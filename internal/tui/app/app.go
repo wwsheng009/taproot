@@ -100,6 +100,20 @@ func (a AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+g":
 			a.showingFullHelp = !a.showingFullHelp
 			a.status.ToggleFullHelp()
+		case "ctrl+m":
+			// Forward OpenDialogMsg to current page to handle
+			if currentPage, ok := a.pages[a.currentPage]; ok {
+				updated, cmd := currentPage.Update(msg)
+				a.pages[a.currentPage] = updated
+				return a, cmd
+			}
+		case "ctrl+p":
+			// Forward OpenDialogMsg to current page to handle
+			if currentPage, ok := a.pages[a.currentPage]; ok {
+				updated, cmd := currentPage.Update(msg)
+				a.pages[a.currentPage] = updated
+				return a, cmd
+			}
 		case "esc":
 			// Go back to previous page
 			if len(a.pageStack) > 0 {
