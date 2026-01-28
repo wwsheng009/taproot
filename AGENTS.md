@@ -20,8 +20,14 @@ taproot/
 │       ├── util/         # TUI utilities (Model, InfoMsg, Cursor, etc.)
 │       │   └── util.go
 │       ├── styles/       # Theme system with gradient support
-│       │   ├── theme.go  # Theme manager, color blending, gradients
-│       │   └── charmtone.go
+│       │   ├── theme.go      # Theme manager, color blending, gradients
+│       │   ├── charmtone.go  # Charmtone theme definition
+│       │   ├── palette.go    # Charmtone color palette constants
+│       │   ├── icons.go      # Icon definitions
+│       │   ├── markdown.go   # Markdown rendering with glamour
+│       │   └── chroma.go     # Chroma syntax highlighting theme
+│       ├── highlight/    # Syntax highlighting support
+│       │   └── highlight.go  # Syntax highlight function using chroma
 │       ├── anim/         # Animated spinner component
 │       │   └── anim.go
 │       └── components/
@@ -113,12 +119,30 @@ The TUI framework (`internal/tui/`) is extracted from Crush with these component
 - `CurrentTheme()`: Get the active theme
 - `ForegroundGrad()`: Render text with gradient
 - `blendColors()`: Internal color blending in HCL color space
+- `GetMarkdownRenderer()`: Glamour markdown renderer with theme styling
+- `PlainMarkdownStyle()`: Plain markdown style (no colors)
+- `GetChromaTheme()`: Chroma syntax highlighting theme entries
 - Color helpers: `ParseHex()`, `Alpha()`, `Darken()`, `Lighten()`
+
+**Charmtone Palette** (`palette.go`):
+Predefined color constants for the charmtone color scheme:
+- **Neutrals**: Smoke, Charcoal, Oyster, Salt
+- **Reds**: Coral, Sriracha, Bengal, Cherry
+- **Yellows**: Zest, Butter, Citron, Cumin
+- **Greens**: Guac, Julep, Guppy, Bok
+- **Blues**: Malibu, Zinc, Squid
+- **Purples**: Charple, Pony, Mauve, Hazy, Cheeky
 
 #### **Animation (`anim/`)**
 - `Anim`: Bubbletea component for animated spinner with gradients
 - `Settings`: Configuration for size, label, colors, cycling
 - Supports staggered entrance, color cycling, ellipsis animation
+
+#### **Syntax Highlighting (`highlight/`)**
+- `SyntaxHighlight()`: Perform syntax highlighting on source code
+- Uses `alecthomas/chroma` for tokenization and formatting
+- Supports auto-detection of lexer from filename or content
+- Integrates with theme system for styled output
 
 #### **Core Components (`components/core/`)**
 - `Section()`, `SectionWithInfo()`: Render section headers with lines
@@ -254,7 +278,9 @@ func (m *mockComponent) Blur()         { /* ... */ }
 - Uses `charmbracelet/bubbletea` v1.3.10 as core framework
 - `charmbracelet/bubbles` for interactive components (help, textinput, etc.)
 - `charmbracelet/lipgloss` for styling
+- `charmbracelet/glamour` for markdown rendering
 - `charmbracelet/x/ansi` for ANSI string manipulation
+- `alecthomas/chroma/v2` for syntax highlighting
 - All dependencies are properly vendored in go.sum
 
 ### Framework-Specific Patterns
@@ -302,7 +328,15 @@ Run examples with `go run examples/<name>/main.go`
 - `CurrentTheme() *Theme`: Get active theme
 - `ApplyForegroundGrad(text, c1, c2) string`: Render gradient text
 - `ApplyBoldForegroundGrad(text, c1, c2) string`: Render bold gradient text
+- `GetMarkdownRenderer(width) *glamour.TermRenderer`: Get themed markdown renderer
+- `PlainMarkdownStyle() ansi.StyleConfig`: Get plain markdown style
+- `GetChromaTheme() chroma.StyleEntries`: Get chroma syntax theme
 - Theme colors: Primary, Secondary, Accent, BgBase, FgBase, etc.
+
+### Highlight (`internal/tui/highlight/`)
+- `SyntaxHighlight(source, fileName, bg) (string, error)`: Highlight source code
+- Auto-detects lexer from filename or content
+- Uses theme colors for syntax highlighting
 
 ### Animation (`internal/tui/anim/`)
 - `New(opts Settings) *Anim`: Create animated spinner

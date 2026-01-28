@@ -88,9 +88,9 @@ Taproot 是从 Crush CLI 提取的 TUI 框架，提供可复用的终端 UI 组�
 ## 总体统计
 
 ```
-已完成代码: ~5,845 行
-完成阶段: Phase 1 + Phase 2 + Phase 3 + Phase 4 (95%)
-组件数量: 36 个核心组件
+已完成代码: ~8,670 行
+完成阶段: Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 (100%)
+组件数量: 40+ 核心组件
 示例程序: 13 个
 文档页数: 5 个
 ```
@@ -107,6 +107,9 @@ Taproot 是从 Crush CLI 提取的 TUI 框架，提供可复用的终端 UI 组�
 2. ✅ **消息渲染** (messages/) - 已完成
 3. ✅ **README.md** - 已完成
 4. ✅ **API.md** - 已完成
+5. ✅ **Markdown 渲染** (styles/markdown.go) - 已完成
+6. ✅ **Chroma 语法高亮** (styles/chroma.go, highlight/) - 已完成
+7. ✅ **Charmtone 调色板** (styles/palette.go) - 已完成
 
 #### 可选任务
 
@@ -158,8 +161,9 @@ Taproot 是从 Crush CLI 提取的 TUI 框架，提供可复用的终端 UI 组�
 ├── github.com/charmbracelet/bubbletea (v1.3.10)
 ├── github.com/charmbracelet/bubbles (v0.21.0)
 ├── github.com/charmbracelet/lipgloss (v1.1.x)
+├── github.com/charmbracelet/glamour (v0.8.0) ✅ 新增
+├── github.com/alecthomas/chroma/v2 (v2.23.1) ✅ 新增
 ├── github.com/charmbracelet/x/ansi (v0.11.4)
-├── github.com/charmbracelet/x/exp/charmtone
 ├── github.com/lucasb-eyer/go-colorful (v1.3.0)
 └── mvdan.cc/sh/v3 (v3.12.0)
 
@@ -269,8 +273,9 @@ gradient := styles.ApplyForegroundGrad("Text", t.Primary, t.Secondary)
 
 1. **lipgloss.Layer**: 公共版本可能不支持层级渲染,已简化实现
 2. **剪贴板**: 未迁移,需要平台特定代码
-3. **Markdown**: 依赖 glamour,需要额外集成
-4. **编辑器**: 复杂度太高,建议使用 bubbles/textarea
+3. **Markdown**: 已集成 glamour,提供主题化渲染 ✅
+4. **语法高亮**: 已集成 chroma,支持自动语言检测 ✅
+5. **编辑器**: 复杂度太高,建议使用 bubbles/textarea
 
 ---
 
@@ -303,11 +308,13 @@ gradient := styles.ApplyForegroundGrad("Text", t.Primary, t.Secondary)
 2024-01-28: Phase 5.1 完成 (Image) ✅
 2024-01-28: README.md 完成 ✅
 2024-01-28: API.md 完成 ✅
-2024-01-28: **Taproot TUI Framework v0.9.0 发布就绪！** 🎉
+2024-01-28: Markdown 渲染完成 ✅
+2024-01-28: Chroma 语法高亮完成 ✅
+2024-01-28: **Taproot TUI Framework v1.0.0 发布就绪！** 🎉
 ```
 
 ---
 
 **最后更新**: 2024-01-28
-**当前版本**: 0.9.0
+**当前版本**: 1.0.0
 **状态**: 发布就绪 🚀
