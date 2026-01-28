@@ -500,4 +500,18 @@ Phase 5: ████████████████████ 100% (完�
 - ✅ 所有文档 (README, API, EXAMPLES, CONTRIBUTING, CHANGELOG)
 - ✅ 核心测试覆盖
 
-**状态**: 发布就绪 🚀
+**状态**: v1.0.0 发布就绪 🚀
+
+---
+
+## 📋 v2.0.0 迁移计划
+
+详见 [V2_ROADMAP.md](V2_ROADMAP.md) - 包含 Phase 6-12 的完整迁移计划。
+
+**即将开始**:
+- Phase 6.1: 全局按键系统 (keys.go)
+- Phase 6.2: 通用布局组件 (layout.go)
+- Phase 6.3: 对话框按键绑定
+- Phase 7-12: 列表/Diff/消息组件完善
+
+**预计时间**: 1-2 周
