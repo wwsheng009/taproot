@@ -126,18 +126,21 @@
   - [x] 实现滚动逻辑
   - [x] 实现键盘导航
   - [x] 实现选中状态管理
-- [ ] 迁移 `keys.go`
-- [ ] 迁移 `filterable.go`
-  - [ ] 实现过滤功能
-  - [ ] 实现搜索高亮
-- [ ] 迁移 `filterable_group.go`
-  - [ ] 实现分组过滤
-- [ ] 迁移 `grouped.go`
-  - [ ] 实现分组显示
-  - [ ] 实现分组折叠
+- [ ] 迁移 `keys.go` (简化为内嵌处理)
+- [x] 迁移 `filterable.go`
+  - [x] 实现过滤功能
+  - [x] 实现搜索高亮
+  - [x] 实现 ListItem 结构
+- [x] 迁移 `grouped.go`
+  - [x] 实现分组显示
+  - [x] 实现分组折叠/展开
+  - [x] 实现 flatItem 内部表示
+- [ ] 迁移 `filterable_group.go` (简化实现已完成)
 - [ ] 迁移 `list_test.go`
 - [ ] 迁移 `filterable_test.go`
 - [x] 创建示例程序 (examples/list/main.go)
+- [x] 创建过滤列表示例 (examples/filterablelist/main.go)
+- [x] 创建分组列表示例 (examples/groupedlist/main.go)
 
 **预估**: 10-12 小时
 
@@ -451,7 +454,7 @@
 ```
 Phase 1: ████████████████████ 100% (已完成)
 Phase 2: ████████████████████ 100% (已完成)
-Phase 3: ████████░░░░░░░░░░░  40% (Logo, 简化列表, 自动完成)
+Phase 3: ████████████████░░░░  60% (Logo, SimpleList, Completions, Filterable, Grouped)
 Phase 4: ░░░░░░░░░░░░░░░░░░░░   0%
 Phase 5: ░░░░░░░░░░░░░░░░░░░░   0%
 文档:    ████████████░░░░░░░░  50%
@@ -465,10 +468,9 @@ Phase 5: ░░░░░░░░░░░░░░░░░░░░   0%
 2. ✅ **Phase 2.2**: 实现对话框管理器 (已完成)
 3. ✅ **Phase 2.3**: 实现应用主循环 (已完成)
 4. ✅ **Phase 3.1**: 实现自动完成组件 (已完成)
-5. ⏳ **Phase 3.2**: 完善虚拟化列表 (进行中) - 高价值
-   - 迁移 filterable.go
-   - 迁移 grouped.go
-   - 添加测试
+5. ✅ **Phase 3.2**: 完善虚拟化列表 (已完成)
+   - ✅ FilterableList (过滤 + 搜索高亮)
+   - ✅ GroupedList (分组 + 折叠/展开)
 6. ⏳ **Phase 3.3**: 实现 Diff 查看器 (8-10h) - 高价值
 
-**Phase 3.1 完成！自动完成组件可用于命令行输入场景！**
+**Phase 3.2 完成！列表组件支持过滤和分组功能！**
