@@ -14,6 +14,8 @@ Taproot provides reusable, composable components and utilities for building term
 - **🔧 Easy Composable** - Interface-based design for maximum flexibility
 - **📱 Responsive Layout** - Automatic size management and positioning
 - **🎯 Type Safe** - Full type safety with compile-time guarantees
+- **📝 Markdown Rendering** - Glamour-based markdown with syntax highlighting
+- **🎨 Syntax Highlighting** - Chroma-powered code highlighting
 - **🚀 Zero Dependencies** - Only depends on Bubbletea ecosystem
 
 ## 🚀 Quick Start
