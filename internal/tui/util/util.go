@@ -57,6 +57,13 @@ func NewWarnMsg(warn string) InfoMsg {
 	}
 }
 
+func NewSuccessMsg(msg string) InfoMsg {
+	return InfoMsg{
+		Type: InfoTypeSuccess,
+		Msg:  msg,
+	}
+}
+
 func NewErrorMsg(err error) InfoMsg {
 	return InfoMsg{
 		Type: InfoTypeError,
@@ -66,6 +73,10 @@ func NewErrorMsg(err error) InfoMsg {
 
 func ReportInfo(info string) tea.Cmd {
 	return CmdHandler(NewInfoMsg(info))
+}
+
+func ReportSuccess(msg string) tea.Cmd {
+	return CmdHandler(NewSuccessMsg(msg))
 }
 
 func ReportWarn(warn string) tea.Cmd {

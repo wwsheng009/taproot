@@ -249,7 +249,3 @@ func (d *modelsDialogCmp) Position() (int, int) {
 func (d *modelsDialogCmp) ID() dialogs.DialogID {
 	return ModelDialogID
 }
-
-func (d *modelsDialogCmp) visible() int {
-	return d.height - 6 // Account for header, filter, hints, footer
-}

@@ -28,7 +28,7 @@ func (p *MyCommandProvider) Commands() []commands.Command {
 			ID:          "save",
 			Title:       "Save",
 			Description: "Save current work",
-			Callback: func() tea.Cmd {
+			Callback: func(args map[string]string) tea.Cmd {
 				p.actionLog = append(p.actionLog, "Saved!")
 				return func() tea.Msg {
 					return util.ReportInfo("File saved successfully")
@@ -39,7 +39,7 @@ func (p *MyCommandProvider) Commands() []commands.Command {
 			ID:          "load",
 			Title:       "Load",
 			Description: "Load a file",
-			Callback: func() tea.Cmd {
+			Callback: func(args map[string]string) tea.Cmd {
 				p.actionLog = append(p.actionLog, "Opened file dialog")
 				return func() tea.Msg {
 					return util.ReportInfo("File loaded")
@@ -47,10 +47,29 @@ func (p *MyCommandProvider) Commands() []commands.Command {
 			},
 		},
 		{
+			ID:          "rename",
+			Title:       "Rename Project",
+			Description: "Rename the current project",
+			Args: []commands.ArgDef{
+				{
+					Name:        "New Name",
+					Description: "Enter the new project name",
+					Placeholder: "My Project",
+				},
+			},
+			Callback: func(args map[string]string) tea.Cmd {
+				name := args["New Name"]
+				p.actionLog = append(p.actionLog, fmt.Sprintf("Renamed to: %s", name))
+				return func() tea.Msg {
+					return util.ReportSuccess(fmt.Sprintf("Renamed to %s", name))
+				}
+			},
+		},
+		{
 			ID:          "settings",
 			Title:       "Settings",
 			Description: "Open settings",
-			Callback: func() tea.Cmd {
+			Callback: func(args map[string]string) tea.Cmd {
 				p.actionLog = append(p.actionLog, "Opened settings")
 				return func() tea.Msg {
 					return util.ReportInfo("Settings opened")
@@ -61,7 +80,7 @@ func (p *MyCommandProvider) Commands() []commands.Command {
 			ID:          "export",
 			Title:       "Export",
 			Description: "Export data",
-			Callback: func() tea.Cmd {
+			Callback: func(args map[string]string) tea.Cmd {
 				p.actionLog = append(p.actionLog, "Exported data")
 				return util.ReportInfo("Data exported")
 			},
@@ -70,7 +89,7 @@ func (p *MyCommandProvider) Commands() []commands.Command {
 			ID:          "help",
 			Title:       "Help",
 			Description: "Show help information",
-			Callback: func() tea.Cmd {
+			Callback: func(args map[string]string) tea.Cmd {
 				p.actionLog = append(p.actionLog, "Opened help")
 				return util.ReportInfo("Help: Press ctrl+p for commands")
 			},
@@ -79,7 +98,7 @@ func (p *MyCommandProvider) Commands() []commands.Command {
 			ID:          "quit",
 			Title:       "Quit",
 			Description: "Exit the application",
-			Callback: func() tea.Cmd {
+			Callback: func(args map[string]string) tea.Cmd {
 				return tea.Quit
 			},
 		},
@@ -145,6 +164,7 @@ func (h HomePage) View() string {
 	b.WriteString(title + "\n\n")
 	b.WriteString("Press ctrl+p to open the command palette\n\n")
 	b.WriteString("Available commands:\n")
+	b.WriteString("  - Rename: Rename project (Try args!)\n")
 	b.WriteString("  - Save: Save current work\n")
 	b.WriteString("  - Load: Load a file\n")
 	b.WriteString("  - Settings: Open settings\n")
