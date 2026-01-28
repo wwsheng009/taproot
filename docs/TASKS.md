@@ -416,12 +416,12 @@
 - [x] 创建 `docs/MIGRATION_PLAN.md`
 - [x] 创建 `docs/ALTERNATIVES.md`
 - [x] 创建 `docs/TASKS.md` (本文档)
-- [ ] 创建 `docs/API.md` - API 文档
-- [ ] 创建 `docs/EXAMPLES.md` - 示例集合
-- [ ] 创建 `docs/CONTRIBUTING.md` - 贡献指南
-- [ ] 创建 `docs/CHANGELOG.md` - 变更日志
-- [ ] 更新 `AGENTS.md`
-- [ ] 创建 README.md
+- [x] 创建 `docs/API.md` - API 文档
+- [x] 创建 `docs/EXAMPLES.md` - 示例集合
+- [x] 创建 `docs/CONTRIBUTING.md` - 贡献指南
+- [x] 创建 `docs/CHANGELOG.md` - 变更日志
+- [x] 更新 `AGENTS.md`
+- [x] 创建 README.md
 
 ---
 
