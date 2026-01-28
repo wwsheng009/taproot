@@ -196,13 +196,11 @@ func (a AppModel) View() string {
 	// If there's an active dialog, show it
 	if a.dialogs.HasDialogs() {
 		dialogView := a.dialogs.View()
-		currentPageView := a.currentPageView()
-
-		// Simple overlay - dialog on top of page
-		// In a real implementation, you'd use proper layering
-		return lipgloss.JoinVertical(lipgloss.Top,
-			currentPageView,
-			a.status.View(),
+		
+		// Center the dialog using lipgloss.Place
+		// This will replace the current view with the centered dialog
+		return lipgloss.Place(a.width, a.height,
+			lipgloss.Center, lipgloss.Center,
 			dialogView,
 		)
 	}

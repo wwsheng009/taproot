@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -38,7 +39,7 @@ func (p *MyModelProvider) SetModel(modelID string) tea.Cmd {
 	// Update recent models
 	for i, m := range p.models {
 		if m.ID == modelID {
-			p.models[i].LastUsed = p.models[i].LastUsed
+			p.models[i].LastUsed = time.Now()
 			
 			// Add to recent if not already there
 			found := false
@@ -49,7 +50,7 @@ func (p *MyModelProvider) SetModel(modelID string) tea.Cmd {
 				}
 			}
 			if !found {
-				p.recent = append([]models.Model{m}, p.recent...)
+				p.recent = append([]models.Model{p.models[i]}, p.recent...)
 				if len(p.recent) > 5 {
 					p.recent = p.recent[:5]
 				}
@@ -145,7 +146,7 @@ func (h HomePage) Update(msg tea.Msg) (util.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
-		case "ctrl+m":
+		case "ctrl+m", "enter":
 			// Open model selection dialog
 			dialog := models.NewModelsDialog(h.provider)
 			return h, func() tea.Msg {
@@ -165,7 +166,7 @@ func (h HomePage) View() string {
 
 	var b strings.Builder
 	b.WriteString(title + "\n\n")
-	b.WriteString(fmt.Sprintf("Current Model: %s\n\n", h.provider.currentModel))
+	fmt.Fprintf(&b, "Current Model: %s\n\n", h.provider.currentModel)
 	b.WriteString("Press ctrl+m to open the model selection dialog\n\n")
 	b.WriteString("Features:\n")
 	b.WriteString("  - Search models by name, provider, or description\n")
@@ -174,7 +175,7 @@ func (h HomePage) View() string {
 	b.WriteString("  - Quick select with Enter\n\n")
 	b.WriteString("Available models:\n")
 	for _, m := range h.provider.models {
-		b.WriteString(fmt.Sprintf("  - %s (%s)\n", m.Name, m.Provider))
+		fmt.Fprintf(&b, "  - %s (%s)\n", m.Name, m.Provider)
 	}
 	b.WriteString("\nPress q or ctrl+c to quit")
 
