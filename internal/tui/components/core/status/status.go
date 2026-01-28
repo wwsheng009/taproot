@@ -58,11 +58,19 @@ func (m *statusCmp) Update(msg tea.Msg) (util.Model, tea.Cmd) {
 
 func (m *statusCmp) View() string {
 	t := styles.CurrentTheme()
-	status := t.S().Base.Padding(0, 1, 1, 1).Render(m.help.View(m.keyMap))
-	if m.info.Msg != "" {
-		status = m.infoMsg()
+	// Only render help if keyMap is set
+	if m.keyMap != nil {
+		status := t.S().Base.Padding(0, 1, 1, 1).Render(m.help.View(m.keyMap))
+		if m.info.Msg != "" {
+			status = m.infoMsg()
+		}
+		return status
 	}
-	return status
+	// Fallback: just show info message if available
+	if m.info.Msg != "" {
+		return m.infoMsg()
+	}
+	return ""
 }
 
 func (m *statusCmp) infoMsg() string {

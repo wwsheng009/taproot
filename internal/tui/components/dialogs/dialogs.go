@@ -56,7 +56,7 @@ func (d dialogCmp) Init() tea.Cmd {
 }
 
 // Update handles dialog lifecycle and forwards messages to the active dialog.
-func (d dialogCmp) Update(msg tea.Msg) (util.Model, tea.Cmd) {
+func (d *dialogCmp) Update(msg tea.Msg) (util.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		var cmds []tea.Cmd

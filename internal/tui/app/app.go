@@ -111,7 +111,14 @@ func (a AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case page.PageChangeMsg:
-		a.SetPage(msg.ID)
+		if _, ok := a.pages[msg.ID]; ok {
+			if a.currentPage != "" {
+				a.pageStack = append(a.pageStack, a.currentPage)
+			}
+			a.currentPage = msg.ID
+			cmd := a.initPage(msg.ID)
+			return a, cmd
+		}
 		return a, nil
 
 	case page.PageBackMsg:
@@ -124,11 +131,13 @@ func (a AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return a, nil
 
 	case dialogs.OpenDialogMsg:
-		_, cmd := a.dialogs.Update(msg)
+		updatedDialogs, cmd := a.dialogs.Update(msg)
+		a.dialogs = updatedDialogs.(dialogs.DialogCmp)
 		return a, cmd
 
 	case dialogs.CloseDialogMsg:
-		_, cmd := a.dialogs.Update(msg)
+		updatedDialogs, cmd := a.dialogs.Update(msg)
+		a.dialogs = updatedDialogs.(dialogs.DialogCmp)
 		return a, cmd
 
 	case tea.WindowSizeMsg:
