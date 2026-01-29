@@ -136,8 +136,17 @@ func (h *HeaderComponent) View() string {
 	remainingWidth := h.width - lipgloss.Width(b.String()) - lipgloss.Width(details) - leftPadding - rightPadding
 
 	if remainingWidth > 0 {
+		// Adjust separator count based on token usage percentage
+		var diagsToUse int
+		if h.tokenMax > 0 {
+			percentage := float64(h.tokenUsed) / float64(h.tokenMax)
+			// Scale diags from minDiags to remainingWidth based on percentage
+			diagsToUse = minDiags + int(float64(remainingWidth-minDiags)*percentage)
+		} else {
+			diagsToUse = max(minDiags, remainingWidth)
+		}
 		b.WriteString(s.Base.Foreground(s.Primary).Render(
-			strings.Repeat(diag, max(minDiags, remainingWidth)),
+			strings.Repeat(diag, diagsToUse),
 		))
 		b.WriteString(gap)
 	}

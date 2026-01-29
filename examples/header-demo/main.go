@@ -54,9 +54,12 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "ctrl+c", "q", "Q":
 			return m, tea.Quit
 		case "t", "T":
-			// Update token usage
-			m.tokenUsed = 80000
-			m.cost = 2.00
+			// Update token usage (cycle 0 -> 100% -> 0)
+			m.tokenUsed += 10000
+			if m.tokenUsed > m.tokenMax {
+				m.tokenUsed = 0
+			}
+			m.cost = float64(m.tokenUsed) / float64(m.tokenMax) * 3.00
 			m.header.SetTokenUsage(m.tokenUsed, m.tokenMax, m.cost)
 		case "d", "D":
 			// Toggle details
@@ -123,13 +126,13 @@ func (m *model) View() string {
 	content.WriteString(strings.Repeat(" ", 2))
 	content.WriteString("  Q / Ctrl+C  - Quit\n")
 	content.WriteString(strings.Repeat(" ", 2))
+	content.WriteString("  T           - Cycle token % (0->100->0)\n")
+	content.WriteString(strings.Repeat(" ", 2))
 	content.WriteString("  D           - Toggle details\n")
 	content.WriteString(strings.Repeat(" ", 2))
 	content.WriteString("  E           - Add error\n")
 	content.WriteString(strings.Repeat(" ", 2))
 	content.WriteString("  R           - Reset errors\n")
-	content.WriteString(strings.Repeat(" ", 2))
-	content.WriteString("  T           - Update token usage\n")
 	content.WriteString(strings.Repeat(" ", 2))
 	content.WriteString("  H           - Change working dir\n")
 	content.WriteString(strings.Repeat(" ", 2))
