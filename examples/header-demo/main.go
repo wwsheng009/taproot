@@ -50,32 +50,27 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		key := msg.String()
-		if key == "ctrl+c" {
+		switch msg.String() {
+		case "ctrl+c", "q", "Q":
 			return m, tea.Quit
-		}
-
-		switch strings.ToLower(key) {
-		case "q":
-			return m, tea.Quit
-		case "d":
-			// Toggle details
-			m.detailsOpen = !m.detailsOpen
-			m.header.SetDetailsOpen(m.detailsOpen)
-		case "e":
-			// Add errors
-			m.errorCount++
-			m.header.SetErrorCount(m.errorCount)
-		case "r":
-			// Reset errors
-			m.errorCount = 0
-			m.header.SetErrorCount(m.errorCount)
-		case "t":
+		case "t", "T":
 			// Update token usage
 			m.tokenUsed = 80000
 			m.cost = 2.00
 			m.header.SetTokenUsage(m.tokenUsed, m.tokenMax, m.cost)
-		case "h":
+		case "d", "D":
+			// Toggle details
+			m.detailsOpen = !m.detailsOpen
+			m.header.SetDetailsOpen(m.detailsOpen)
+		case "e", "E":
+			// Add errors
+			m.errorCount++
+			m.header.SetErrorCount(m.errorCount)
+		case "r", "R":
+			// Reset errors
+			m.errorCount = 0
+			m.header.SetErrorCount(m.errorCount)
+		case "h", "H":
 			// Change working directory
 			if m.workingDir == "/projects/ai/Taproot" {
 				m.workingDir = "/home/user/projects/taproot/examples"
@@ -83,20 +78,20 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.workingDir = "/projects/ai/Taproot"
 			}
 			m.header.SetWorkingDirectory(m.workingDir)
-		case "c":
+		case "c", "C":
 			// Change compact mode
 			m.compactMode = true
 			m.header.SetCompactMode(m.compactMode)
-		case "n":
+		case "n", "N":
 			// Normal mode
 			m.compactMode = false
 			m.header.SetCompactMode(m.compactMode)
-		case "b":
+		case "b", "B":
 			// Change brand
 			m.brand = "MyBrand™"
 			m.title = "APP"
 			m.header.SetBrand(m.brand, m.title)
-		case "s":
+		case "s", "S":
 			// Reset to default brand
 			m.brand = "Charm™"
 			m.title = "CRUSH"
