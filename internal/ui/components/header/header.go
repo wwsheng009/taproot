@@ -128,26 +128,33 @@ func (h *HeaderComponent) View() string {
 	b.WriteString(styles.ApplyBoldForegroundGrad(&s, h.title, s.Secondary, s.Primary))
 	b.WriteString(gap)
 
-	// Calculate available width for details
-	availDetailWidth := h.width - leftPadding - rightPadding - lipgloss.Width(b.String()) - minDiags
-	details := h.renderDetails(availDetailWidth)
+	// Render details first so we can calculate fixed separator width
+	details := h.renderDetails(h.width) // full width available for details calculation
 
-	// Calculate remaining width for separator
-	remainingWidth := h.width - lipgloss.Width(b.String()) - lipgloss.Width(details) - leftPadding - rightPadding
+	// Calculate separator space (remaining width after brand/title and details)
+	brandWidth := lipgloss.Width(b.String())
+	detailsWidth := lipgloss.Width(details)
+	separatorWidth := h.width - leftPadding - rightPadding - brandWidth - detailsWidth
 
-	if remainingWidth > 0 {
-		// Adjust separator count based on token usage percentage
-		var diagsToUse int
+	if separatorWidth > 0 && separatorWidth > minDiags {
+		// Calculate number of diags based on percentage
+		var diagsCount int
 		if h.tokenMax > 0 {
 			percentage := float64(h.tokenUsed) / float64(h.tokenMax)
-			// Scale diags from minDiags to remainingWidth based on percentage
-			diagsToUse = minDiags + int(float64(remainingWidth-minDiags)*percentage)
+			// Scale from minDiags to separatorWidth based on percentage
+			diagsCount = minDiags + int(float64(separatorWidth-minDiags)*percentage)
 		} else {
-			diagsToUse = max(minDiags, remainingWidth)
+			diagsCount = minDiags
 		}
-		b.WriteString(s.Base.Foreground(s.Primary).Render(
-			strings.Repeat(diag, diagsToUse),
-		))
+
+		// Render separator with padding to keep content position fixed
+		diagsStr := strings.Repeat(diag, diagsCount)
+		paddingCount := separatorWidth - diagsCount
+		if paddingCount > 0 {
+			diagsStr += strings.Repeat(" ", paddingCount)
+		}
+
+		b.WriteString(s.Base.Foreground(s.Primary).Render(diagsStr))
 		b.WriteString(gap)
 	}
 
