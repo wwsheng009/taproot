@@ -23,7 +23,7 @@ Taproot v2.0.0 是一次重大架构升级，旨在整合 Crush 项目中两个�
 **目标**: 为 Taproot 添加 Ultraviolet 渲染引擎支持
 
 **任务**:
-- [ ] 创建 `internal/ui/` 目录
+- [x] 创建 `internal/ui/` 目录 ✅
 - [ ] 迁移 `internal/ui/list/list.go`
   - [ ] Item 接口定义
   - [ ] 虚拟化渲染
@@ -31,10 +31,12 @@ Taproot v2.0.0 是一次重大架构升级，旨在整合 Crush 项目中两个�
   - [ ] 选择管理
   - [ ] 过滤支持 (filterable.go)
   - [ ] 分组支持 (grouped.go)
-- [ ] 迁移 `internal/ui/common/`
-  - [ ] 布局工具函数
-  - [ ] Markdown 渲染器
-  - [ ] 状态栏组件
+- [x] 迁移 `internal/ui/styles/` ✅
+  - [x] 布局工具函数
+  - [x] Markdown 渲染器
+  - [x] Chroma 语法高亮
+  - [x] Charmtone 颜色调色板
+  - [x] 主题系统
 - [ ] 创建 `internal/ui/render/`
   - [ ] Ultraviolet 适配器
   - [ ] Bubbletea 适配器
@@ -242,8 +244,8 @@ E:/projects/ai/crush/internal/ui/chat/*.go
 **目标**: 更强大的 Markdown 渲染
 
 **任务**:
-- [ ] 增强 `internal/ui/styles/styles.go` (incorporating chroma/markdown logic)
-- [ ] 代码块语法高亮
+- [x] 增强 `internal/ui/styles/styles.go` (incorporating chroma/markdown logic) ✅
+- [x] 代码块语法高亮 ✅
 - [ ] 表格渲染
 - [ ] 任务列表
 - [ ] 链接处理
@@ -566,3 +568,17 @@ E:/projects/ai/crush/internal/tui/
 **文档版本**: v2.0.0
 **创建日期**: 2025-01-29
 **最后更新**: 2025-01-29
+
+---
+
+## 📝 更新日志
+
+### 2025-01-29
+- ✅ Phase 6.1 部分完成: `internal/ui/styles/` 已创建并迁移
+  - 主题系统 (theme.go)
+  - Markdown 渲染器 (markdown.go)
+  - Chroma 语法高亮 (chroma.go)
+  - Charmtone 颜色调色板 (palette.go, charmtone.go)
+  - 图标系统 (icons.go)
+- ✅ 移除旧的 `internal/tui/styles/` 包
+- ✅ 所有组件已更新为使用注入式样式
