@@ -78,6 +78,13 @@ func RegisterEngine(engineType EngineType, factory EngineFactory) {
 	registry[engineType] = factory
 }
 
+// init registers the built-in engines
+func init() {
+	RegisterEngine(EngineBubbletea, NewBubbleteaEngine)
+	RegisterEngine(EngineUltraviolet, NewUltravioletEngine)
+	RegisterEngine(EngineDirect, NewDirectEngine)
+}
+
 // CreateEngine creates a new engine of the specified type.
 func CreateEngine(engineType EngineType, config *EngineConfig) (Engine, error) {
 	factory, ok := registry[engineType]
