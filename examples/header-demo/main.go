@@ -50,8 +50,13 @@ func (m model) Init() tea.Cmd {
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "q", "ctrl+c":
+		key := msg.String()
+		if key == "ctrl+c" {
+			return m, tea.Quit
+		}
+
+		switch strings.ToLower(key) {
+		case "q":
 			return m, tea.Quit
 		case "d":
 			// Toggle details
@@ -121,25 +126,25 @@ func (m model) View() string {
 	content.WriteString(strings.Repeat(" ", 2))
 	content.WriteString("Press keys to interact:\n")
 	content.WriteString(strings.Repeat(" ", 2))
-	content.WriteString("  q / ctrl+c  - Quit\n")
+	content.WriteString("  Q / Ctrl+C  - Quit\n")
 	content.WriteString(strings.Repeat(" ", 2))
-	content.WriteString("  d           - Toggle details\n")
+	content.WriteString("  D           - Toggle details\n")
 	content.WriteString(strings.Repeat(" ", 2))
-	content.WriteString("  e           - Add error\n")
+	content.WriteString("  E           - Add error\n")
 	content.WriteString(strings.Repeat(" ", 2))
-	content.WriteString("  r           - Reset errors\n")
+	content.WriteString("  R           - Reset errors\n")
 	content.WriteString(strings.Repeat(" ", 2))
-	content.WriteString("  t           - Update token usage\n")
+	content.WriteString("  T           - Update token usage\n")
 	content.WriteString(strings.Repeat(" ", 2))
-	content.WriteString("  h           - Change working dir\n")
+	content.WriteString("  H           - Change working dir\n")
 	content.WriteString(strings.Repeat(" ", 2))
-	content.WriteString("  c           - Compact mode\n")
+	content.WriteString("  C           - Compact mode\n")
 	content.WriteString(strings.Repeat(" ", 2))
-	content.WriteString("  n           - Normal mode\n")
+	content.WriteString("  N           - Normal mode\n")
 	content.WriteString(strings.Repeat(" ", 2))
-	content.WriteString("  b           - Change brand\n")
+	content.WriteString("  B           - Change brand\n")
 	content.WriteString(strings.Repeat(" ", 2))
-	content.WriteString("  s           - Reset brand\n\n")
+	content.WriteString("  S           - Reset brand\n")
 
 	// Show current state
 	content.WriteString(strings.Repeat(" ", 2))
