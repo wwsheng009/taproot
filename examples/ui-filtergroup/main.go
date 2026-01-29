@@ -1,30 +1,33 @@
-// Filter and Group example using the engine-agnostic list package
+// Interactive filter and group example using Bubbletea
 package main
 
 import (
 	"fmt"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/yourorg/taproot/internal/ui/list"
-	"github.com/yourorg/taproot/internal/ui/render"
+	"github.com/yourorg/taproot/internal/ui/styles"
 )
 
-// FilterGroupModel demonstrates filter and group functionality
-type FilterGroupModel struct {
+// InteractiveFilterGroupModel demonstrates filter and group with Bubbletea
+type InteractiveFilterGroupModel struct {
 	allItems   []list.FilterableItem
 	filtered   []list.FilterableItem
 	groups     []*list.Group
 	groupMgr   *list.GroupManager
 	filter     *list.Filter
 	cursor     int
-	width      int
-	height     int
-	quit       bool
+	styles     *styles.Styles
+	quitting   bool
 	filterMode bool
 	query      string
 }
 
-func NewFilterGroupModel() *FilterGroupModel {
+func NewInteractiveFilterGroupModel() *InteractiveFilterGroupModel {
+	s := styles.DefaultStyles()
+
 	// Create filterable items
 	items := []list.FilterableItem{
 		list.NewListItem("f1", "Fuji Apple", "Red apple from Japan"),
@@ -41,17 +44,17 @@ func NewFilterGroupModel() *FilterGroupModel {
 
 	// Create groups
 	groups := []*list.Group{
-		list.NewGroup("Apples", []list.Item{
+		list.NewGroup("🍎 Apples", []list.Item{
 			list.NewListItem("f1", "Fuji Apple", "Red apple from Japan"),
 			list.NewListItem("f2", "Gala Apple", "Sweet red apple"),
 			list.NewListItem("f3", "Honeycrisp", "Crisp sweet apple"),
 		}),
-		list.NewGroup("Citrus", []list.Item{
+		list.NewGroup("🍊 Citrus", []list.Item{
 			list.NewListItem("c1", "Navel Orange", "Seedless orange"),
 			list.NewListItem("c2", "Blood Orange", "Red-fleshed orange"),
 			list.NewListItem("c3", "Mandarin", "Small easy-peel citrus"),
 		}),
-		list.NewGroup("Tropical", []list.Item{
+		list.NewGroup("🌴 Tropical", []list.Item{
 			list.NewListItem("b1", "Cavendish", "Common yellow banana"),
 			list.NewListItem("b2", "Plantain", "Cooking banana"),
 			list.NewListItem("g1", "Thompson", "Green seedless grape"),
@@ -59,36 +62,36 @@ func NewFilterGroupModel() *FilterGroupModel {
 		}),
 	}
 
-	return &FilterGroupModel{
+	return &InteractiveFilterGroupModel{
 		allItems:   items,
 		filtered:   items,
 		groups:     groups,
 		groupMgr:   list.NewGroupManager(),
 		filter:     list.NewFilter(),
 		cursor:     0,
-		width:      70,
-		height:     15,
-		quit:       false,
+		styles:     &s,
+		quitting:   false,
 		filterMode: false,
 		query:      "",
 	}
 }
 
-// Init initializes the model
-func (m *FilterGroupModel) Init() error {
-	m.groupMgr.SetGroups(m.groups)
+// Init implements tea.Model
+func (m *InteractiveFilterGroupModel) Init() tea.Cmd {
 	return nil
 }
 
-// Update handles incoming messages
-func (m *FilterGroupModel) Update(msg any) (render.Model, render.Cmd) {
+// Update implements tea.Model
+func (m *InteractiveFilterGroupModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case render.KeyMsg:
-		key := msg.String()
+	case tea.KeyMsg:
+		if m.quitting {
+			return m, tea.Quit
+		}
 
 		// Handle filter mode input
 		if m.filterMode {
-			switch key {
+			switch msg.String() {
 			case "enter":
 				m.filterMode = false
 			case "esc":
@@ -100,11 +103,12 @@ func (m *FilterGroupModel) Update(msg any) (render.Model, render.Cmd) {
 					m.applyFilter()
 				}
 			case "ctrl+c", "q":
-				m.quit = true
+				m.quitting = true
+				return m, tea.Quit
 			default:
 				// Regular character input
-				if len(key) == 1 && key != "/" {
-					m.query += key
+				if len(msg.String()) == 1 && msg.String() != "/" {
+					m.query += msg.String()
 					m.applyFilter()
 				}
 			}
@@ -112,71 +116,115 @@ func (m *FilterGroupModel) Update(msg any) (render.Model, render.Cmd) {
 		}
 
 		// Normal mode
-		switch key {
+		switch msg.String() {
+		case "ctrl+c", "q":
+			m.quitting = true
+			return m, tea.Quit
+
 		case "/":
 			m.filterMode = true
 			m.query = ""
+
 		case "j", "down":
 			m.moveDown()
+
 		case "k", "up":
 			m.moveUp()
+
 		case "enter", " ":
 			m.toggleCurrent()
+
 		case "E":
 			m.groupMgr.ExpandAll()
+
 		case "W":
 			m.groupMgr.CollapseAll()
-		case "q", "ctrl+c":
-			m.quit = true
 		}
 
-	case render.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+	case tea.WindowSizeMsg:
+		// Window resize - can adjust viewport here if needed
 	}
 
 	return m, nil
 }
 
-// View renders the model
-func (m *FilterGroupModel) View() string {
-	if m.quit {
-		return "Goodbye!"
+// View implements tea.Model
+func (m *InteractiveFilterGroupModel) View() string {
+	if m.quitting {
+		return "Goodbye!\n"
 	}
 
 	var b strings.Builder
 
+	// Styles
+	headerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("86")).
+		Background(lipgloss.Color("235")).
+		Padding(0, 2).
+		MarginBottom(1)
+
+	groupStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("228")).
+		Bold(true)
+
+	itemStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("252"))
+
+	cursorStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("226")).
+		Bold(true)
+
+	filterStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("226")).
+		Background(lipgloss.Color("235"))
+
 	// Header
-	b.WriteString("╔════════════════════════════════════════════════════════════════╗\n")
-	b.WriteString("║           Filter & Group List Demo (v2.0)                      ║\n")
-	b.WriteString("╠════════════════════════════════════════════════════════════════╣\n")
+	b.WriteString(headerStyle.Render("╔════════════════════════════════════════════════════════════════╗"))
+	b.WriteString("\n")
+	b.WriteString(headerStyle.Render("║              Filter & Group List Demo (v2.0)                    ║"))
+	b.WriteString("\n")
+	b.WriteString(headerStyle.Render("╠════════════════════════════════════════════════════════════════╣"))
+	b.WriteString("\n")
 
 	if m.filterMode {
-		b.WriteString(fmt.Sprintf("║  Filter: %s_                                                   ║\n", m.query))
+		filterText := fmt.Sprintf("║  Filter: %s_%-51s║", m.query, "")
+		b.WriteString(filterStyle.Render(filterText))
+		b.WriteString("\n")
 	} else {
 		filterInfo := ""
 		if m.query != "" {
 			filterInfo = fmt.Sprintf(" (filtered: %d/%d)", len(m.filtered), len(m.allItems))
 		}
-		b.WriteString(fmt.Sprintf("║  Keys: /filter  j/k=nav  enter=toggle  E=expand  W=collapse%s  ║\n", filterInfo))
+		helpText := fmt.Sprintf("║  /filter j/k nav enter=toggle E=expand W=collapse%s%-20s║", filterInfo, "")
+		b.WriteString(headerStyle.Render(helpText))
+		b.WriteString("\n")
 	}
 
-	b.WriteString("╚════════════════════════════════════════════════════════════════╝\n\n")
+	b.WriteString(headerStyle.Render("╚════════════════════════════════════════════════════════════════╝"))
+	b.WriteString("\n")
 
 	// Grouped view
-	m.renderGroups(&b)
+	m.renderGroups(&b, cursorStyle, groupStyle, itemStyle)
 
-	// Filter info
+	// Filter info footer
 	if m.query != "" && !m.filterMode {
-		b.WriteString(fmt.Sprintf("\n  Filter: \"%s\" | Showing %d of %d items\n", m.query, len(m.filtered), len(m.allItems)))
+		footerStyle := lipgloss.NewStyle().
+			Foreground(lipgloss.Color("243")).
+			MarginTop(1)
+		footerText := fmt.Sprintf("Filter: \"%s\" | Showing %d of %d items",
+			m.query, len(m.filtered), len(m.allItems))
+		b.WriteString(footerStyle.Render(footerText))
 	}
 
 	return b.String()
 }
 
-func (m *FilterGroupModel) renderGroups(b *strings.Builder) {
+func (m *InteractiveFilterGroupModel) renderGroups(
+	b *strings.Builder,
+	cursorStyle, groupStyle, itemStyle lipgloss.Style,
+) {
 	count := m.groupMgr.Count()
-	maxVisible := m.height - 6
+	maxVisible := 12
 	start := 0
 	end := min(count, start+maxVisible)
 
@@ -190,51 +238,64 @@ func (m *FilterGroupModel) renderGroups(b *strings.Builder) {
 		if isGroup {
 			// Render group header
 			group := m.groupMgr.Groups()[groupIdx]
-			expandIcon := "+"
-			if group.Expanded() {
-				expandIcon = "-"
+			expandIcon := "▼"
+			if !group.Expanded() {
+				expandIcon = "▶"
 			}
 			line := fmt.Sprintf("%s [%s] %s (%d items)", cursor, expandIcon, group.Title(), group.ItemCount())
-			b.WriteString("  " + line + "\n")
+
+			if i == m.cursor {
+				b.WriteString(cursorStyle.Render("  "+line) + "\n")
+			} else {
+				b.WriteString(groupStyle.Render("  "+line) + "\n")
+			}
 		} else {
 			// Render item
 			group := m.groupMgr.Groups()[groupIdx]
 			item := group.Items()[itemIdx]
 			if li, ok := item.(*list.ListItem); ok {
-				line := fmt.Sprintf("%s    • %s - %s", cursor, li.Title(), li.Desc())
-				b.WriteString("  " + line + "\n")
+				line := fmt.Sprintf("%s    • %s — %s", cursor, li.Title(), li.Desc())
+
+				if i == m.cursor {
+					b.WriteString(cursorStyle.Render("  "+line) + "\n")
+				} else {
+					b.WriteString(itemStyle.Render("  "+line) + "\n")
+				}
 			}
 		}
 	}
 
-	// Footer info
+	// Scroll indicator
 	if count > maxVisible {
-		b.WriteString(fmt.Sprintf("\n  Showing %d-%d of %d (scroll for more)", start+1, end, count))
+		footerStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("243"))
+		scrollText := fmt.Sprintf("  Showing %d-%d of %d (scroll for more)", start+1, end, count)
+		b.WriteString("\n" + footerStyle.Render(scrollText))
 	}
 }
 
-func (m *FilterGroupModel) moveDown() {
+func (m *InteractiveFilterGroupModel) moveDown() {
 	if m.cursor < m.groupMgr.Count()-1 {
 		m.cursor++
 	}
 }
 
-func (m *FilterGroupModel) moveUp() {
+func (m *InteractiveFilterGroupModel) moveUp() {
 	if m.cursor > 0 {
 		m.cursor--
 	}
 }
 
-func (m *FilterGroupModel) toggleCurrent() {
+func (m *InteractiveFilterGroupModel) toggleCurrent() {
 	if m.groupMgr.IsAtGroup() {
 		m.groupMgr.ToggleCurrentGroup()
 	}
 }
 
-func (m *FilterGroupModel) applyFilter() {
+func (m *InteractiveFilterGroupModel) applyFilter() {
 	if m.query == "" {
 		m.filter.Clear()
 		m.filtered = m.allItems
+		m.groupMgr.SetGroups(m.groups)
 	} else {
 		m.filter.SetQuery(m.query)
 		m.filtered = m.filter.Apply(m.allItems)
@@ -259,7 +320,7 @@ func (m *FilterGroupModel) applyFilter() {
 	m.cursor = 0
 }
 
-func (m *FilterGroupModel) clearFilter() {
+func (m *InteractiveFilterGroupModel) clearFilter() {
 	m.query = ""
 	m.filter.Clear()
 	m.filtered = m.allItems
@@ -268,61 +329,13 @@ func (m *FilterGroupModel) clearFilter() {
 }
 
 func main() {
-	fmt.Println("=== Filter & Group Demo ===")
-	fmt.Println()
-	fmt.Println("This demo demonstrates:")
-	fmt.Println("  - list.Filter: Filter items with query")
-	fmt.Println("  - list.Group: Grouped list with expand/collapse")
-	fmt.Println("  - list.GroupManager: Manage group state")
-	fmt.Println()
+	p := tea.NewProgram(
+		NewInteractiveFilterGroupModel(),
+		tea.WithAltScreen(),
+		tea.WithMouseCellMotion(),
+	)
 
-	// Create and run the model
-	model := NewFilterGroupModel()
-	engine := render.NewDirectEngine(nil)
-
-	if err := engine.Start(model); err != nil {
-		fmt.Printf("Error starting engine: %v\n", err)
-		return
+	if _, err := p.Run(); err != nil {
+		fmt.Printf("Error running program: %v\n", err)
 	}
-	defer engine.Stop()
-
-	// Demo sequence
-	demoInputs := []render.Msg{
-		render.WindowSizeMsg{Width: 70, Height: 20},
-		render.KeyMsg{Key: "j"},
-		render.KeyMsg{Key: "j"},
-		render.KeyMsg{Key: " "}, // Toggle group
-		render.KeyMsg{Key: "k"},
-		render.KeyMsg{Key: "/"},
-		render.KeyMsg{Key: "a"},
-		render.KeyMsg{Key: "p"},
-		render.KeyMsg{Key: "l"},
-		render.KeyMsg{Key: "e"},
-		render.KeyMsg{Key: "enter"},
-		render.KeyMsg{Key: "W"},
-		render.KeyMsg{Key: "E"},
-		render.KeyMsg{Key: "q"},
-	}
-
-	for _, input := range demoInputs {
-		if err := engine.Send(input); err != nil {
-			fmt.Printf("Error: %v\n", err)
-			continue
-		}
-
-		if d, ok := engine.(*render.DirectEngine); ok {
-			if km, ok := input.(render.KeyMsg); ok {
-				fmt.Printf("--- Key: %s ---\n", km.String())
-			}
-			fmt.Println(d.Output())
-			fmt.Println()
-		}
-	}
-
-	fmt.Println("=== Demo Complete ===")
-	fmt.Println("\nTry running again and:")
-	fmt.Println("  - Press / to enter filter mode, type to filter")
-	fmt.Println("  - Press enter on a group to toggle it")
-	fmt.Println("  - Press E to expand all groups")
-	fmt.Println("  - Press W to collapse all groups")
 }

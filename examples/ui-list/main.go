@@ -1,27 +1,29 @@
-// Simple list example using the engine-agnostic list package
+// Interactive list example using the new engine-agnostic list components with Bubbletea
 package main
 
 import (
 	"fmt"
 	"strings"
 
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"github.com/yourorg/taproot/internal/ui/list"
-	"github.com/yourorg/taproot/internal/ui/render"
+	"github.com/yourorg/taproot/internal/ui/styles"
 )
 
-// SimpleListModel demonstrates using the list package with a custom model
-type SimpleListModel struct {
+// InteractiveListModel wraps the engine-agnostic list components for Bubbletea
+type InteractiveListModel struct {
 	items    []list.Item
 	cursor   int
 	selected map[string]struct{}
 	viewport *list.Viewport
 	selMgr   *list.SelectionManager
-	width    int
-	height   int
-	quit     bool
+	styles   *styles.Styles
+	quitting bool
 }
 
-func NewSimpleListModel() *SimpleListModel {
+func NewInteractiveListModel() *InteractiveListModel {
+	s := styles.DefaultStyles()
 	items := []list.Item{
 		list.NewListItem("1", "Apple", "A red fruit"),
 		list.NewListItem("2", "Banana", "A yellow fruit"),
@@ -33,72 +35,100 @@ func NewSimpleListModel() *SimpleListModel {
 		list.NewListItem("8", "Honeydew", "A sweet melon"),
 		list.NewListItem("9", "Kiwi", "A fuzzy green fruit"),
 		list.NewListItem("10", "Lemon", "A sour citrus fruit"),
+		list.NewListItem("11", "Mango", "A tropical sweet fruit"),
+		list.NewListItem("12", "Nectarine", "A smooth-skinned peach"),
+		list.NewListItem("13", "Orange", "A citrus fruit"),
+		list.NewListItem("14", "Papaya", "A tropical fruit"),
+		list.NewListItem("15", "Quince", "A fragrant fruit"),
 	}
 
-	return &SimpleListModel{
+	return &InteractiveListModel{
 		items:    items,
 		cursor:   0,
 		selected: make(map[string]struct{}),
-		viewport: list.NewViewport(5, len(items)),
+		viewport: list.NewViewport(8, len(items)),
 		selMgr:   list.NewSelectionManager(list.SelectionModeMultiple),
-		width:    60,
-		height:   10,
-		quit:     false,
+		styles:   &s,
+		quitting: false,
 	}
 }
 
-// Init initializes the model
-func (m *SimpleListModel) Init() error {
-	m.viewport.SetTotal(len(m.items))
+// Init implements tea.Model
+func (m *InteractiveListModel) Init() tea.Cmd {
 	return nil
 }
 
-// Update handles incoming messages
-func (m *SimpleListModel) Update(msg any) (render.Model, render.Cmd) {
+// Update implements tea.Model
+func (m *InteractiveListModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
-	case render.KeyMsg:
-		// Convert key string to action
-		key := msg.String()
-		action := m.matchAction(key)
-
-		switch action {
-		case list.ActionMoveUp:
-			m.moveUp()
-		case list.ActionMoveDown:
-			m.moveDown()
-		case list.ActionToggleSelection:
-			m.toggleSelection()
-		case list.ActionMoveToTop:
-			m.moveToTop()
-		case list.ActionMoveToBottom:
-			m.moveToBottom()
-		case list.ActionQuit:
-			m.quit = true
+	case tea.KeyMsg:
+		if m.quitting {
+			return m, tea.Quit
 		}
 
-	case render.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
-		m.viewport.SetVisible(m.height - 4) // Leave room for header/footer
+		switch msg.String() {
+		case "ctrl+c", "q":
+			m.quitting = true
+			return m, tea.Quit
+
+		case "up", "k":
+			m.moveUp()
+
+		case "down", "j":
+			m.moveDown()
+
+		case " ", "enter":
+			m.toggleSelection()
+
+		case "g":
+			m.moveToTop()
+
+		case "G":
+			m.moveToBottom()
+
+		case "ctrl+u":
+			m.viewport.PageUp()
+
+		case "ctrl+d":
+			m.viewport.PageDown()
+		}
+
+	case tea.WindowSizeMsg:
+		// Window resized - update viewport visible count
+		height := msg.Height - 8 // Leave room for header/footer
+		if height > 0 {
+			m.viewport.SetVisible(height)
+		}
 	}
 
 	return m, nil
 }
 
-// View renders the model
-func (m *SimpleListModel) View() string {
-	if m.quit {
-		return "Goodbye!"
+// View implements tea.Model
+func (m *InteractiveListModel) View() string {
+	if m.quitting {
+		return "Goodbye!\n"
 	}
 
 	var b strings.Builder
 
-	// Header
-	b.WriteString("╔════════════════════════════════════════════════════════╗\n")
-	b.WriteString("║              Simple List Demo (v2.0)                   ║\n")
-	b.WriteString("╠════════════════════════════════════════════════════════╣\n")
-	b.WriteString("║  Keys: ↑/k=up  ↓/j=down  space=select  g=top  G=bottom ║\n")
-	b.WriteString("╚════════════════════════════════════════════════════════╝\n\n")
+	// Header with gradient
+	headerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("86")).
+		Background(lipgloss.Color("235")).
+		Padding(0, 2).
+		MarginBottom(1)
+
+	b.WriteString(headerStyle.Render("╔════════════════════════════════════════════════════════╗"))
+	b.WriteString("\n")
+	b.WriteString(headerStyle.Render("║         Engine-Agnostic List Demo (v2.0)                ║"))
+	b.WriteString("\n")
+	b.WriteString(headerStyle.Render("╠════════════════════════════════════════════════════════╣"))
+	b.WriteString("\n")
+	b.WriteString(headerStyle.Render("║  ↑/k up  ↓/j down  space=select  g=top  G=bottom  q=quit ║"))
+	b.WriteString("\n")
+	b.WriteString(headerStyle.Render("╚════════════════════════════════════════════════════════╝"))
+	b.WriteString("\n")
 
 	// Items
 	start, end := m.viewport.Range()
@@ -118,61 +148,54 @@ func (m *SimpleListModel) View() string {
 			checked = "✓"
 		}
 
-		// Get title from ListItem
+		// Style based on cursor position
+		itemStyle := m.styles.Base
+		if i == m.cursor {
+			itemStyle = m.styles.TextSelection.Foreground(lipgloss.Color("226"))
+		} else {
+			itemStyle = m.styles.Base.Foreground(lipgloss.Color("252"))
+		}
+
+		// Render item
 		if li, ok := item.(*list.ListItem); ok {
 			line := fmt.Sprintf("%s [%s] %s", cursor, checked, li.Title())
 			if li.Desc() != "" {
-				line += fmt.Sprintf(" - %s", li.Desc())
+				line += fmt.Sprintf(" — %s", li.Desc())
 			}
-			b.WriteString(line + "\n")
+			b.WriteString(itemStyle.Render(line) + "\n")
 		}
 	}
 
 	// Footer
-	b.WriteString(fmt.Sprintf("\n  Selected: %d | Showing %d-%d of %d | Scroll: %s",
-		len(m.selected),
-		start+1, end,
-		len(m.items),
-		m.viewport.ScrollIndicator()))
+	footerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("243")).
+		MarginTop(1)
+
+	selectedCount := len(m.selected)
+	scrollInfo := m.viewport.ScrollIndicator()
+	footerText := fmt.Sprintf("Selected: %d | Showing %d-%d of %d | Scroll: %s",
+		selectedCount, start+1, end, len(m.items), scrollInfo)
+
+	b.WriteString(footerStyle.Render(footerText))
 
 	return b.String()
 }
 
-func (m *SimpleListModel) matchAction(key string) list.Action {
-	// Simple key matching
-	switch key {
-	case "up", "k":
-		return list.ActionMoveUp
-	case "down", "j":
-		return list.ActionMoveDown
-	case " ":
-		return list.ActionToggleSelection
-	case "g":
-		return list.ActionMoveToTop
-	case "G":
-		return list.ActionMoveToBottom
-	case "q", "ctrl+c":
-		return list.ActionQuit
-	default:
-		return list.ActionNone
-	}
-}
-
-func (m *SimpleListModel) moveUp() {
+func (m *InteractiveListModel) moveUp() {
 	if m.cursor > 0 {
 		m.cursor--
 		m.viewport.MoveUp()
 	}
 }
 
-func (m *SimpleListModel) moveDown() {
+func (m *InteractiveListModel) moveDown() {
 	if m.cursor < len(m.items)-1 {
 		m.cursor++
 		m.viewport.MoveDown()
 	}
 }
 
-func (m *SimpleListModel) toggleSelection() {
+func (m *InteractiveListModel) toggleSelection() {
 	id := m.items[m.cursor].ID()
 	if _, ok := m.selected[id]; ok {
 		delete(m.selected, id)
@@ -181,93 +204,24 @@ func (m *SimpleListModel) toggleSelection() {
 	}
 }
 
-func (m *SimpleListModel) moveToTop() {
+func (m *InteractiveListModel) moveToTop() {
 	m.cursor = 0
 	m.viewport.MoveToTop()
 }
 
-func (m *SimpleListModel) moveToBottom() {
+func (m *InteractiveListModel) moveToBottom() {
 	m.cursor = len(m.items) - 1
 	m.viewport.MoveToBottom()
 }
 
 func main() {
-	fmt.Println("=== Engine-Agnostic List Demo ===")
-	fmt.Println()
-	fmt.Println("This demo uses the new internal/ui/list package")
-	fmt.Println("which is independent of any rendering engine.")
-	fmt.Println()
-	fmt.Println("The components demonstrated:")
-	fmt.Println("  - list.Item: Basic item interface")
-	fmt.Println("  - list.Viewport: Virtualized scrolling")
-	fmt.Println("  - list.SelectionManager: Selection state")
-	fmt.Println("  - render.Model: Elm architecture")
-	fmt.Println()
+	p := tea.NewProgram(
+		NewInteractiveListModel(),
+		tea.WithAltScreen(),       // Use alternate screen
+		tea.WithMouseCellMotion(), // Enable mouse support
+	)
 
-	// Create and run the model using DirectEngine
-	model := NewSimpleListModel()
-	engine := render.NewDirectEngine(nil)
-
-	if err := engine.Start(model); err != nil {
-		fmt.Printf("Error starting engine: %v\n", err)
-		return
-	}
-	defer engine.Stop()
-
-	// Simulate some user input
-	demoInputs := []render.Msg{
-		render.WindowSizeMsg{Width: 60, Height: 15},
-		render.KeyMsg{Key: "j"},
-		render.KeyMsg{Key: "j"},
-		render.KeyMsg{Key: " "},
-		render.KeyMsg{Key: "j"},
-		render.KeyMsg{Key: "j"},
-		render.KeyMsg{Key: " "},
-		render.KeyMsg{Key: "G"},
-		render.KeyMsg{Key: "q"},
-	}
-
-	fmt.Println("--- Initial State ---")
-	if d, ok := engine.(*render.DirectEngine); ok {
-		fmt.Println(d.Output())
-		fmt.Println()
-	}
-
-	for _, input := range demoInputs {
-		if err := engine.Send(input); err != nil {
-			fmt.Printf("Error sending message: %v\n", err)
-			continue
-		}
-
-		// Show state after each input
-		if d, ok := engine.(*render.DirectEngine); ok {
-			if km, ok := input.(render.KeyMsg); ok {
-				fmt.Printf("--- After key: %s ---\n", km.String())
-			} else {
-				fmt.Println("--- After input ---")
-			}
-			fmt.Println(d.Output())
-			fmt.Println()
-		}
-	}
-
-	fmt.Println("--- Final State ---")
-	if d, ok := engine.(*render.DirectEngine); ok {
-		fmt.Println(d.Output())
-	}
-
-	// Show selected items
-	if d, ok := engine.(*render.DirectEngine); ok {
-		finalModel := d.Model()
-		fmt.Println("\n=== Selected Items ===")
-		if m, ok := finalModel.(*SimpleListModel); ok {
-			for _, item := range m.items {
-				if _, ok := m.selected[item.ID()]; ok {
-					if li, ok := item.(*list.ListItem); ok {
-						fmt.Printf("  - %s: %s\n", li.ID(), li.Title())
-					}
-				}
-			}
-		}
+	if _, err := p.Run(); err != nil {
+		fmt.Printf("Error running program: %v\n", err)
 	}
 }
