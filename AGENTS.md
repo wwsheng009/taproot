@@ -16,10 +16,26 @@ taproot/
 │   │   ├── layout.go     # Focusable, Sizeable, Positional, Help interfaces
 │   │   └── layout_test.go
 │   ├── ui/
-│   │   └── styles/       # Theme system with gradient support
-│   │       ├── styles.go     # Theme manager, color blending, gradients, markdown, chroma
-│   │       ├── colors.go     # Color palette constants
-│   │       └── grad.go       # Gradient helpers
+│   │   ├── styles/       # Theme system with gradient support
+│   │   │   ├── styles.go     # Theme manager, color blending, gradients
+│   │   │   ├── markdown.go   # Markdown rendering with glamour
+│   │   │   ├── chroma.go     # Chroma syntax highlighting theme
+│   │   │   ├── palette.go    # Charmtone color palette constants
+│   │   │   └── icons.go      # Icon definitions
+│   │   ├── list/         # Engine-agnostic list components (v2.0)
+│   │   │   ├── types.go      # Core interfaces (Item, Filterable, Selectable, etc.)
+│   │   │   ├── item.go       # Basic item implementations
+│   │   │   ├── list.go       # Base list with key bindings
+│   │   │   ├── viewport.go   # Virtualized scroll management
+│   │   │   ├── filter.go     # Filtering with match highlighting
+│   │   │   ├── selection.go  # Selection state management
+│   │   │   ├── group.go      # Grouped/expanding list support
+│   │   │   └── list_test.go  # Tests
+│   │   └── render/       # Rendering engine abstraction (v2.0)
+│   │       ├── types.go      # Model, Msg, Cmd interfaces
+│   │       ├── engine.go     # Engine registry and factory
+│   │       ├── direct.go     # DirectEngine for testing
+│   │       └── render_test.go # Tests
 │   └── tui/              # Extracted TUI framework from Crush
 │       ├── keys.go       # Global key bindings
 │       ├── util/         # TUI utilities (Model, InfoMsg, Cursor, etc.)
@@ -345,6 +361,109 @@ Run examples with `go run examples/<name>/main.go`
 - `NewStatusCmp() StatusCmp`: Create status bar component
 - Displays help by default, shows InfoMsg when received
 - Auto-clears messages after TTL (default 5 seconds)
+
+---
+
+## v2.0.0 Architecture (New)
+
+The v2.0.0 release adds engine-agnostic UI components for dual-engine support (Bubbletea + Ultraviolet).
+
+### List Components (`internal/ui/list/`)
+
+**Core Interfaces** (`types.go`):
+- `Item`: Base interface for list items (requires `ID() string`)
+- `FilterableItem`: Items that can be filtered (`FilterValue() string`)
+- `Sizeable`: Components with dimensions (`Size()`, `SetSize()`)
+- `Focusable`: Components that can receive focus (`Focus()`, `Blur()`, `Focused()`)
+- `Selectable`: Items with selection state (`Selected()`, `SetSelected()`)
+- `Toggleable`: Items with expandable state (`Expanded()`, `SetExpanded()`)
+
+**Item Implementations** (`item.go`):
+- `ListItem`: Basic filterable item with ID, title, description
+- `SectionItem`: Section header for grouped lists
+- `SelectableItem`: Item with selection tracking
+- `ExpandableItem`: Item with expandable state
+
+**Viewport** (`viewport.go`):
+- `NewViewport(visible, total)`: Create viewport
+- `MoveUp()`, `MoveDown()`, `PageUp()`, `PageDown()`: Navigation
+- `MoveToTop()`, `MoveToBottom()`: Jump navigation
+- `Range()`: Get visible range (start, end)
+- `ScrollIndicator()`: Get scroll indicator string
+
+**Selection Manager** (`selection.go`):
+- `SelectionModeNone`, `SelectionModeSingle`, `SelectionModeMultiple`
+- `Select()`, `Deselect()`, `Toggle()`: Selection operations
+- `SelectAll()`, `DeselectAll()`, `InvertSelection()`: Bulk operations
+- `SelectedIDs()`, `GetSelected()`: Get selected items
+
+**Filter** (`filter.go`):
+- `SetQuery()`, `Clear()`: Filter management
+- `Apply(items)`: Apply filter to items
+- `Highlight(text, before, after)`: Highlight matches with ANSI
+- `SetCaseSensitive()`: Case sensitivity toggle
+
+**Group Manager** (`group.go`):
+- `Group`: Section with title, items, expanded state
+- `GroupManager`: Manages groups with flattened view
+- `ExpandAll()`, `CollapseAll()`: Bulk operations
+- `ToggleCurrentGroup()`: Toggle group at cursor
+
+**Base List** (`list.go`):
+- `Action`: Keyboard action constants
+- `KeyMap`: Keyboard shortcut configuration
+- `DefaultKeyMap()`: Returns default key bindings
+- `BaseList`: Shared state for all list types
+
+### Render Engine (`internal/ui/render/`)
+
+**Core Types** (`types.go`):
+- `Model`: Elm architecture interface (`Init()`, `Update()`, `View()`)
+- `Cmd`: Command interface for side effects
+- `Msg`: Message interface (events)
+- `KeyMsg`: Keyboard event with modifiers
+- `WindowSizeMsg`, `TickMsg`, `QuitMsg`: Standard messages
+
+**Engine** (`engine.go`):
+- `Engine`: Rendering engine interface
+- `EngineType`: Bubbletea, Ultraviolet, Direct
+- `RegisterEngine()`: Register engine factory
+- `CreateEngine()`: Create engine by type
+- `EngineConfig`: Configuration for engine initialization
+
+**Direct Engine** (`direct.go`):
+- `DirectEngine`: Simple engine for testing
+- Writes to buffer (no terminal output)
+- Useful for unit tests and CI/CD
+
+### Using v2.0.0 Components
+
+```go
+import "github.com/yourorg/taproot/internal/ui/list"
+
+// Create items
+items := []list.FilterableItem{
+    list.NewListItem("1", "Apple", "Red fruit"),
+    list.NewListItem("2", "Banana", "Yellow fruit"),
+}
+
+// Create filter
+filter := list.NewFilter()
+filtered := filter.Apply(items)
+
+// Create viewport
+viewport := list.NewViewport(10, len(filtered))
+
+// Create selection manager
+selMgr := list.NewSelectionManager(list.SelectionModeMultiple)
+selMgr.SelectAll(items)
+
+// Use key map
+keyMap := list.DefaultKeyMap()
+action := keyMap.MatchAction("k")  // Returns ActionMoveUp
+```
+
+---
 
 ## Related Projects
 
