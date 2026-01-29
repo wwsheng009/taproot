@@ -22,14 +22,14 @@ type model struct {
 	title         string
 }
 
-func initialModel() model {
+func initialModel() *model {
 	h := header.New()
 	h.SetSize(100, 2)
 	h.SetWorkingDirectory("/projects/ai/Taproot")
 	h.SetTokenUsage(64000, 128000, 1.50)
 	h.SetErrorCount(3)
 
-	return model{
+	return &model{
 		header:       h,
 		errorCount:   3,
 		workingDir:   "/projects/ai/Taproot",
@@ -43,11 +43,11 @@ func initialModel() model {
 	}
 }
 
-func (m model) Init() tea.Cmd {
+func (m *model) Init() tea.Cmd {
 	return nil
 }
 
-func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -107,7 +107,7 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m model) View() string {
+func (m *model) View() string {
 	var b strings.Builder
 
 	// Render header
