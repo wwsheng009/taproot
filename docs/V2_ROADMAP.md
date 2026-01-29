@@ -454,16 +454,49 @@ examples/sidebar-demo/
 **目标**: 通用头部组件
 
 **任务**:
-- [ ] 创建 `internal/ui/components/header/`
-- [ ] 迁移 `internal/tui/components/chat/header/`
-- [ ] 标题显示
-- [ ] 信息区域
-- [ ] 操作按钮
+- [x] 创建 `internal/ui/components/header/` ✅
+- [x] 核心类型定义 (types.go) ✅
+  - [x] Header 接口
+  - [x] Sizeable 接口
+  - [x] SessionInfo - 会话信息 (标题、工作目录、Token 使用、成本)
+  - [x] DiagnosticInfo - 诊断信息 (错误、警告计数)
+  - [x] Config - 配置选项
+- [x] 主组件实现 (header.go) ✅
+  - [x] Brand 显示 (品牌、标题)
+  - [x] 工作目录显示 (自动截断)
+  - [x] Token 使用百分比显示
+  - [x] 错误计数显示 (带图标)
+  - [x] Details toggle 提示
+  - [x] 对角线分隔符 (╱)
+  - [x] 紧凑模式支持
+- [x] 综合测试套件 (header_test.go, 280+ lines, 20+ tests) ✅
+- [x] 交互式演示 (examples/header-demo) ✅
 
 **源文件**:
 ```
 E:/projects/ai/crush/internal/tui/components/chat/header/header.go
 ```
+
+**文件结构** (3 files, ~600 lines):
+```
+internal/ui/components/header/
+├── types.go       (55 lines) - 核心接口和类型定义
+├── header.go      (175 lines) - 主组件实现
+└── header_test.go (280+ lines) - 测试套件
+
+examples/header-demo/
+└── main.go        (190 lines) - 交互式演示
+```
+
+**特性**:
+- Engine-agnostic 设计，可配合多种渲染引擎使用
+- 品牌/标题显示，支持渐变
+- 工作目录自动截断 (最多显示 4 个目录层级)
+- Token 使用百分比显示
+- 错误计数显示 (带 × 图标)
+- Details toggle 快捷键提示
+- 响应式对角线分隔符填充剩余空间
+- 可配置品牌、标题、工作目录等
 
 ---
 
@@ -809,5 +842,23 @@ E:/projects/ai/crush/internal/tui/
   - Interactive demo (`examples/sidebar-demo/main.go`, 240 lines)
     - Toggle compact mode, add/remove files, update session, reload data
     - Real-time resize support
+- ✅ Phase 9.3 完成: Header component
+  - Core types and interfaces (`types.go`, 55 lines)
+    - Header interface extending layout.Sizeable
+    - SessionInfo, DiagnosticInfo, Config
+    - FormatTokenUsage, FormatErrorMessage helpers
+  - Main implementation (`header.go`, 175 lines)
+    - Brand display (logo + gradient title)
+    - Working directory (auto-truncated to 4 components)
+    - Token usage percentage display
+    - Error count display with × icon
+    - Details toggle hint (ctrl+d)
+    - Diagonal separator (╱) filling remaining space
+    - Compact mode support
+  - Comprehensive test suite (`header_test.go`, 280+ lines, 20+ tests)
+  - Interactive demo (`examples/header-demo/main.go`, 190 lines)
+    - Toggle details, add errors, update tokens
+    - Change working directory, toggle compact mode
+    - Custom brand support, real-time resize
 
 
