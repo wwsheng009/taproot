@@ -465,6 +465,94 @@ action := keyMap.MatchAction("k")  // Returns ActionMoveUp
 
 ---
 
+## Dialog Components (`internal/ui/dialog/`)
+
+**Core Interfaces** (`types.go`):
+- `Dialog`: Base interface for all dialogs (`ID()`, `Title()`, `SetSize()`)
+- `ActionResult`: Dialog result constants (`ActionConfirm`, `ActionCancel`, `ActionDismiss`)
+- `Callback`: Callback function type for dialog results
+
+**UI Components**:
+- `Button`: Single button with label and selection state
+- `ButtonGroup`: Group of buttons with selection management
+- `InputField`: Text input with cursor, max length, hidden (password) support
+- `SelectList`: Dropdown selection list with viewport
+
+**Dialog Types** (`dialogs.go`, `input.go`):
+- `InfoDialog`: Simple informational message dialog
+- `ConfirmDialog`: Yes/No confirmation dialog with callback
+- `InputDialog`: Text input prompt with validation
+- `SelectListDialog`: Single-select from list of items
+
+**Overlay Manager** (`overlay.go`):
+- `Overlay`: Stack manager for multiple dialogs
+- `Push()`, `Pop()`, `Peek()`: Dialog stack operations
+- `ActiveDialog()`: Get topmost dialog
+- `FindByID()`, `RemoveByID()`: Dialog lookup operations
+- `CalculateBounds()`: Center dialog on screen
+
+**Messages**:
+- `OpenDialogMsg`: Open a new dialog
+- `CloseDialogMsg`: Close active dialog
+- `CloseAllDialogsMsg`: Close all dialogs
+- `DialogActionMsg`: Dialog action notification
+- `DialogResultMsg`: Final dialog result
+
+**Utility Functions**:
+- `DefaultWidth()`, `DefaultHeight()`: Default dialog dimensions
+- `MaxWidth()`, `MaxHeight()`: Maximum dimensions based on screen size
+
+### Using Dialog Components
+
+```go
+import "github.com/yourorg/taproot/internal/ui/dialog"
+
+// Info dialog
+info := dialog.NewInfoDialog("Success", "Operation completed successfully!")
+info.SetCallback(func(result dialog.ActionResult, data any) {
+    // Handle acknowledgment
+})
+
+// Confirm dialog with callback
+confirm := dialog.NewConfirmDialog(
+    "Delete File",
+    "Are you sure you want to delete this file?",
+    func(result dialog.ActionResult, data any) {
+        if result == dialog.ActionConfirm {
+            // Execute delete
+        }
+    },
+)
+
+// Input dialog
+input := dialog.NewInputDialog(
+    "Enter Name",
+    "Name:",
+    func(value string) {
+        fmt.Printf("User entered: %s\n", value)
+    },
+)
+input.SetPlaceholder("John Doe")
+input.SetMaxLength(50)
+
+// Select list dialog
+items := []string{"Option 1", "Option 2", "Option 3"}
+select := dialog.NewSelectListDialog(
+    "Choose an Option",
+    items,
+    func(index int, value string) {
+        fmt.Printf("Selected: %s\n", value)
+    },
+)
+
+// Using overlay manager
+overlay := dialog.NewOverlay()
+overlay.Push(confirm)
+overlay.Pop()
+```
+
+---
+
 ## Related Projects
 
 This framework is extracted from the Crush CLI tool (E:/projects/ai/crush), which contains extensive TUI implementations including:

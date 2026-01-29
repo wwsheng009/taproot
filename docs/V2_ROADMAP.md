@@ -82,19 +82,19 @@ func (m *Model) Draw(scr uv.Screen, area uv.Rectangle) *tea.Cursor {
 **目标**: 整合 TUI 和 UI 的对话框框架
 
 **任务**:
-- [ ] 迁移 `internal/ui/dialog/`
-  - [ ] Dialog 接口定义
-  - [ ] Overlay 管理器
-  - [ ] Action 消息系统
-- [ ] 从 TUI 对话框中提取通用部分
-  - [ ] 按钮组件
-  - [ ] 输入组件
-  - [ ] 选择组件
-- [ ] 创建通用对话框
-  - [ ] InfoDialog
-  - [ ] ConfirmDialog
-  - [ ] InputDialog
-  - [ ] SelectListDialog
+- [x] 迁移 `internal/ui/dialog/` ✅
+  - [x] Dialog 接口定义
+  - [x] Overlay 管理器
+  - [x] Action 消息系统
+- [x] 从 TUI 对话框中提取通用部分 ✅
+  - [x] 按钮组件
+  - [x] 输入组件
+  - [x] 选择组件
+- [x] 创建通用对话框 ✅
+  - [x] InfoDialog
+  - [x] ConfirmDialog
+  - [x] InputDialog
+  - [x] SelectListDialog
 
 **源文件**:
 ```
