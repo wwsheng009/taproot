@@ -17,6 +17,8 @@ type DialogsModel struct {
 	overlay   *dialog.Overlay
 	menuIndex int
 	quitting  bool
+	width     int
+	height    int
 }
 
 func NewDialogsModel() *DialogsModel {
@@ -64,6 +66,8 @@ func (m *DialogsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
+		m.width = msg.Width
+		m.height = msg.Height
 		m.overlay.SetSize(msg.Width, msg.Height)
 	}
 
@@ -73,18 +77,32 @@ func (m *DialogsModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *DialogsModel) updateDialog(msg tea.Msg) (tea.Model, tea.Cmd) {
 	activeDialog := m.overlay.ActiveDialog()
 
-	// Update the active dialog
-	updated, _ := activeDialog.Update(msg)
-	if updatedDialog, ok := updated.(dialog.Dialog); ok {
-		// Replace the dialog in the overlay
-		m.overlay.Pop()
-		m.overlay.Push(updatedDialog)
+	// Convert tea.KeyMsg to render.KeyMsg for dialog compatibility
+	var renderMsg any
+	if keyMsg, ok := msg.(tea.KeyMsg); ok {
+		renderMsg = dialog.ConvertKeyMsg(keyMsg)
+	} else {
+		renderMsg = msg
 	}
 
-	// Check if dialog was dismissed
-	if m.overlay.ActiveDialog() == nil {
+	// Update the active dialog
+	updated, _ := activeDialog.Update(renderMsg)
+	updatedDialog, ok := updated.(dialog.Dialog)
+	if !ok {
+		// Dialog was dismissed, remove from overlay
+		m.overlay.Pop()
 		return m, nil
 	}
+
+	// Check if dialog view is empty (indicates quitting state)
+	if updatedDialog.View() == "" {
+		m.overlay.Pop()
+		return m, nil
+	}
+
+	// Replace the dialog in the overlay with updated state
+	m.overlay.Pop()
+	m.overlay.Push(updatedDialog)
 
 	return m, nil
 }
@@ -97,6 +115,7 @@ func (m *DialogsModel) openSelectedDialog() tea.Cmd {
 			"Information",
 			"This is an informational dialog message.\n\nIt can display important details to the user.",
 		)
+		d.Init()
 		m.overlay.Push(d)
 
 	case 1:
@@ -108,6 +127,7 @@ func (m *DialogsModel) openSelectedDialog() tea.Cmd {
 				// Handle result
 			},
 		)
+		d.Init()
 		m.overlay.Push(d)
 
 	case 2:
@@ -120,6 +140,7 @@ func (m *DialogsModel) openSelectedDialog() tea.Cmd {
 			},
 		)
 		d.SetPlaceholder("John Doe")
+		d.Init()
 		m.overlay.Push(d)
 
 	case 3:
@@ -134,6 +155,7 @@ func (m *DialogsModel) openSelectedDialog() tea.Cmd {
 		d := dialog.NewSelectListDialog("Choose a Fruit", items, func(index int, value string) {
 			// Handle selection
 		})
+		d.Init()
 		m.overlay.Push(d)
 
 	case 4:
@@ -151,12 +173,7 @@ func (m *DialogsModel) View() string {
 		return ""
 	}
 
-	// If a dialog is active, show it
-	if m.overlay.HasDialogs() {
-		return m.overlay.ActiveDialog().View()
-	}
-
-	// Otherwise show the menu
+	// Render the background
 	var b strings.Builder
 
 	// Title
@@ -213,13 +230,28 @@ func (m *DialogsModel) View() string {
 
 	// Footer
 	footerStyle := lipgloss.NewStyle().
-		Foreground(lipgloss.Color("243")).
-		MarginTop(1)
+		Foreground(lipgloss.Color("243"))
 
 	footerText := "↑/k/j down: Navigate | Enter/Space: Open | q: Quit"
+	b.WriteString("\n")
 	b.WriteString(footerStyle.Render(footerText))
 
-	return b.String()
+	backgroundView := b.String()
+
+	if m.width > 0 && m.height > 0 {
+		backgroundView = lipgloss.Place(
+			m.width, m.height,
+			lipgloss.Left, lipgloss.Top,
+			backgroundView,
+		)
+	}
+
+	// If dialog is active, overlay it on top of background
+	if m.overlay.HasDialogs() {
+		return m.overlay.Render(backgroundView)
+	}
+
+	return backgroundView
 }
 
 func main() {

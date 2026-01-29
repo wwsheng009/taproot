@@ -1,5 +1,25 @@
 package dialog
 
+import (
+	"strings"
+
+	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
+	"github.com/charmbracelet/x/ansi"
+	"github.com/yourorg/taproot/internal/ui/render"
+)
+
+// ConvertKeyMsg converts tea.KeyMsg to render.KeyMsg.
+func ConvertKeyMsg(msg tea.KeyMsg) render.KeyMsg {
+	return render.KeyMsg{
+		Key:   msg.String(),
+		Alt:   msg.Alt,
+		Ctrl:  false,
+		Shift: false,
+		Type:  render.KeyPress,
+	}
+}
+
 // OpenDialogMsg is sent to open a new dialog.
 type OpenDialogMsg struct {
 	Dialog Dialog
@@ -204,4 +224,82 @@ func MaxHeight(screenHeight int) int {
 		return 30
 	}
 	return max
+}
+
+// Render renders the active dialog on top of the background.
+func (o *Overlay) Render(background string) string {
+	if !o.HasDialogs() {
+		return background
+	}
+
+	active := o.ActiveDialog()
+	dialogView := active.View()
+
+	dialogWidth, dialogHeight := lipgloss.Size(dialogView)
+	width, height := o.width, o.height
+
+	bounds := CalculateBounds(dialogWidth, dialogHeight, width, height)
+
+	bgLines := strings.Split(background, "\n")
+	dlgLines := strings.Split(dialogView, "\n")
+
+	var out strings.Builder
+
+	// Calculate total height needed (max of background height and dialog bottom edge)
+	maxH := len(bgLines)
+	if bounds.Y+dialogHeight > maxH {
+		maxH = bounds.Y + dialogHeight
+	}
+
+	for i := 0; i < maxH; i++ {
+		var line string
+		if i < len(bgLines) {
+			line = bgLines[i]
+		} else {
+			line = ""
+		}
+
+		// If line is NOT within dialog vertical range
+		if i < bounds.Y || i >= bounds.Y+dialogHeight {
+			out.WriteString(line)
+			out.WriteString("\n")
+			continue
+		}
+
+		// Line IS within dialog vertical range
+		dlgLineIdx := i - bounds.Y
+		if dlgLineIdx >= len(dlgLines) {
+			out.WriteString(line)
+			out.WriteString("\n")
+			continue
+		}
+
+		dlgLine := dlgLines[dlgLineIdx]
+
+		// 1. Get Left Part
+		left := ansi.Cut(line, 0, bounds.X)
+		// Ensure left part is padded if the line was shorter than bounds.X
+		leftW := ansi.StringWidth(left)
+		if leftW < bounds.X {
+			left += strings.Repeat(" ", bounds.X-leftW)
+		}
+
+		// 2. Get Right Part
+		rightStart := bounds.X + dialogWidth
+		right := ""
+		lineW := ansi.StringWidth(line)
+		if lineW > rightStart {
+			right = ansi.Cut(line, rightStart, lineW)
+		}
+
+		// Combine
+		out.WriteString(left)
+		out.WriteString(dlgLine)
+		out.WriteString(right)
+		out.WriteString("\n")
+	}
+
+	// Remove last newline if needed
+	result := out.String()
+	return strings.TrimSuffix(result, "\n")
 }
