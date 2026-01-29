@@ -300,4 +300,25 @@ func TestCommand(t *testing.T) {
 			t.Error("expected nil for empty batch")
 		}
 	})
+
+	t.Run("Quit", func(t *testing.T) {
+		cmd := Quit()
+		if cmd == nil {
+			t.Error("expected non-nil quit command")
+		}
+		if !IsQuit(cmd) {
+			t.Error("expected IsQuit to return true")
+		}
+
+		// Test that None is not quit
+		if IsQuit(None()) {
+			t.Error("expected IsQuit to return false for None()")
+		}
+
+		// Test that regular command is not quit
+		regularCmd := Command(func() error { return nil })
+		if IsQuit(regularCmd) {
+			t.Error("expected IsQuit to return false for regular command")
+		}
+	})
 }

@@ -140,6 +140,11 @@ func adaptCmd(cmd Cmd) tea.Cmd {
 		return nil
 	}
 
+	// Check for quit command
+	if q, ok := cmd.(interface{ IsQuit() bool }); ok && q.IsQuit() {
+		return tea.Quit
+	}
+
 	// If it's a Command func (func() error), wrap it
 	if c, ok := cmd.(Command); ok {
 		return func() tea.Msg {
@@ -155,7 +160,7 @@ func adaptCmd(cmd Cmd) tea.Cmd {
 	if c, ok := cmd.(tea.Cmd); ok {
 		return c
 	}
-	
+
 	// Check if it matches func() tea.Msg signature but not typed as tea.Cmd
 	if c, ok := cmd.(func() tea.Msg); ok {
 		return c

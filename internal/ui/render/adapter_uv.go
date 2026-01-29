@@ -109,8 +109,14 @@ func (e *UltravioletEngine) update(msg Msg) {
 	}
 
 	// Update model
-	newModel, _ := e.model.Update(msg)
+	newModel, cmd := e.model.Update(msg)
 	e.model = newModel
+
+	// Check for quit command
+	if IsQuit(cmd) {
+		e.Stop()
+		return
+	}
 
 	// Render
 	e.render()

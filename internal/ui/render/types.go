@@ -53,6 +53,32 @@ func Batch(cmds ...Cmd) Cmd {
 	}
 }
 
+// Quit returns a command that will quit the application.
+func Quit() Cmd {
+	return quitCmd{}
+}
+
+type quitCmd struct{}
+
+func (q quitCmd) Execute() error {
+	return nil
+}
+
+func (q quitCmd) IsQuit() bool {
+	return true
+}
+
+// IsQuit checks if a command is a quit command.
+func IsQuit(cmd Cmd) bool {
+	if cmd == nil {
+		return false
+	}
+	if q, ok := cmd.(interface{ IsQuit() bool }); ok {
+		return q.IsQuit()
+	}
+	return false
+}
+
 // Msg represents any message that can be sent to a Model.
 // This could be key events, mouse events, timer events, etc.
 type Msg interface{}

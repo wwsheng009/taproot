@@ -134,20 +134,60 @@ dialog := dialogs.NewConfirmDialog(
 **目标**: 整合两个系统的自动完成实现
 
 **任务**:
-- [ ] 合并 TUI 和 UI 的自动完成
-  - [ ] 触发字符 (@)
-  - [ ] 弹窗定位算法
-  - [ ] 模糊匹配
-  - [ ] 键盘导航
-- [ ] 数据提供者接口
-  - [ ] FileProvider
-  - [ ] CommandProvider
-  - [ ] CustomProvider
+- [x] 合并 TUI 和 UI 的自动完成 ✅
+  - [x] 触发字符 (/) ✅
+  - [x] 弹窗定位算法 ✅
+  - [x] 模糊匹配 ✅
+  - [x] 键盘导航 ✅
+- [x] 数据提供者接口 ✅
+  - [x] FileProvider ✅
+  - [x] CommandProvider ✅
+  - [x] StringProvider ✅
+  - [x] CustomProvider ✅
+- [x] 测试用例 ✅
+  - [x] 单元测试 (completions_test.go) ✅
+  - [x] Provider 测试 ✅
+  - [x] 过滤测试 ✅
+  - [x] 导航测试 ✅
+- [x] 示例程序 ✅
+  - [x] examples/autocomplete/demo.go ✅
 
 **源文件**:
 ```
 E:/projects/ai/crush/internal/ui/completions/completions.go
 E:/projects/ai/crush/internal/tui/components/completions/completions.go
+E:/projects/ai/Taproot/internal/ui/completions/completions.go
+E:/projects/ai/Taproot/internal/ui/completions/providers.go
+E:/projects/ai/Taproot/internal/ui/completions/completions_test.go
+E:/projects/ai/Taproot/examples/autocomplete/demo.go
+```
+
+**预期成果**:
+```go
+// 自动完成组件接口
+type AutoCompletion struct {
+    provider   Provider
+    visible    bool
+    cursor     int
+    // ...
+}
+
+// 提供者接口
+type Provider interface {
+    GetCompletions() ([]CompletionItem, error)
+}
+
+// 提供者类型
+type StringProvider struct { /* ... */ }
+type FileProvider struct { /* ... */ }
+type CommandProvider struct { /* ... */ }
+
+// 使用示例
+provider := completions.NewStringProvider([]string{"Apple", "Banana"})
+auto := completions.NewAutoCompletion(provider, triggerChar)
+auto.SetQuery("Ap")  // 过滤
+auto.MoveNext()       // 导航
+selected, ok := auto.Select()  // 选择
 ```
 
 ---
@@ -481,7 +521,7 @@ E:/projects/ai/crush/internal/ui/model/pills.go
 
 | Phase | 组件 | 预估时间 | 价值 |
 |-------|------|----------|------|
-| 6.3 | 自动完成组件 | 1周 | ⭐⭐ |
+| ~~6.3~~ | ~~自动完成组件~~ | ~~1周~~ | ~~⭐⭐~~ |
 | 7.3 | Diff 查看器完善 | 1周 | ⭐⭐ |
 | 8.2 | Markdown 渲染增强 | 1周 | ⭐⭐ |
 | 10.1 | 附件系统 | 1周 | ⭐⭐ |
@@ -576,8 +616,25 @@ E:/projects/ai/crush/internal/tui/
 ## 📝 更新日志
 
 ### 2025-01-29
-- ✅ Phase 6.1 部分完成: `internal/ui/styles/` 已创建并迁移
-  - 主题系统 (theme.go)
+- ✅ Phase 6.1 完成: Dual engine foundation complete
+  - 渲染引擎抽象层 (`render/`)
+  - DirectEngine 测试引擎
+  - Bubbletea 适配器 (`adapter_tea.go`)
+  - Ultraviolet 适配器 (`adapter_uv.go`)
+  - Ultraviolet 演示程序 (`examples/ultraviolet/main.go`)
+  - 双引擎对比演示 (`examples/dual-engine/main.go`)
+- ✅ Phase 6.2 完成: Dialog system integrated
+  - Engine-agnostic dialog framework
+  - InfoDialog, ConfirmDialog, InputDialog, SelectListDialog
+  - Overlay manager for dialog stacking
+- ✅ Phase 6.3 完成: Auto-complete component created
+  - Engine-agnostic `AutoCompletion` component (`completions.go`, 230 lines)
+  - Three built-in providers: StringProvider, FileProvider, CommandProvider (`providers.go`, 200+ lines)
+  - Comprehensive test suite (`completions_test.go`, 330 lines, 7 test suites, 28 subtests)
+  - Interactive demo (`examples/autocomplete/demo.go`, 265 lines)
+  - Real-time filtering with match highlighting
+  - ASCII popup box for completions
+- ✅ 主题系统 (theme.go)
   - Markdown 渲染器 (markdown.go)
   - Chroma 语法高亮 (chroma.go)
   - Charmtone 颜色调色板 (palette.go, charmtone.go)

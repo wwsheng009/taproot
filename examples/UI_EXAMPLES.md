@@ -149,3 +149,156 @@ go run examples/ui-filtergroup/main.go
 ```
 
 Both examples run in **alternate screen mode** for a proper TUI experience.
+
+## Ultraviolet & Dual-Engine Examples (v2.0.0)
+
+### ultraviolet
+
+Demonstrates the new **Ultraviolet rendering engine** interface:
+- High-performance direct terminal drawing
+- Same model architecture as Bubbletea, different engine
+- Counter example with progress bar and pause functionality
+
+```bash
+go run examples/ultraviolet/main.go
+```
+
+**Key bindings:**
+- `↑` / `→` / `+` / `=` : Increment (if not paused)
+- `↓` / `←` / `-` / `_` : Decrement (if not paused)
+- `Space` / `Enter` : Toggle pause
+- `r` : Reset counter
+- `q` / `Ctrl+C` : Quit
+
+**Features demonstrated:**
+- Using `render.EngineUltraviolet` for rendering
+- Model implements `render.Model` interface
+- Progress bar with Unicode block characters
+- Pause/resume functionality
+
+### dual-engine
+
+Shows the **same model running on different engines**:
+- Demonstrates engine-agnostic model architecture
+- Performance comparison between Bubbletea and Ultraviolet
+- History graph visualization
+- Command-line argument to switch engines
+
+```bash
+# Run with Bubbletea (default)
+go run examples/dual-engine/main.go
+
+# Run with Ultraviolet
+go run examples/dual-engine/main.go -engine=ultraviolet
+```
+
+**Key bindings:**
+- `↑` / `→` / `+` / `=` : Increment counter
+- `↓` / `←` / `-` / `_` : Decrement counter
+- `Space` : Save to history
+- `q` / `Ctrl+C` : Quit
+
+**Features demonstrated:**
+- Same `DualEngineModel` works with both engines
+- Engine type display (`bubbletea` vs `ultraviolet`)
+- Real-time FPS estimation
+- History graph with ASCII visualization
+- Command-line flag parsing
+
+## Engine Comparison
+
+| Feature | Bubbletea | Ultraviolet |
+|---------|-----------|-------------|
+| Maturity | ✅ Production-ready | 🔄 Beta |
+| Performance | Good | ⚡ Excellent |
+| API | Event-driven ( tea.Cmd ) | Direct drawing ( uv.Screen ) |
+| Use Cases | Complex TUIs | High-performance UIs |
+| Integration | Built-in | Adapter required |
+
+Both engines use the **same model interface** (`render.Model`), making it easy to switch between them.
+
+## Auto-Complete Component (v2.0.0)
+
+### autocomplete/demo.go
+
+Demonstrates the **engine-agnostic auto-completion system**:
+- Interactive text input with inline completion suggestions
+- Dynamic filtering as you type
+- Multiple provider types (String, File, Command)
+- ASCII popup box for completion display
+
+```bash
+go run examples/autocomplete/demo.go
+```
+
+**Key bindings:**
+- `/` - Toggle completion popup
+- `1` / `2` - Switch between provider types
+- Type to filter completions in real-time
+- `↑` / `↓` - Navigate completions
+- `Enter` - Select current completion
+- `Esc` - Close popup, cancel completion
+- `q` / `Ctrl+C` - Quit
+
+**Features demonstrated:**
+- Engine-agnostic `AutoCompletion` component
+- Three built-in provider types:
+  - **StringProvider**: Simple string-based completions (e.g., fruit names)
+  - **FileProvider**: File system completions with depth control
+  - **CommandProvider**: Command completions with action handlers
+- Real-time filtering with match highlighting
+- Popup positioning and dimension calculation
+- Cursor navigation (circular wrapping)
+
+**Provider Type 1 - String Provider:**
+- Simple list of strings
+- Best for: keywords, options, fixed values
+- Example data: Apple, Banana, Cherry, Grape, etc.
+
+**Provider Type 2 - Command Provider:**
+- Completions with associated actions
+- Best for: commands, functions with callbacks
+- Example data: help, clear, quit (with handlers)
+
+**Built-in Providers:**
+The `completions` package includes three ready-to-use providers:
+
+```go
+// StringProvider - Simple string completions
+provider := completions.NewStringProvider([]string{
+    "Apple", "Banana", "Cherry",
+})
+
+// FileProvider - File system completions
+provider := completions.NewFileProvider(
+    ".",
+    false,  // caseSensitive
+    "/",    // ignorePathSeparator
+    3,      // maxDepth
+    nil,    // ignoreDirs
+)
+
+// CommandProvider - Commands with handlers
+handler := func(value string) error {
+    fmt.Printf("Executing: %s\n", value)
+    return nil
+}
+
+cmd1 := completions.NewCommandItem("help", "Show help", handler)
+cmd2 := completions.NewCommandItem("clear", "Clear screen", handler)
+
+provider := completions.NewCommandProvider([]*completions.CommandItem{cmd1, cmd2})
+```
+
+**Custom Providers:**
+Create custom providers by implementing the `Provider` interface:
+
+```go
+type MyProvider struct {
+    items []CompletionItem
+}
+
+func (p *MyProvider) GetCompletions() ([]CompletionItem, error) {
+    return p.items, nil
+}
+```

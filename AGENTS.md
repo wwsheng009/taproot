@@ -199,8 +199,11 @@ Components typically:
 2. Use a struct to hold state
 3. Handle `tea.KeyMsg` for keyboard input
 4. Use `strings.Builder` for efficient view rendering
-5. Return `tea.Quit` command to exit
-6. Use `util.InfoMsg` for status reporting
+5. For v1.0.0 (Bubbletea only): Return `tea.Quit` command to exit
+6. For v2.0.0 (engine-agnostic): Return `render.Quit()` command to exit
+7. Use `util.InfoMsg` for status reporting
+
+**Note**: When using v2.0.0 engine-agnostic components with Bubbletea, use `render.Quit()` instead of `tea.Quit()`. The adapter will handle conversion automatically.
 
 ### Theme System
 
@@ -424,6 +427,12 @@ The v2.0.0 release adds engine-agnostic UI components for dual-engine support (B
 - `KeyMsg`: Keyboard event with modifiers
 - `WindowSizeMsg`, `TickMsg`, `QuitMsg`: Standard messages
 
+**Commands**:
+- `None() Cmd`: Return no operation command
+- `Batch(cmds ...Cmd) Cmd`: Combine multiple commands
+- `Quit() Cmd`: Return quit command to exit application
+- `IsQuit(cmd Cmd) bool`: Check if command is a quit command
+
 **Engine** (`engine.go`):
 - `Engine`: Rendering engine interface
 - `EngineType`: Bubbletea, Ultraviolet, Direct
@@ -435,6 +444,14 @@ The v2.0.0 release adds engine-agnostic UI components for dual-engine support (B
 - `DirectEngine`: Simple engine for testing
 - Writes to buffer (no terminal output)
 - Useful for unit tests and CI/CD
+
+**Engine Adapters**:
+- `adapter_tea.go`: Bubbletea engine adapter
+  - Converts `render.Model` to `tea.Model`
+  - Handles `tea.Quit` from `render.Quit()` command
+- `adapter_uv.go`: Ultraviolet engine adapter
+  - Implements direct terminal drawing
+  - Handles quit via `render.Quit()` command or `QuitMsg`
 
 ### Using v2.0.0 Components
 
