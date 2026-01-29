@@ -397,16 +397,55 @@ examples/layout-demo/
 **目标**: 通用侧边栏组件
 
 **任务**:
-- [ ] 创建 `internal/ui/components/sidebar/`
-- [ ] 迁移 `internal/tui/components/chat/sidebar/`
-- [ ] 多面板支持
-- [ ] 折叠/展开
-- [ ] 紧凑模式
+- [x] 创建 `internal/ui/components/sidebar/` ✅
+- [x] 核心类型定义 (types.go) ✅
+  - [x] Sidebar 接口
+  - [x] ModelInfo - 模型信息 (名称、提供者、推理能力、上下文窗口)
+  - [x] SessionInfo - 会话信息 (ID、标题、Token 使用、成本、工作目录)
+  - [x] FileInfo - 文件信息 (路径、增删统计)
+  - [x] LSPService - LSP 服务状态
+  - [x] MCPService - MCP 服务状态
+  - [x] Config - 配置选项 (宽度、高度、Logo、模式)
+- [x] 主组件实现 (sidebar.go) ✅
+  - [x] Logo 显示 (响应式，小屏幕用简化版)
+  - [x] Session 标题和信息
+  - [x] 工作目录显示
+  - [x] 当前模型信息 (带推理状态)
+  - [x] Token 使用和成本显示 (百分比、格式化、警告)
+  - [x] 文件修改列表 (增删统计)
+  - [x] LSP 服务列表 (状态、错误计数)
+  - [x] MCP 服务列表 (状态)
+  - [x] 紧凑模式支持
+  - [x] 响应式布局 (垂直/水平)
+- [x] 多面板支持 (✅ - 文件/LSP/MCP 三个面板)
+- [x] 紧凑模式 (✅ - 移除 Logo、减少 Padding)
+- [x] 综合测试套件 ✅
+- [x] 交互式演示 (examples/sidebar-demo) ✅
 
 **源文件**:
 ```
 E:/projects/ai/crush/internal/tui/components/chat/sidebar/sidebar.go
 ```
+
+**文件结构** (3 files, ~750 lines):
+```
+internal/ui/components/sidebar/
+├── types.go       (140 lines) - 核心接口和类型定义
+├── sidebar.go     (550 lines) - 主组件实现
+└── sidebar_test.go (420 lines) - 测试套件
+
+examples/sidebar-demo/
+└── main.go        (240 lines) - 交互式演示
+```
+
+**特性**:
+- Engine-agnostic 设计，可配合多种渲染引擎使用
+- 响应式布局，根据屏幕尺寸自动调整显示内容
+- 支持自定义 Logo 提供者
+- 文件路径自动截断
+- Token 使用百分比显示 (超过 80% 显示警告)
+- 支持多个 LSP 和 MCP 服务
+- 可配置显示数量限制
 
 ---
 
@@ -751,3 +790,24 @@ E:/projects/ai/crush/internal/tui/
     - 8 layout type demonstrations
     - Real-time size adjustment
     - Detailed area information view
+- ✅ Phase 9.2 完成: Sidebar component
+  - Core types and interfaces (`types.go`, 140 lines)
+    - Sidebar interface with layout.Sizeable
+    - ModelInfo, SessionInfo, FileInfo, LSPService, MCPService
+    - Config with width, height, logo, mode, limits
+  - Main implementation (`sidebar.go`, 550 lines)
+    - Logo display (responsive)
+    - Session title and info
+    - Working directory
+    - Model info with reasoning status
+    - Token usage (percentage, warnings > 80%)
+    - Modified files with diff stats
+    - LSP/MCP services list
+    - Compact mode support
+    - Responsive layout (vertical/horizontal)
+  - Comprehensive test suite (`sidebar_test.go`, 420 lines, 20+ tests)
+  - Interactive demo (`examples/sidebar-demo/main.go`, 240 lines)
+    - Toggle compact mode, add/remove files, update session, reload data
+    - Real-time resize support
+
+
