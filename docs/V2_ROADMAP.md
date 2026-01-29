@@ -335,16 +335,59 @@ E:/projects/ai/crush/internal/ui/chat/*.go
 **目标**: 创建响应式布局系统
 
 **任务**:
-- [ ] 创建 `internal/ui/layout/`
-- [ ] Flexbox 布局
-- [ ] Grid 布局
-- [ ] 响应式断点
-- [ ] 自适应大小
+- [x] 创建 `internal/ui/layout/` ✅
+- [x] 核心类型和约束 (area.go - Position, Area, Constraints) ✅
+  - [x] Fixed 约束
+  - [x] Percent 约束
+  - [x] Ratio 约束
+  - [x] Grow 约束
+  - [x] MinSize/MaxSize 约束
+- [x] Split 布局 (split.go) ✅
+  - [x] SplitVertical - 垂直分割
+  - [x] SplitHorizontal - 水平分割
+  - [x] CenterRect - 居中矩形
+  - [x] TopLeftRect, TopCenterRect, TopRightRect - 顶部位置
+  - [x] LeftCenterRect, RightCenterRect - 中部位置
+  - [x] BottomLeftRect, BottomCenterRect, BottomRightRect - 底部位置
+  - [x] Pad - 统一内边距
+  - [x] Inset - 四边独立内边距
+- [x] Flexbox 布局 (flex.go) ✅
+  - [x] FlexChild - 子元素配置 (支持 grow/shrink)
+  - [x] RowLayout - 水平弹性布局
+  - [x] ColumnLayout - 垂直弹性布局
+  - [x] FlexRow/FlexColumn - 便捷函数
+  - [x] 支持固定尺寸、比例分配、自动扩展
+- [x] Grid 布局 (grid.go) ✅
+  - [x] GridConfig - 网格配置 (行/列/间距)
+  - [x] GridLayout - 创建均匀网格
+  - [x] GetCell/GetRow/GetColumn - 访问网格单元
+  - [x] SpanCell - 跨行跨列
+  - [x] FixedGrid - 固定单元格大小
+  - [x] UniformGrid - 均匀分布
+- [x] 综合测试套件 (layout_test.go, 500+ lines, 30+ tests) ✅
+- [x] 交互式布局演示 (examples/layout-demo/main.go, 390+ lines) ✅
+  - [x] 8种布局类型演示
+  - [x] 实时调整大小
+  - [x] 详细信息查看
 
 **参考**:
 ```
 E:/projects/ai/crush/internal/ui/model/ui.go (generateLayout)
 E:/projects/ai/crush/internal/ui/common/elements.go
+github.com/charmbracelet/ultraviolet (layout primitives)
+```
+
+**文件结构** (6 files, ~1500 lines):
+```
+internal/ui/layout/
+├── area.go        (180 lines) - 核心类型和约束
+├── split.go       (200 lines) - 分割布局和定位
+├── flex.go        (220 lines) - 弹性布局系统
+├── grid.go        (230 lines) - 网格布局
+└── layout_test.go (500+ lines) - 全面测试
+
+examples/layout-demo/
+└── main.go        (390+ lines) - 交互式演示
 ```
 
 ---
@@ -628,6 +671,7 @@ E:/projects/ai/crush/internal/tui/
 
 ---
 
+---
 **文档版本**: v2.0.0
 **创建日期**: 2025-01-29
 **最后更新**: 2025-01-29
@@ -683,3 +727,27 @@ E:/projects/ai/crush/internal/tui/
   - Tree statistics (nodes, files, dirs, size)
   - Comprehensive test suite (`tree_test.go`, 490+ lines, 20+ tests)
   - Interactive tree browser demo (`examples/treefiles/main.go`, 340 lines)
+- ✅ Phase 9.1 完成: Layout system
+  - Core types and constraints (`area.go`, 180 lines)
+    - Fixed, Percent, Ratio, Grow constraints
+    - MinSize/MaxSize constraints
+    - Area methods (TopLeft, BottomRight, Dx, Dy, Empty, Intersect, Union)
+  - Split layout primitives (`split.go`, 200 lines)
+    - SplitVertical / SplitHorizontal
+    - Absolute positioning: CenterRect, TopLeftRect, TopCenterRect, etc.
+    - Padding utilities: Pad, Inset
+  - Flexbox layout system (`flex.go`, 220 lines)
+    - FlexChild with grow/shrink support
+    - RowLayout / ColumnLayout
+    - FlexRow / FlexColumn convenience functions
+    - Support for fixed sizes, ratios, and auto-expand
+  - Grid layout (`grid.go`, 230 lines)
+    - GridConfig with rows/cols/gaps
+    - GetCell / GetRow / GetColumn utilities
+    - SpanCell for cross-row/column spans
+    - FixedGrid and UniformGrid
+  - Comprehensive test suite (`layout_test.go`, 500+ lines, 30+ tests)
+  - Interactive layout demo (`examples/layout-demo/main.go`, 390+ lines)
+    - 8 layout type demonstrations
+    - Real-time size adjustment
+    - Detailed area information view
