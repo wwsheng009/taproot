@@ -88,7 +88,7 @@ Crush TUI Architecture
 - `internal/layout/` - 布局接口
 - `internal/tui/util/util.go` - 通用工具
 - `internal/tui/keys.go` - 全局快捷键
-- `internal/tui/styles/` - 主题系统
+- `internal/ui/styles/` - 主题系统
 - `internal/tui/anim/` - 动画组件
 - `internal/tui/components/core/` - 核心UI组件
 
@@ -142,7 +142,7 @@ Crush TUI Architecture
   - **价值**: 可复用的列表组件
 
 - `internal/tui/exp/diffview/` - Diff查看器 (7个文件)
-  - 依赖: chroma, internal/tui/styles/
+  - 依赖: chroma, internal/ui/styles/
   - 复杂度: 高
   - **价值**: 代码diff显示
 

@@ -5,18 +5,19 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 )
 
 // Group represents a group of items with a section header
 type Group struct {
-	Title  string
-	Items  []ListItem
+	Title    string
+	Items    []ListItem
 	Expanded bool
 }
 
 // GroupedList is a list with group support
 type GroupedList struct {
+	styles    *styles.Styles
 	groups    []Group
 	flatItems []flatItem
 	cursor    int
@@ -30,19 +31,21 @@ type GroupedList struct {
 
 // flatItem represents either a group header or a list item
 type flatItem struct {
-	isGroup   bool
-	groupIdx  int
-	itemIdx   int
-	group     *Group
-	listItem  *ListItem
+	isGroup  bool
+	groupIdx int
+	itemIdx  int
+	group    *Group
+	listItem *ListItem
 }
 
 // NewGroupedList creates a new grouped list
 func NewGroupedList(groups []Group) *GroupedList {
+	s := styles.DefaultStyles()
 	gl := &GroupedList{
+		styles:   &s,
 		groups:   groups,
 		selected: make(map[string]struct{}),
-		visible: 10,
+		visible:  10,
 		focused:  true,
 	}
 	gl.flatten()
@@ -152,12 +155,12 @@ func (l *GroupedList) flatten() {
 }
 
 func (l *GroupedList) View() string {
-	t := styles.CurrentTheme()
+	s := l.styles
 
 	var b strings.Builder
 
 	// Header
-	headerStyle := t.S().Base.Bold(true).Foreground(t.Primary)
+	headerStyle := s.Base.Bold(true).Foreground(s.Primary)
 	expandedCount := 0
 	totalItems := 0
 	for _, g := range l.groups {
@@ -181,9 +184,9 @@ func (l *GroupedList) View() string {
 			cursor = ">"
 		}
 
-		itemStyle := t.S().Base
+		itemStyle := s.Base
 		if l.cursor == i && l.focused {
-			itemStyle = t.S().TextSelected
+			itemStyle = s.TextSelection
 		}
 
 		if item.isGroup {
@@ -216,7 +219,7 @@ func (l *GroupedList) View() string {
 	if len(l.flatItems) > l.visible {
 		footer += fmt.Sprintf(" | Showing %d-%d of %d", start+1, end, len(l.flatItems))
 	}
-	b.WriteString("\n" + t.S().Base.Foreground(t.FgMuted).Render(footer))
+	b.WriteString("\n" + s.Base.Foreground(s.FgMuted).Render(footer))
 
 	return b.String()
 }

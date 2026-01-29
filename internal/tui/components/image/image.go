@@ -8,7 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 	"github.com/yourorg/taproot/internal/tui/util"
 )
 
@@ -24,13 +24,14 @@ const (
 
 // Image displays an image in the terminal
 type Image struct {
-	width      int
-	height     int
-	path       string
-	renderer   RendererType
-	loaded     bool
-	error      string
+	width       int
+	height      int
+	path        string
+	renderer    RendererType
+	loaded      bool
+	error       string
 	aspectRatio float64
+	styles      *styles.Styles
 }
 
 const (
@@ -39,10 +40,12 @@ const (
 
 // New creates a new image component
 func New(path string) *Image {
+	s := styles.DefaultStyles()
 	return &Image{
 		path:     path,
 		renderer: RendererAuto,
 		loaded:   false,
+		styles:   &s,
 	}
 }
 
@@ -90,12 +93,12 @@ func (img *Image) Update(msg tea.Msg) (util.Model, tea.Cmd) {
 }
 
 func (img *Image) View() string {
-	theme := styles.CurrentTheme()
+	s := img.styles
 
 	if img.error != "" {
 		// Show error message
 		errorStyle := lipgloss.NewStyle().
-			Foreground(theme.Error).
+			Foreground(s.Error).
 			Bold(true).
 			Width(img.width).
 			Align(lipgloss.Center)
@@ -106,7 +109,7 @@ func (img *Image) View() string {
 	if !img.loaded {
 		// Show loading state
 		loadingStyle := lipgloss.NewStyle().
-			Foreground(theme.FgMuted).
+			Foreground(s.FgMuted).
 			Width(img.width).
 			Align(lipgloss.Center)
 
@@ -122,21 +125,22 @@ func (img *Image) View() string {
 	// Render based on type
 	switch renderer {
 	case RendererKitty:
-		return img.renderKitty(theme)
+		return img.renderKitty()
 	case RendereriTerm2:
-		return img.renderiTerm2(theme)
+		return img.renderiTerm2()
 	default:
-		return img.renderBlocks(theme)
+		return img.renderBlocks()
 	}
 }
 
 // renderKitty uses the Kitty graphics protocol
-func (img *Image) renderKitty(theme *styles.Theme) string {
+func (img *Image) renderKitty() string {
 	// Kitty protocol escape sequence
 	// This is a simplified version - full implementation would encode the image
+	s := img.styles
 	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(theme.Border).
+		BorderForeground(s.Border).
 		Padding(1)
 
 	placeholder := fmt.Sprintf("[Image: %s]\nKitty graphics protocol\n(%dx%d)",
@@ -146,10 +150,11 @@ func (img *Image) renderKitty(theme *styles.Theme) string {
 }
 
 // renderiTerm2 uses the iTerm2 inline image protocol
-func (img *Image) renderiTerm2(theme *styles.Theme) string {
+func (img *Image) renderiTerm2() string {
+	s := img.styles
 	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(theme.Border).
+		BorderForeground(s.Border).
 		Padding(1)
 
 	placeholder := fmt.Sprintf("[Image: %s]\niTerm2 inline images\n(%dx%d)",
@@ -159,10 +164,11 @@ func (img *Image) renderiTerm2(theme *styles.Theme) string {
 }
 
 // renderBlocks uses Unicode block characters (fallback)
-func (img *Image) renderBlocks(theme *styles.Theme) string {
+func (img *Image) renderBlocks() string {
+	s := img.styles
 	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(theme.Border).
+		BorderForeground(s.Border).
 		Padding(1)
 
 	// Create a simple ASCII art placeholder

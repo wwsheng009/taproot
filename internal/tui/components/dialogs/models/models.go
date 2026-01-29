@@ -6,9 +6,8 @@ import (
 	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/charmbracelet/lipgloss"
 	"github.com/yourorg/taproot/internal/tui/components/dialogs"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 	"github.com/yourorg/taproot/internal/tui/util"
 )
 
@@ -44,6 +43,7 @@ type ModelsDialog interface {
 }
 
 type modelsDialogCmp struct {
+	styles       *styles.Styles
 	width        int
 	height       int
 	x, y         int
@@ -60,8 +60,10 @@ type modelsDialogCmp struct {
 func NewModelsDialog(provider ModelProvider) ModelsDialog {
 	allModels := provider.Models()
 	recentModels := provider.RecentModels()
+	s := styles.DefaultStyles()
 
 	return &modelsDialogCmp{
+		styles:       &s,
 		width:        defaultWidth,
 		height:       20,
 		x:            10,
@@ -165,13 +167,10 @@ func (d *modelsDialogCmp) filterModels() {
 }
 
 func (d *modelsDialogCmp) View() string {
-	t := styles.CurrentTheme()
+	s := d.styles
 
 	// Dialog box style
-	boxStyle := t.S().Base.
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(t.Primary).
-		Padding(0, 1)
+	boxStyle := s.Dialog.View.Padding(0, 1)
 
 	var content strings.Builder
 
@@ -180,15 +179,15 @@ func (d *modelsDialogCmp) View() string {
 	if d.showRecent {
 		title += " (Recent)"
 	}
-	header := t.S().Base.Bold(true).Foreground(t.Primary).Render(title)
+	header := s.Base.Bold(true).Foreground(s.Primary).Render(title)
 	content.WriteString(header + "\n\n")
 
 	// Filter input
-	filterLabel := t.S().Base.Foreground(t.FgMuted).Render("Search: ")
+	filterLabel := s.Base.Foreground(s.FgMuted).Render("Search: ")
 	content.WriteString(filterLabel + d.query + "_\n\n")
 
 	// Toggle hint
-	toggleHint := t.S().Base.Foreground(t.FgSubtle).Render("Tab: Toggle Recent/All | Enter: Select | ESC: Close")
+	toggleHint := s.Base.Foreground(s.FgSubtle).Render("Tab: Toggle Recent/All | Enter: Select | ESC: Close")
 	content.WriteString(toggleHint + "\n\n")
 
 	// Model list
@@ -207,9 +206,9 @@ func (d *modelsDialogCmp) View() string {
 			prefix = ">"
 		}
 
-		itemStyle := t.S().Base
+		itemStyle := s.Dialog.NormalItem
 		if i == d.selectedIdx {
-			itemStyle = t.S().TextSelected
+			itemStyle = s.Dialog.SelectedItem
 		}
 
 		// Model info
@@ -222,10 +221,10 @@ func (d *modelsDialogCmp) View() string {
 		}
 
 		content.WriteString(itemStyle.Render(line) + "\n")
-		
+
 		// Description on next line if selected
 		if i == d.selectedIdx && model.Description != "" {
-			descStyle := t.S().Base.Foreground(t.FgMuted).Italic(true)
+			descStyle := s.Muted.Italic(true)
 			content.WriteString(descStyle.Render("  " + model.Description) + "\n")
 		}
 	}
@@ -236,7 +235,7 @@ func (d *modelsDialogCmp) View() string {
 		source = d.recentModels
 	}
 	footerCount := fmt.Sprintf("%d/%d models", len(d.filtered), len(source))
-	footer := t.S().Base.Foreground(t.FgMuted).Render(footerCount)
+	footer := s.Muted.Render(footerCount)
 	content.WriteString("\n" + footer)
 
 	return boxStyle.Render(content.String())
@@ -249,3 +248,4 @@ func (d *modelsDialogCmp) Position() (int, int) {
 func (d *modelsDialogCmp) ID() dialogs.DialogID {
 	return ModelDialogID
 }
+

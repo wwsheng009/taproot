@@ -7,8 +7,8 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/yourorg/taproot/internal/tui/styles"
 	"github.com/yourorg/taproot/internal/tui/util"
+	"github.com/yourorg/taproot/internal/ui/styles"
 )
 
 type StatusCmp interface {
@@ -18,6 +18,7 @@ type StatusCmp interface {
 }
 
 type statusCmp struct {
+	styles     *styles.Styles
 	info       util.InfoMsg
 	width      int
 	messageTTL time.Duration
@@ -57,10 +58,10 @@ func (m *statusCmp) Update(msg tea.Msg) (util.Model, tea.Cmd) {
 }
 
 func (m *statusCmp) View() string {
-	t := styles.CurrentTheme()
+	s := m.styles
 	// Only render help if keyMap is set
 	if m.keyMap != nil {
-		status := t.S().Base.Padding(0, 1, 1, 1).Render(m.help.View(m.keyMap))
+		status := s.Base.Padding(0, 1, 1, 1).Render(m.help.View(m.keyMap))
 		if m.info.Msg != "" {
 			status = m.infoMsg()
 		}
@@ -74,29 +75,29 @@ func (m *statusCmp) View() string {
 }
 
 func (m *statusCmp) infoMsg() string {
-	t := styles.CurrentTheme()
+	s := m.styles
 	message := ""
 	infoType := ""
 	switch m.info.Type {
 	case util.InfoTypeError:
-		infoType = t.S().Base.Background(t.Error).Padding(0, 1).Render("ERROR")
+		infoType = s.Base.Background(s.Error).Padding(0, 1).Render("ERROR")
 		widthLeft := m.width - (lipgloss.Width(infoType) + 2)
 		info := ansi.Truncate(m.info.Msg, widthLeft, "…")
-		message = t.S().Base.Background(t.Error).Width(widthLeft+2).Foreground(t.White).Padding(0, 1).Render(info)
+		message = s.Base.Background(s.Error).Width(widthLeft+2).Foreground(s.White).Padding(0, 1).Render(info)
 	case util.InfoTypeWarn:
-		infoType = t.S().Base.Foreground(t.BgOverlay).Background(t.Warning).Padding(0, 1).Render("WARNING")
+		infoType = s.Base.Foreground(s.BgOverlay).Background(s.Warning).Padding(0, 1).Render("WARNING")
 		widthLeft := m.width - (lipgloss.Width(infoType) + 2)
 		info := ansi.Truncate(m.info.Msg, widthLeft, "…")
-		message = t.S().Base.Foreground(t.BgOverlay).Width(widthLeft+2).Background(t.Warning).Padding(0, 1).Render(info)
+		message = s.Base.Foreground(s.BgOverlay).Width(widthLeft+2).Background(s.Warning).Padding(0, 1).Render(info)
 	default:
 		note := "OKAY!"
 		if m.info.Type == util.InfoTypeUpdate {
 			note = "HEY!"
 		}
-		infoType = t.S().Base.Foreground(t.BgSubtle).Background(t.Success).Padding(0, 1).Bold(true).Render(note)
+		infoType = s.Base.Foreground(s.BgSubtle).Background(s.Green).Padding(0, 1).Bold(true).Render(note)
 		widthLeft := m.width - (lipgloss.Width(infoType) + 2)
 		info := ansi.Truncate(m.info.Msg, widthLeft, "…")
-		message = t.S().Base.Background(t.Success).Width(widthLeft+2).Foreground(t.BgSubtle).Padding(0, 1).Render(info)
+		message = s.Base.Background(s.Green).Width(widthLeft+2).Foreground(s.BgSubtle).Padding(0, 1).Render(info)
 	}
 	return ansi.Truncate(infoType+message, m.width, "…")
 }
@@ -110,11 +111,20 @@ func (m *statusCmp) SetKeyMap(keyMap help.KeyMap) {
 }
 
 func NewStatusCmp() StatusCmp {
-	t := styles.CurrentTheme()
-	help := help.New()
-	help.Styles = t.S().Help
+	s := styles.DefaultStyles()
+	h := help.New()
+	h.Styles = help.Styles{
+		ShortKey:       s.Dialog.Help.ShortKey,
+		ShortDesc:      s.Dialog.Help.ShortDesc,
+		ShortSeparator: s.Dialog.Help.ShortSeparator,
+		Ellipsis:       s.Dialog.Help.Ellipsis,
+		FullKey:        s.Dialog.Help.FullKey,
+		FullDesc:       s.Dialog.Help.FullDesc,
+		FullSeparator:  s.Dialog.Help.FullSeparator,
+	}
 	return &statusCmp{
+		styles:     &s,
 		messageTTL: 5 * time.Second,
-		help:       help,
+		help:       h,
 	}
 }

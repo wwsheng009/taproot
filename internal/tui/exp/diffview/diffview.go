@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 )
 
 // Layout type for diff view
@@ -35,6 +35,7 @@ const (
 
 // DiffView represents a simplified diff viewer
 type DiffView struct {
+	styles      *styles.Styles
 	before      string
 	after       string
 	layout      Layout
@@ -44,13 +45,15 @@ type DiffView struct {
 	xOffset     int
 	yOffset     int
 
-	lines   []DiffLine
+	lines      []DiffLine
 	totalLines int
 }
 
 // New creates a new DiffView
 func New() *DiffView {
+	s := styles.DefaultStyles()
 	return &DiffView{
+		styles:      &s,
 		layout:      LayoutUnified,
 		lineNumbers: true,
 	}
@@ -184,12 +187,12 @@ func (dv *DiffView) Render() string {
 		dv.Compute()
 	}
 
-	t := styles.CurrentTheme()
+	s := dv.styles
 
 	var result strings.Builder
 
 	// Header
-	header := t.S().Base.Bold(true).Foreground(t.Primary).
+	header := s.Base.Bold(true).Foreground(s.Primary).
 		Render("─ Diff View (Unified) ─")
 	result.WriteString(header + "\n\n")
 
@@ -203,7 +206,7 @@ func (dv *DiffView) Render() string {
 	}
 
 	// Footer
-	footer := t.S().Base.Foreground(t.FgMuted).
+	footer := s.Base.Foreground(s.FgMuted).
 		Render(fmt.Sprintf("Lines %d-%d of %d | Scroll: ←/→ ↑/↓",
 			start+1, end, dv.totalLines))
 	result.WriteString("\n" + footer)
@@ -213,7 +216,7 @@ func (dv *DiffView) Render() string {
 
 // renderLine renders a single diff line
 func (dv *DiffView) renderLine(line DiffLine) string {
-	t := styles.CurrentTheme()
+	s := dv.styles
 
 	var prefix string
 	var style lipgloss.Style
@@ -221,16 +224,16 @@ func (dv *DiffView) renderLine(line DiffLine) string {
 	switch line.Type {
 	case LineAdded:
 		prefix = "+"
-		style = t.S().Base.Foreground(t.Success)
+		style = s.Base.Foreground(s.Green)
 	case LineDeleted:
 		prefix = "-"
-		style = t.S().Base.Foreground(t.Error)
+		style = s.Base.Foreground(s.Error)
 	case LineContext:
 		prefix = " "
-		style = t.S().Base.Foreground(t.FgBase)
+		style = s.Base.Foreground(s.FgBase)
 	case LineHeader:
 		prefix = "@"
-		style = t.S().Base.Bold(true).Foreground(t.Warning)
+		style = s.Base.Bold(true).Foreground(s.Warning)
 	}
 
 	// Build line content

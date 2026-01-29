@@ -83,7 +83,7 @@ func (h HomePage) View() string { return "Hello, Taproot!" }
 ## 🎨 Themes
 
 ```go
-import "github.com/yourorg/taproot/internal/tui/styles"
+import "github.com/yourorg/taproot/internal/ui/styles"
 
 // Get current theme
 t := styles.CurrentTheme()
@@ -181,10 +181,11 @@ go test ./internal/tui/util/
 taproot/
 ├── internal/
 │   ├── layout/          # Core interfaces
+│   ├── ui/
+│   │   ├── styles/     # Theme system
 │   ├── tui/
 │   │   ├── app/        # Application framework
 │   │   ├── page/       # Page system
-│   │   ├── styles/     # Theme system
 │   │   ├── anim/       # Animations
 │   │   ├── util/       # Utilities
 │   │   ├── components/ # UI components

@@ -5,7 +5,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 	"github.com/yourorg/taproot/internal/tui/util"
 )
 
@@ -83,16 +83,17 @@ type CompletionsCmp interface {
 }
 
 type completionsCmp struct {
+	styles          *styles.Styles
 	wWidth, wHeight int
 	width, height   int
 	x, y            int
 	open            bool
 	query           string
 
-	items          []CompletionItem
-	filteredItems  []CompletionItem
-	selectedIndex  int
-	maxResults     int
+	items         []CompletionItem
+	filteredItems []CompletionItem
+	selectedIndex int
+	maxResults    int
 
 	normalStyle  lipgloss.Style
 	focusedStyle lipgloss.Style
@@ -100,17 +101,18 @@ type completionsCmp struct {
 
 // New creates a new completions component
 func New() CompletionsCmp {
-	t := styles.CurrentTheme()
+	s := styles.DefaultStyles()
 	return &completionsCmp{
-		width:     0,
-		height:    maxCompletionsHeight,
-		open:      false,
-		query:     "",
-		items:     []CompletionItem{},
+		styles:        &s,
+		width:         0,
+		height:        maxCompletionsHeight,
+		open:          false,
+		query:         "",
+		items:         []CompletionItem{},
 		selectedIndex: -1,
-		maxResults: 0,
-		normalStyle: t.S().Base,
-		focusedStyle: t.S().TextSelected,
+		maxResults:    0,
+		normalStyle:   s.Base,
+		focusedStyle:  s.TextSelection,
 	}
 }
 
@@ -238,7 +240,7 @@ func (c *completionsCmp) View() string {
 		return ""
 	}
 
-	t := styles.CurrentTheme()
+	s := c.styles
 
 	// Calculate visible items
 	visibleCount := len(c.filteredItems)
@@ -256,7 +258,7 @@ func (c *completionsCmp) View() string {
 	}
 
 	var b strings.Builder
-	b.WriteString(t.S().Base.Foreground(t.FgMuted).Render("┌─ Completions ─────────┐") + "\n")
+	b.WriteString(s.Base.Foreground(s.FgMuted).Render("┌─ Completions ─────────┐") + "\n")
 
 	for i := 0; i < visibleCount; i++ {
 		idx := offset + i
@@ -285,13 +287,13 @@ func (c *completionsCmp) View() string {
 		b.WriteString("│" + line + "│\n")
 	}
 
-	b.WriteString(t.S().Base.Foreground(t.FgMuted).Render("└─────────────────────┘"))
+	b.WriteString(s.Base.Foreground(s.FgMuted).Render("└─────────────────────┘"))
 
 	return b.String()
 }
 
 func (c *completionsCmp) highlightMatches(text, query string) string {
-	t := styles.CurrentTheme()
+	s := c.styles
 	lowerText := strings.ToLower(text)
 	lowerQuery := strings.ToLower(query)
 
@@ -299,7 +301,7 @@ func (c *completionsCmp) highlightMatches(text, query string) string {
 	i := 0
 	for i < len(text) {
 		if i <= len(text)-len(query) && lowerText[i:i+len(query)] == lowerQuery {
-			result += t.S().Base.Foreground(t.Primary).Bold(true).Render(text[i:i+len(query)])
+			result += s.Base.Foreground(s.Primary).Bold(true).Render(text[i:i+len(query)])
 			i += len(query)
 		} else {
 			result += string(text[i])

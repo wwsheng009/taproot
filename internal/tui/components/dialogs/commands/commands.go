@@ -9,7 +9,7 @@ import (
 	"github.com/charmbracelet/lipgloss"
 	"github.com/yourorg/taproot/internal/tui/components/completions"
 	"github.com/yourorg/taproot/internal/tui/components/dialogs"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 	"github.com/yourorg/taproot/internal/tui/util"
 )
 
@@ -48,6 +48,7 @@ type CommandsDialog interface {
 }
 
 type commandDialogCmp struct {
+	styles      *styles.Styles
 	width       int
 	height      int
 	x, y        int
@@ -82,7 +83,10 @@ func NewCommandsDialog(provider CommandProvider) CommandsDialog {
 	ti.Focus()
 	ti.Width = defaultWidth - 4
 
+	s := styles.DefaultStyles()
+
 	return &commandDialogCmp{
+		styles:      &s,
 		width:       defaultWidth,
 		height:      20,
 		x:           10,
@@ -230,19 +234,19 @@ func contains(s, substr string) bool {
 }
 
 func (d *commandDialogCmp) View() string {
-	t := styles.CurrentTheme()
+	s := d.styles
 
 	// Dialog box style
-	boxStyle := t.S().Base.
+	boxStyle := s.Base.
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(t.Primary).
+		BorderForeground(s.Primary).
 		Padding(0, 1).
 		Width(d.width)
 
 	var content strings.Builder
 
 	// Header
-	header := t.S().Base.Bold(true).Foreground(t.Primary).Render("Commands")
+	header := s.Base.Bold(true).Foreground(s.Primary).Render("Commands")
 	content.WriteString(header + "\n\n")
 
 	if d.collectingArgs {
@@ -251,26 +255,26 @@ func (d *commandDialogCmp) View() string {
 		arg := cmd.Args[d.currentArg]
 
 		// Show command title
-		content.WriteString(t.S().Base.Foreground(t.Secondary).Render(cmd.Title) + "\n\n")
+		content.WriteString(s.Base.Foreground(s.Secondary).Render(cmd.Title) + "\n\n")
 
 		// Show prompt
 		label := arg.Name
 		if arg.Description != "" {
 			label = fmt.Sprintf("%s (%s)", arg.Name, arg.Description)
 		}
-		content.WriteString(t.S().Base.Bold(true).Render(label + ":") + "\n")
+		content.WriteString(s.Base.Bold(true).Render(label + ":") + "\n")
 		
 		// Set placeholder
 		d.textInput.Placeholder = arg.Placeholder
 		content.WriteString(d.textInput.View() + "\n")
 		
 		// Help
-		content.WriteString("\n" + t.S().Base.Foreground(t.FgMuted).Render("Enter to confirm, Esc to cancel"))
+		content.WriteString("\n" + s.Base.Foreground(s.FgMuted).Render("Enter to confirm, Esc to cancel"))
 
 	} else {
 		// List view
 		// Filter input
-		filterLabel := t.S().Base.Foreground(t.FgMuted).Render("Filter: ")
+		filterLabel := s.Base.Foreground(s.FgMuted).Render("Filter: ")
 		content.WriteString(filterLabel + d.completions.Query() + "_\n\n")
 
 		// Command list
@@ -288,9 +292,9 @@ func (d *commandDialogCmp) View() string {
 				prefix = ">"
 			}
 
-			itemStyle := t.S().Base
+			itemStyle := s.Base
 			if i == d.selectedIdx {
-				itemStyle = t.S().TextSelected
+				itemStyle = s.TextSelection
 			}
 
 			line := fmt.Sprintf("%s %s", prefix, cmd.Title)
@@ -310,7 +314,7 @@ func (d *commandDialogCmp) View() string {
 		// Footer
 		footerCount := fmt.Sprintf("%d/%d commands", len(d.filtered), len(d.commands))
 		footerHelp := "↑↓: Navigate | Enter: Execute | Type: Filter | ESC: Close"
-		footer := t.S().Base.Foreground(t.FgMuted).Render(footerCount + " | " + footerHelp)
+		footer := s.Base.Foreground(s.FgMuted).Render(footerCount + " | " + footerHelp)
 		content.WriteString("\n" + footer)
 	}
 
@@ -324,4 +328,3 @@ func (d *commandDialogCmp) Position() (int, int) {
 func (d *commandDialogCmp) ID() dialogs.DialogID {
 	return CommandDialogID
 }
-

@@ -10,7 +10,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/yourorg/taproot/internal/tui/components/dialogs"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 	"github.com/yourorg/taproot/internal/tui/util"
 )
 
@@ -21,6 +21,7 @@ const (
 type Callback func(path string) tea.Cmd
 
 type FilePicker struct {
+	styles      *styles.Styles
 	id          dialogs.DialogID
 	currentDir  string
 	files       []os.DirEntry
@@ -40,8 +41,10 @@ func New(startPath string, callback Callback) *FilePicker {
 	if err != nil {
 		absPath = "."
 	}
+	s := styles.DefaultStyles()
 	
 	fp := &FilePicker{
+		styles:     &s,
 		id:         ID,
 		currentDir: absPath,
 		callback:   callback,
@@ -180,36 +183,36 @@ func (m *FilePicker) handleSelect() (util.Model, tea.Cmd) {
 }
 
 func (m *FilePicker) View() string {
-	theme := styles.CurrentTheme()
+	s := m.styles
 	
 	// Simple Box
 	width := 60
 	height := 20
 	
-	s := lipgloss.NewStyle().
+	boxStyle := lipgloss.NewStyle().
 		Width(width).
 		Height(height).
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(theme.Border).
+		BorderForeground(s.Border).
 		Padding(1, 2)
 		
 	var sb strings.Builder
 	
 	// Title
-	sb.WriteString(styles.ApplyForegroundGrad(fmt.Sprintf("📂 %s", m.currentDir), theme.Primary, theme.Secondary))
+	sb.WriteString(styles.ApplyForegroundGrad(s, fmt.Sprintf("📂 %s", m.currentDir), s.Primary, s.Secondary))
 	sb.WriteString("\n\n")
 	
 	if m.err != nil {
-		sb.WriteString(lipgloss.NewStyle().Foreground(theme.Error).Render(fmt.Sprintf("Error: %v", m.err)))
-		return s.Render(sb.String())
+		sb.WriteString(lipgloss.NewStyle().Foreground(s.Error).Render(fmt.Sprintf("Error: %v", m.err)))
+		return boxStyle.Render(sb.String())
 	}
 	
 	// Parent dir option
 	cursor := "  "
-	style := lipgloss.NewStyle().Foreground(theme.FgBase)
+	style := lipgloss.NewStyle().Foreground(s.FgBase)
 	if m.cursor == -1 {
 		cursor = "> "
-		style = style.Foreground(theme.Primary).Bold(true)
+		style = style.Foreground(s.Primary).Bold(true)
 	}
 	sb.WriteString(style.Render(cursor + ".. (Parent Directory)"))
 	sb.WriteString("\n")
@@ -227,13 +230,13 @@ func (m *FilePicker) View() string {
 		isDir := f.IsDir()
 		
 		cursor := "  "
-		style := lipgloss.NewStyle().Foreground(theme.FgBase)
+		style := lipgloss.NewStyle().Foreground(s.FgBase)
 		
 		if idx == m.cursor {
 			cursor = "> "
-			style = style.Foreground(theme.Primary).Bold(true)
+			style = style.Foreground(s.Primary).Bold(true)
 		} else if isDir {
-			style = style.Foreground(theme.Secondary)
+			style = style.Foreground(s.Secondary)
 		}
 		
 		icon := "📄"
@@ -256,9 +259,9 @@ func (m *FilePicker) View() string {
 	}
 	
 	// Simple footer hint
-	sb.WriteString(lipgloss.NewStyle().Foreground(theme.FgMuted).Render("\n[esc] cancel  [.] toggle hidden"))
+	sb.WriteString(lipgloss.NewStyle().Foreground(s.FgMuted).Render("\n[esc] cancel  [.] toggle hidden"))
 	
-	return s.Render(sb.String())
+	return boxStyle.Render(sb.String())
 }
 
 func (m *FilePicker) Position() (int, int) {

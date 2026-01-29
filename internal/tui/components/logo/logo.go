@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 )
 
 var (
@@ -41,7 +41,7 @@ type Opts struct {
 const diag = `╱`
 
 // Render renders the logo. Set compact to true for a narrow version.
-func Render(version string, compact bool, o Opts) string {
+func Render(s *styles.Styles, version string, compact bool, o Opts) string {
 	const charm = " Taproot"
 
 	fg := func(c lipgloss.Color, s string) string {
@@ -68,7 +68,7 @@ func Render(version string, compact bool, o Opts) string {
 	taprootWidth := lipgloss.Width(taproot)
 	b := new(strings.Builder)
 	for _, r := range strings.Split(taproot, "\n") {
-		fmt.Fprintln(b, styles.ApplyForegroundGrad(r, o.TitleColorA, o.TitleColorB))
+		fmt.Fprintln(b, styles.ApplyForegroundGrad(s, r, o.TitleColorA, o.TitleColorB))
 	}
 	taproot = b.String()
 
@@ -129,14 +129,13 @@ func Render(version string, compact bool, o Opts) string {
 }
 
 // SmallRender renders a smaller version of the logo.
-func SmallRender(width int) string {
-	t := styles.CurrentTheme()
-	title := t.S().Base.Foreground(t.Secondary).Render("Taproot")
-	title = fmt.Sprintf("%s %s", title, styles.ApplyBoldForegroundGrad("TUI", t.Secondary, t.Primary))
+func SmallRender(s *styles.Styles, width int) string {
+	title := s.Base.Foreground(s.Secondary).Render("Taproot")
+	title = fmt.Sprintf("%s %s", title, styles.ApplyBoldForegroundGrad(s, "TUI", s.Secondary, s.Primary))
 	remainingWidth := width - lipgloss.Width(title) - 1
 	if remainingWidth > 0 {
 		lines := strings.Repeat("╱", remainingWidth)
-		title = fmt.Sprintf("%s %s", title, t.S().Base.Foreground(t.Primary).Render(lines))
+		title = fmt.Sprintf("%s %s", title, s.Base.Foreground(s.Primary).Render(lines))
 	}
 	return title
 }
@@ -292,4 +291,3 @@ func letterT(stretch bool) string {
 		mid,
 	)
 }
-

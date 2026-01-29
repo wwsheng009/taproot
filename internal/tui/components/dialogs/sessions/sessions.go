@@ -8,7 +8,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/yourorg/taproot/internal/tui/components/dialogs"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 	"github.com/yourorg/taproot/internal/tui/util"
 )
 
@@ -34,6 +34,7 @@ type SessionProvider interface {
 
 // SessionsDialog displays a list of sessions with search and actions
 type SessionsDialog struct {
+	styles      *styles.Styles
 	provider    SessionProvider
 	width       int
 	height      int
@@ -59,7 +60,9 @@ const (
 
 // New creates a new sessions dialog
 func New(provider SessionProvider) *SessionsDialog {
+	s := styles.DefaultStyles()
 	return &SessionsDialog{
+		styles:   &s,
 		provider: provider,
 		mode:     modeBrowse,
 	}
@@ -228,12 +231,12 @@ func (d *SessionsDialog) filteredSessions() []Session {
 }
 
 func (d *SessionsDialog) View() string {
-	theme := styles.CurrentTheme()
+	s := d.styles
 
 	// Dialog box style
 	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(theme.Border).
+		BorderForeground(s.Border).
 		Padding(1, 2)
 
 	// Calculate dialog size
@@ -243,17 +246,17 @@ func (d *SessionsDialog) View() string {
 	var sb strings.Builder
 
 	// Header
-	sb.WriteString(lipgloss.NewStyle().Bold(true).Foreground(theme.Primary).Render("Sessions"))
+	sb.WriteString(lipgloss.NewStyle().Bold(true).Foreground(s.Primary).Render("Sessions"))
 	sb.WriteString("\n\n")
 
 	// Mode-specific content
 	switch d.mode {
 	case modeBrowse:
-		d.renderBrowseMode(&sb, theme)
+		d.renderBrowseMode(&sb)
 	case modeCreate:
-		d.renderCreateMode(&sb, theme)
+		d.renderCreateMode(&sb)
 	case modeConfirmDelete:
-		d.renderDeleteConfirmMode(&sb, theme)
+		d.renderDeleteConfirmMode(&sb)
 	}
 
 	// Footer hints
@@ -261,13 +264,13 @@ func (d *SessionsDialog) View() string {
 	switch d.mode {
 	case modeBrowse:
 		hints := "Enter: Select | n: New | d: Delete | /: Filter | Esc: Close"
-		sb.WriteString(lipgloss.NewStyle().Foreground(theme.FgMuted).Render(hints))
+		sb.WriteString(lipgloss.NewStyle().Foreground(s.FgMuted).Render(hints))
 	case modeCreate:
 		hints := "Enter: Create | Esc: Cancel"
-		sb.WriteString(lipgloss.NewStyle().Foreground(theme.FgMuted).Render(hints))
+		sb.WriteString(lipgloss.NewStyle().Foreground(s.FgMuted).Render(hints))
 	case modeConfirmDelete:
 		hints := "y: Delete | n: Cancel"
-		sb.WriteString(lipgloss.NewStyle().Foreground(theme.FgMuted).Render(hints))
+		sb.WriteString(lipgloss.NewStyle().Foreground(s.FgMuted).Render(hints))
 	}
 
 	// Apply size and render
@@ -280,11 +283,12 @@ func (d *SessionsDialog) View() string {
 		Render(rendered)
 }
 
-func (d *SessionsDialog) renderBrowseMode(sb *strings.Builder, theme *styles.Theme) {
+func (d *SessionsDialog) renderBrowseMode(sb *strings.Builder) {
+	s := d.styles
 	sessions := d.filteredSessions()
 
 	if d.filter != "" {
-		sb.WriteString(lipgloss.NewStyle().Foreground(theme.Secondary).Render("Filter: /"+d.filter))
+		sb.WriteString(lipgloss.NewStyle().Foreground(s.Secondary).Render("Filter: /"+d.filter))
 		sb.WriteString("\n\n")
 	}
 
@@ -293,9 +297,9 @@ func (d *SessionsDialog) renderBrowseMode(sb *strings.Builder, theme *styles.The
 		if d.filter != "" {
 			msg = "No matching sessions"
 		}
-		sb.WriteString(lipgloss.NewStyle().Foreground(theme.FgMuted).Italic(true).Render(msg))
+		sb.WriteString(lipgloss.NewStyle().Foreground(s.FgMuted).Italic(true).Render(msg))
 		sb.WriteString("\n")
-		sb.WriteString(lipgloss.NewStyle().Foreground(theme.FgMuted).Render("Press n to create a new session"))
+		sb.WriteString(lipgloss.NewStyle().Foreground(s.FgMuted).Render("Press n to create a new session"))
 		return
 	}
 
@@ -306,11 +310,11 @@ func (d *SessionsDialog) renderBrowseMode(sb *strings.Builder, theme *styles.The
 	}
 
 	for i := d.scroll; i < end; i++ {
-		s := sessions[i]
+		sess := sessions[i]
 		isSelected := i == d.cursor
 
 		// Format title
-		title := s.Title
+		title := sess.Title
 		if title == "" {
 			title = "Untitled"
 		}
@@ -325,18 +329,18 @@ func (d *SessionsDialog) renderBrowseMode(sb *strings.Builder, theme *styles.The
 		}
 
 		// Style
-		style := lipgloss.NewStyle().Foreground(theme.FgBase)
+		style := lipgloss.NewStyle().Foreground(s.FgBase)
 		if isSelected {
-			style = style.Foreground(theme.Primary).Bold(true)
+			style = style.Foreground(s.Primary).Bold(true)
 		}
 
 		sb.WriteString(style.Render(cursor + " " + title))
 
 		// Timestamp
-		timeStr := formatTime(s.UpdatedAt)
+		timeStr := formatTime(sess.UpdatedAt)
 		if timeStr != "" {
 			padding := strings.Repeat(" ", 35-len(title))
-			sb.WriteString(padding + lipgloss.NewStyle().Foreground(theme.FgMuted).Render(timeStr))
+			sb.WriteString(padding + lipgloss.NewStyle().Foreground(s.FgMuted).Render(timeStr))
 		}
 
 		sb.WriteString("\n")
@@ -345,28 +349,30 @@ func (d *SessionsDialog) renderBrowseMode(sb *strings.Builder, theme *styles.The
 	// Scroll indicator
 	if len(sessions) > maxVisibleItems {
 		scrollInfo := fmt.Sprintf("%d/%d", d.cursor+1, len(sessions))
-		sb.WriteString(lipgloss.NewStyle().Foreground(theme.FgMuted).Render(scrollInfo))
+		sb.WriteString(lipgloss.NewStyle().Foreground(s.FgMuted).Render(scrollInfo))
 	}
 }
 
-func (d *SessionsDialog) renderCreateMode(sb *strings.Builder, theme *styles.Theme) {
-	sb.WriteString(lipgloss.NewStyle().Foreground(theme.Secondary).Render("Create new session"))
+func (d *SessionsDialog) renderCreateMode(sb *strings.Builder) {
+	s := d.styles
+	sb.WriteString(lipgloss.NewStyle().Foreground(s.Secondary).Render("Create new session"))
 	sb.WriteString("\n\n")
 	sb.WriteString("Title: ")
-	sb.WriteString(lipgloss.NewStyle().Foreground(theme.Primary).Render(d.creatingTitle))
+	sb.WriteString(lipgloss.NewStyle().Foreground(s.Primary).Render(d.creatingTitle))
 	if time.Now().Unix()%2 == 0 {
 		sb.WriteString("▋")
 	}
 	sb.WriteString("\n\n")
-	sb.WriteString(lipgloss.NewStyle().Foreground(theme.FgMuted).Render("Enter a title for the new session"))
+	sb.WriteString(lipgloss.NewStyle().Foreground(s.FgMuted).Render("Enter a title for the new session"))
 }
 
-func (d *SessionsDialog) renderDeleteConfirmMode(sb *strings.Builder, theme *styles.Theme) {
-	sb.WriteString(lipgloss.NewStyle().Foreground(theme.Error).Bold(true).Render("Delete Session?"))
+func (d *SessionsDialog) renderDeleteConfirmMode(sb *strings.Builder) {
+	s := d.styles
+	sb.WriteString(lipgloss.NewStyle().Foreground(s.Error).Bold(true).Render("Delete Session?"))
 	sb.WriteString("\n\n")
-	sb.WriteString(lipgloss.NewStyle().Foreground(theme.FgMuted).Render("This action cannot be undone."))
+	sb.WriteString(lipgloss.NewStyle().Foreground(s.FgMuted).Render("This action cannot be undone."))
 	sb.WriteString("\n\n")
-	sb.WriteString(lipgloss.NewStyle().Foreground(theme.FgMuted).Render("Press y to confirm, n to cancel"))
+	sb.WriteString(lipgloss.NewStyle().Foreground(s.FgMuted).Render("Press y to confirm, n to cancel"))
 }
 
 func formatTime(t time.Time) string {

@@ -5,11 +5,12 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 )
 
 // SimpleList is a simple list component for demonstration.
 type SimpleList struct {
+	styles   *styles.Styles
 	items    []string
 	cursor   int
 	selected map[int]struct{}
@@ -22,11 +23,13 @@ type SimpleList struct {
 
 // NewSimpleList creates a new simple list.
 func NewSimpleList(items []string) *SimpleList {
+	s := styles.DefaultStyles()
 	return &SimpleList{
+		styles:    &s,
 		items:     items,
 		selected:  make(map[int]struct{}),
-		visible:  10,
-		focused:  true,
+		visible:   10,
+		focused:   true,
 	}
 }
 
@@ -75,7 +78,7 @@ func (l *SimpleList) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (l *SimpleList) View() string {
-	t := styles.CurrentTheme()
+	s := l.styles
 
 	var b strings.Builder
 	b.WriteString("Simple List\n\n")
@@ -95,9 +98,9 @@ func (l *SimpleList) View() string {
 			checked = "x"
 		}
 
-		itemStyle := t.S().Base
+		itemStyle := s.Base
 		if l.cursor == i && l.focused {
-			itemStyle = t.S().TextSelected
+			itemStyle = s.TextSelection
 		}
 
 		item := itemStyle.Render(fmt.Sprintf("%s [%s] %s", cursor, checked, l.items[i]))

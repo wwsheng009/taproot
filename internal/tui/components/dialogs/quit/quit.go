@@ -6,7 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/yourorg/taproot/internal/tui/components/dialogs"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 	"github.com/yourorg/taproot/internal/tui/util"
 )
 
@@ -15,6 +15,7 @@ const (
 )
 
 type QuitDialog struct {
+	styles     *styles.Styles
 	id         dialogs.DialogID
 	width      int
 	height     int
@@ -23,7 +24,9 @@ type QuitDialog struct {
 }
 
 func New(hasChanges bool) *QuitDialog {
+	s := styles.DefaultStyles()
 	return &QuitDialog{
+		styles:     &s,
 		id:         ID,
 		hasChanges: hasChanges,
 		selected:   0,
@@ -58,24 +61,24 @@ func (m *QuitDialog) Update(msg tea.Msg) (util.Model, tea.Cmd) {
 }
 
 func (m *QuitDialog) View() string {
-	theme := styles.CurrentTheme()
+	s := m.styles
 	
 	// Box style
-	s := lipgloss.NewStyle().
+	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(theme.Border).
+		BorderForeground(s.Border).
 		Padding(1, 2).
 		Align(lipgloss.Center)
 
 	var sb strings.Builder
 	
 	// Title
-	sb.WriteString(lipgloss.NewStyle().Bold(true).Foreground(theme.Primary).Render("Confirm Quit"))
+	sb.WriteString(lipgloss.NewStyle().Bold(true).Foreground(s.Primary).Render("Confirm Quit"))
 	sb.WriteString("\n\n")
 	
 	// Message
 	if m.hasChanges {
-		sb.WriteString(lipgloss.NewStyle().Foreground(theme.Warning).Render("⚠️  You have unsaved changes!"))
+		sb.WriteString(lipgloss.NewStyle().Foreground(s.Warning).Render("⚠️  You have unsaved changes!"))
 		sb.WriteString("\n")
 		sb.WriteString("Are you sure you want to quit?")
 	} else {
@@ -84,8 +87,8 @@ func (m *QuitDialog) View() string {
 	sb.WriteString("\n\n")
 	
 	// Buttons
-	btnStyle := lipgloss.NewStyle().Padding(0, 2).Foreground(theme.FgBase)
-	selectedStyle := lipgloss.NewStyle().Padding(0, 2).Background(theme.Primary).Foreground(theme.FgSelected).Bold(true)
+	btnStyle := lipgloss.NewStyle().Padding(0, 2).Foreground(s.FgBase)
+	selectedStyle := lipgloss.NewStyle().Padding(0, 2).Background(s.Primary).Foreground(s.BgBase).Bold(true)
 	
 	cancelBtn := "Cancel"
 	quitBtn := "Quit"
@@ -100,7 +103,7 @@ func (m *QuitDialog) View() string {
 	
 	sb.WriteString(cancelBtn + "   " + quitBtn)
 	
-	return s.Render(sb.String())
+	return boxStyle.Render(sb.String())
 }
 
 func (m *QuitDialog) Position() (int, int) {

@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/yourorg/taproot/internal/ui/styles"
 )
 
 func TestSyntaxHighlight(t *testing.T) {
@@ -58,7 +59,8 @@ func main() {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			bg := lipgloss.Color("#1a1a2e")
-			result, err := SyntaxHighlight(tt.source, tt.fileName, bg)
+			s := styles.DefaultStyles()
+			result, err := SyntaxHighlight(&s, tt.source, tt.fileName, bg)
 
 			if err != nil {
 				t.Errorf("SyntaxHighlight() error = %v", err)
@@ -79,8 +81,9 @@ func TestSyntaxHighlightBackgroundColor(t *testing.T) {
 	source := `package main
 func main() {}`
 	bg := lipgloss.Color("#FF0000")
+	s := styles.DefaultStyles()
 
-	result, err := SyntaxHighlight(source, "test.go", bg)
+	result, err := SyntaxHighlight(&s, source, "test.go", bg)
 	if err != nil {
 		t.Fatalf("SyntaxHighlight() error = %v", err)
 	}

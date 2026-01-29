@@ -17,7 +17,7 @@ Taproot 是从 Crush CLI 提取的 TUI 框架，提供可复用的终端 UI 组�
 | **布局接口** | `internal/layout/layout.go` | Focusable, Sizeable, Positional, Help | ~40 |
 | **工具函数** | `internal/tui/util/util.go` | Model, InfoMsg, ExecShell | ~70 |
 | **快捷键** | `internal/tui/keys.go` | KeyMap, DefaultKeyMap | ~30 |
-| **主题系统** | `internal/tui/styles/` | Theme, Manager, 颜色混合 | ~350 |
+| **主题系统** | `internal/ui/styles/` | Theme, Manager, 颜色混合 | ~350 |
 | **动画组件** | `internal/tui/anim/` | 渐变加载动画 | ~250 |
 | **核心UI** | `internal/tui/components/core/` | Section, Title, Button | ~180 |
 | **状态栏** | `internal/tui/components/core/status/` | 状态栏组件 | ~100 |

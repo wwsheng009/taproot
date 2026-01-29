@@ -426,7 +426,7 @@ func CmdHandler(msg tea.Msg) tea.Cmd
 
 ## Theme System
 
-### Theme Structure (`internal/tui/styles`)
+### Theme Structure (`internal/ui/styles`)
 
 ```go
 type Theme struct {

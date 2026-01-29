@@ -218,7 +218,7 @@
   - [x] 实现 Chroma 集成
   - [x] 实现主题映射
   - [x] 实现语言检测
-- [x] 创建 `internal/tui/styles/chroma.go`
+- [x] 创建 `internal/ui/styles/chroma.go`
   - [x] 实现 `GetChromaTheme` 函数
   - [x] 实现 `chromaStyle` 辅助函数
 - [ ] 编写测试
@@ -375,7 +375,7 @@
   - [x] 实现工具调用显示
   - [x] 实现工具结果显示
 - [x] 集成 Markdown 渲染
-  - [x] 创建 `internal/tui/styles/markdown.go`
+  - [x] 创建 `internal/ui/styles/markdown.go`
   - [x] 实现 `GetMarkdownRenderer` 函数
   - [x] 实现 `PlainMarkdownStyle` 函数
   - [x] 添加 Charmtone 颜色调色板 (`palette.go`)

@@ -25,7 +25,7 @@ Phase 5           ░░░░░░░░░░░░░░░░░░░░  
 | 布局接口 | ✅ | `internal/layout/layout.go` |
 | 工具函数 | ✅ | `internal/tui/util/util.go` |
 | 快捷键 | ✅ | `internal/tui/keys.go` |
-| 主题系统 | ✅ | `internal/tui/styles/` |
+| 主题系统 | ✅ | `internal/ui/styles/` |
 | 动画组件 | ✅ | `internal/tui/anim/` |
 | 核心UI组件 | ✅ | `internal/tui/components/core/` |
 | 状态栏 | ✅ | `internal/tui/components/core/status/` |
@@ -193,7 +193,7 @@ func NewDialogCmp() DialogCmp
 
 **依赖**:
 - `internal/tui/util/`
-- `internal/tui/styles/`
+- `internal/ui/styles/`
 
 **文件列表**:
 ```
@@ -226,7 +226,7 @@ list_test.go     - 测试
 
 **依赖**:
 - `github.com/alecthomas/chroma/v2`
-- `internal/tui/styles/`
+- `internal/ui/styles/`
 
 **文件列表**:
 ```

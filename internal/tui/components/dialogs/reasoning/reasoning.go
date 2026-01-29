@@ -6,7 +6,7 @@ import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/yourorg/taproot/internal/tui/components/dialogs"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 	"github.com/yourorg/taproot/internal/tui/util"
 )
 
@@ -16,6 +16,7 @@ const (
 
 // ReasoningDialog displays collapsible reasoning/thought content
 type ReasoningDialog struct {
+	styles     *styles.Styles
 	width      int
 	height     int
 	expanded   bool
@@ -26,7 +27,9 @@ type ReasoningDialog struct {
 
 // New creates a new reasoning dialog
 func New(content string) *ReasoningDialog {
+	s := styles.DefaultStyles()
 	return &ReasoningDialog{
+		styles:       &s,
 		expanded:     false,
 		content:      content,
 		visibleLines: 5, // Collapsed height
@@ -88,12 +91,12 @@ func (d *ReasoningDialog) canScrollDown() bool {
 }
 
 func (d *ReasoningDialog) View() string {
-	theme := styles.CurrentTheme()
+	s := d.styles
 
 	// Dialog box style
 	boxStyle := lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
-		BorderForeground(theme.Border).
+		BorderForeground(s.Border).
 		Padding(1, 2)
 
 	// Calculate content width
@@ -105,11 +108,11 @@ func (d *ReasoningDialog) View() string {
 	var sb strings.Builder
 
 	// Header with expand indicator
-	sb.WriteString(lipgloss.NewStyle().Bold(true).Foreground(theme.Primary).Render("Reasoning"))
+	sb.WriteString(lipgloss.NewStyle().Bold(true).Foreground(s.Primary).Render("Reasoning"))
 	if d.expanded {
-		sb.WriteString(" " + lipgloss.NewStyle().Foreground(theme.FgMuted).Render("[-]"))
+		sb.WriteString(" " + lipgloss.NewStyle().Foreground(s.FgMuted).Render("[-]"))
 	} else {
-		sb.WriteString(" " + lipgloss.NewStyle().Foreground(theme.FgMuted).Render("[+]"))
+		sb.WriteString(" " + lipgloss.NewStyle().Foreground(s.FgMuted).Render("[+]"))
 	}
 
 	// Content with scrolling
@@ -135,7 +138,7 @@ func (d *ReasoningDialog) View() string {
 				if len(line) > contentWidth {
 					line = line[:contentWidth-3] + "..."
 				}
-				sb.WriteString("\n" + lipgloss.NewStyle().Foreground(theme.FgBase).Render(line))
+				sb.WriteString("\n" + lipgloss.NewStyle().Foreground(s.FgBase).Render(line))
 			}
 		}
 	}
@@ -151,14 +154,14 @@ func (d *ReasoningDialog) View() string {
 	} else if totalLines > d.visibleLines {
 		// Show "more" indicator in collapsed mode
 		sb.WriteString("\n")
-		sb.WriteString(lipgloss.NewStyle().Foreground(theme.FgMuted).Italic(true).Render("..."))
+		sb.WriteString(lipgloss.NewStyle().Foreground(s.FgMuted).Italic(true).Render("..."))
 	}
 
 	// Hints footer
 	sb.WriteString("\n\n")
-	hints := lipgloss.NewStyle().Foreground(theme.FgMuted).Render("Enter: Toggle | Esc: Close")
+	hints := lipgloss.NewStyle().Foreground(s.FgMuted).Render("Enter: Toggle | Esc: Close")
 	if d.expanded {
-		hints = lipgloss.NewStyle().Foreground(theme.FgMuted).Render("Enter: Collapse | ↑↓: Scroll | Esc: Close")
+		hints = lipgloss.NewStyle().Foreground(s.FgMuted).Render("Enter: Collapse | ↑↓: Scroll | Esc: Close")
 	}
 	sb.WriteString(hints)
 

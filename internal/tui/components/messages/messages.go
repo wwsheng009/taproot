@@ -5,8 +5,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/tui/styles"
 	"github.com/yourorg/taproot/internal/tui/util"
+	"github.com/yourorg/taproot/internal/ui/styles"
 )
 
 // Message represents a single message in the chat
@@ -25,11 +25,12 @@ type ToolUse struct {
 
 // MessagesModel displays a list of messages with scrolling
 type MessagesModel struct {
-	width     int
-	height    int
-	messages  []Message
-	scroll    int
-	cursor    int // For potential selection
+	width    int
+	height   int
+	messages []Message
+	scroll   int
+	cursor   int // For potential selection
+	styles   *styles.Styles
 }
 
 const (
@@ -38,9 +39,11 @@ const (
 
 // New creates a new messages model
 func New() *MessagesModel {
+	s := styles.DefaultStyles()
 	return &MessagesModel{
 		messages: []Message{},
 		scroll:   0,
+		styles:   &s,
 	}
 }
 
@@ -165,14 +168,14 @@ func (m *MessagesModel) messageHeight(msg Message) int {
 }
 
 func (m *MessagesModel) View() string {
-	theme := styles.CurrentTheme()
-	
+	s := m.styles
+
 	if len(m.messages) == 0 {
 		return lipgloss.NewStyle().
 			Width(m.width).
 			Height(m.height).
 			Align(lipgloss.Center, lipgloss.Center).
-			Render(lipgloss.NewStyle().Foreground(theme.FgMuted).Italic(true).Render("No messages yet"))
+			Render(lipgloss.NewStyle().Foreground(s.FgMuted).Italic(true).Render("No messages yet"))
 	}
 
 	var sb strings.Builder
@@ -180,7 +183,7 @@ func (m *MessagesModel) View() string {
 
 	for _, msg := range m.messages {
 		msgHeight := m.messageHeight(msg)
-		msgView := m.renderMessage(msg, theme)
+		msgView := m.renderMessage(msg, s)
 		msgLines := strings.Split(msgView, "\n")
 
 		// Skip if above scroll position
@@ -213,7 +216,7 @@ func (m *MessagesModel) View() string {
 	return sb.String()
 }
 
-func (m *MessagesModel) renderMessage(msg Message, theme *styles.Theme) string {
+func (m *MessagesModel) renderMessage(msg Message, s *styles.Styles) string {
 	contentWidth := m.width - 4
 	if contentWidth > maxWidth {
 		contentWidth = maxWidth
@@ -227,19 +230,19 @@ func (m *MessagesModel) renderMessage(msg Message, theme *styles.Theme) string {
 
 	switch msg.Role {
 	case "user":
-		roleStyle = lipgloss.NewStyle().Foreground(theme.Primary).Bold(true)
+		roleStyle = lipgloss.NewStyle().Foreground(s.Primary).Bold(true)
 		roleName = "You"
 	case "assistant":
-		roleStyle = lipgloss.NewStyle().Foreground(theme.Secondary).Bold(true)
+		roleStyle = lipgloss.NewStyle().Foreground(s.Secondary).Bold(true)
 		roleName = "Assistant"
 	case "system":
-		roleStyle = lipgloss.NewStyle().Foreground(theme.Warning).Bold(true)
+		roleStyle = lipgloss.NewStyle().Foreground(s.Warning).Bold(true)
 		roleName = "System"
 	case "tool":
-		roleStyle = lipgloss.NewStyle().Foreground(theme.Info).Bold(true)
+		roleStyle = lipgloss.NewStyle().Foreground(s.Info).Bold(true)
 		roleName = "Tool"
 	default:
-		roleStyle = lipgloss.NewStyle().Foreground(theme.FgMuted).Bold(true)
+		roleStyle = lipgloss.NewStyle().Foreground(s.FgMuted).Bold(true)
 		roleName = msg.Role
 	}
 
@@ -249,7 +252,7 @@ func (m *MessagesModel) renderMessage(msg Message, theme *styles.Theme) string {
 	// Content with wrapping
 	contentStyle := lipgloss.NewStyle().
 		Width(contentWidth).
-		Foreground(theme.FgBase)
+		Foreground(s.FgBase)
 
 	sb.WriteString(contentStyle.Render(msg.Content))
 	sb.WriteString("\n")
@@ -257,7 +260,7 @@ func (m *MessagesModel) renderMessage(msg Message, theme *styles.Theme) string {
 	// Tool use if present
 	if msg.ToolUse != nil {
 		toolStyle := lipgloss.NewStyle().
-			Foreground(theme.Info).
+			Foreground(s.Info).
 			Bold(true)
 
 		sb.WriteString(toolStyle.Render("  🔧 " + msg.ToolUse.Name))
@@ -266,18 +269,18 @@ func (m *MessagesModel) renderMessage(msg Message, theme *styles.Theme) string {
 		if msg.ToolUse.Arguments != "" {
 			argStyle := lipgloss.NewStyle().
 				Width(contentWidth - 2).
-				Foreground(theme.FgMuted)
+				Foreground(s.FgMuted)
 			sb.WriteString(argStyle.Render(msg.ToolUse.Arguments))
 			sb.WriteString("\n")
 		}
 
 		if msg.ToolUse.Result != "" {
-			sb.WriteString(lipgloss.NewStyle().Foreground(theme.Success).Render("  ✓ Result"))
+			sb.WriteString(lipgloss.NewStyle().Foreground(s.Green).Render("  ✓ Result"))
 			sb.WriteString("\n")
-			
+
 			resultStyle := lipgloss.NewStyle().
 				Width(contentWidth - 2).
-				Foreground(theme.FgBase)
+				Foreground(s.FgBase)
 			sb.WriteString(resultStyle.Render(msg.ToolUse.Result))
 			sb.WriteString("\n")
 		}

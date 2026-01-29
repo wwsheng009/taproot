@@ -15,17 +15,15 @@ taproot/
 │   ├── layout/           # Core TUI component interfaces
 │   │   ├── layout.go     # Focusable, Sizeable, Positional, Help interfaces
 │   │   └── layout_test.go
+│   ├── ui/
+│   │   └── styles/       # Theme system with gradient support
+│   │       ├── styles.go     # Theme manager, color blending, gradients, markdown, chroma
+│   │       ├── colors.go     # Color palette constants
+│   │       └── grad.go       # Gradient helpers
 │   └── tui/              # Extracted TUI framework from Crush
 │       ├── keys.go       # Global key bindings
 │       ├── util/         # TUI utilities (Model, InfoMsg, Cursor, etc.)
 │       │   └── util.go
-│       ├── styles/       # Theme system with gradient support
-│       │   ├── theme.go      # Theme manager, color blending, gradients
-│       │   ├── charmtone.go  # Charmtone theme definition
-│       │   ├── palette.go    # Charmtone color palette constants
-│       │   ├── icons.go      # Icon definitions
-│       │   ├── markdown.go   # Markdown rendering with glamour
-│       │   └── chroma.go     # Chroma syntax highlighting theme
 │       ├── highlight/    # Syntax highlighting support
 │       │   └── highlight.go  # Syntax highlight function using chroma
 │       ├── anim/         # Animated spinner component
@@ -113,18 +111,14 @@ The TUI framework (`internal/tui/`) is extracted from Crush with these component
 - `KeyMap`: Global key binding structure
 - `DefaultKeyMap()`: Returns default keymap (quit: ctrl+c, help: ctrl+g, etc.)
 
-#### **Styles System (`styles/`)**
-- `Theme`: Complete theme with colors for all UI elements
-- `Manager`: Theme manager for switching between themes
-- `CurrentTheme()`: Get the active theme
-- `ForegroundGrad()`: Render text with gradient
-- `blendColors()`: Internal color blending in HCL color space
-- `GetMarkdownRenderer()`: Glamour markdown renderer with theme styling
-- `PlainMarkdownStyle()`: Plain markdown style (no colors)
-- `GetChromaTheme()`: Chroma syntax highlighting theme entries
-- Color helpers: `ParseHex()`, `Alpha()`, `Darken()`, `Lighten()`
+#### **Styles System (`internal/ui/styles/`)**
+- `Styles`: Complete style definition with colors for all UI elements
+- `DefaultStyles()`: Returns the default styles
+- `ApplyForegroundGrad()`: Render text with gradient
+- `ChromaTheme()`: Method to get Chroma syntax highlighting theme entries
+- `Markdown`, `PlainMarkdown`: Markdown style configurations
 
-**Charmtone Palette** (`palette.go`):
+**Charmtone Palette** (`colors.go`):
 Predefined color constants for the charmtone color scheme:
 - **Neutrals**: Smoke, Charcoal, Oyster, Salt
 - **Reds**: Coral, Sriracha, Bengal, Cherry
@@ -197,15 +191,15 @@ Components typically:
 The theme system uses `lipgloss.Color` for all colors:
 
 ```go
-// Get current theme
-t := styles.CurrentTheme()
+// Get default styles
+s := styles.DefaultStyles()
 
 // Access colors
-primary := t.Primary
-mutedText := t.S().Base.Foreground(t.FgMuted).Render("text")
+primary := s.Primary
+mutedText := s.Base.Foreground(s.FgMuted).Render("text")
 
 // Apply gradients
-gradientText := styles.ApplyForegroundGrad("Hello", t.Primary, t.Secondary)
+gradientText := styles.ApplyForegroundGrad(&s, "Hello", s.Primary, s.Secondary)
 ```
 
 Predefined color categories:
@@ -285,7 +279,7 @@ func (m *mockComponent) Blur()         { /* ... */ }
 
 ### Framework-Specific Patterns
 1. **Message passing**: Use `util.InfoMsg` for status messages, handle in parent components
-2. **Theme access**: Always use `styles.CurrentTheme()` to get the active theme
+2. **Theme access**: Use `styles.DefaultStyles()` to get the styles struct
 3. **Color gradients**: `ApplyForegroundGrad()` and `ApplyBoldForegroundGrad()` for gradient text
 4. **Animation**: `anim.Anim` requires `tea.Tick` commands for frame updates
 5. **Help system**: Use `help.Model` from bubbles with custom `KeyMap` implementations
@@ -299,7 +293,7 @@ func (m *mockComponent) Blur()         { /* ... */ }
 
 1. **Add new interface**: Define in `internal/layout/layout.go`
 2. **Implement interface**: Create component struct and methods
-3. **Add styling**: Use `styles.CurrentTheme()` for colors
+3. **Add styling**: Use `styles.DefaultStyles()` for colors
 4. **Write tests**: Add comprehensive tests in `*_test.go`
 5. **Create example**: Add demo in `examples/` if applicable
 6. **Run tests**: `go test ./...`
@@ -324,17 +318,14 @@ Run examples with `go run examples/<name>/main.go`
 - `ReportWarn(msg) tea.Cmd`: Report warning to status
 - `ExecShell()`: Execute shell commands
 
-### Styles (`internal/tui/styles/`)
-- `CurrentTheme() *Theme`: Get active theme
-- `ApplyForegroundGrad(text, c1, c2) string`: Render gradient text
-- `ApplyBoldForegroundGrad(text, c1, c2) string`: Render bold gradient text
-- `GetMarkdownRenderer(width) *glamour.TermRenderer`: Get themed markdown renderer
-- `PlainMarkdownStyle() ansi.StyleConfig`: Get plain markdown style
-- `GetChromaTheme() chroma.StyleEntries`: Get chroma syntax theme
-- Theme colors: Primary, Secondary, Accent, BgBase, FgBase, etc.
+### Styles (`internal/ui/styles/`)
+- `DefaultStyles() Styles`: Get default styles
+- `ApplyForegroundGrad(s, text, c1, c2) string`: Render gradient text
+- `ApplyBoldForegroundGrad(s, text, c1, c2) string`: Render bold gradient text
+- `Styles` struct: Contains all styles (Base, Primary, Markdown, etc.)
 
 ### Highlight (`internal/tui/highlight/`)
-- `SyntaxHighlight(source, fileName, bg) (string, error)`: Highlight source code
+- `SyntaxHighlight(s, source, fileName, bg) (string, error)`: Highlight source code
 - Auto-detects lexer from filename or content
 - Uses theme colors for syntax highlighting
 

@@ -9,6 +9,7 @@ import (
 	"github.com/yourorg/taproot/internal/tui/page"
 	"github.com/yourorg/taproot/internal/tui/util"
 	"github.com/yourorg/taproot/internal/tui/components/logo"
+	"github.com/yourorg/taproot/internal/ui/styles"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )
@@ -35,7 +36,8 @@ func main() {
 	fmt.Println("✓ Initial page set")
 
 	// Test 4: Test logo rendering
-	logoText := logo.SmallRender(80)
+	s := styles.DefaultStyles()
+	logoText := logo.SmallRender(&s, 80)
 	if logoText == "" {
 		fmt.Println("✗ Logo rendering failed")
 		os.Exit(1)

@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 )
 
 type KeyMapHelp interface {
@@ -36,20 +36,18 @@ func (s *simpleHelp) ShortHelp() []key.Binding {
 	return s.shortList
 }
 
-func Section(text string, width int) string {
-	t := styles.CurrentTheme()
+func Section(s *styles.Styles, text string, width int) string {
 	char := "─"
 	length := lipgloss.Width(text) + 1
 	remainingWidth := width - length
-	lineStyle := t.S().Base.Foreground(t.Border)
+	lineStyle := s.Base.Foreground(s.Border)
 	if remainingWidth > 0 {
 		text = text + " " + lineStyle.Render(strings.Repeat(char, remainingWidth))
 	}
 	return text
 }
 
-func SectionWithInfo(text string, width int, info string) string {
-	t := styles.CurrentTheme()
+func SectionWithInfo(s *styles.Styles, text string, width int, info string) string {
 	char := "─"
 	length := lipgloss.Width(text) + 1
 	remainingWidth := width - length
@@ -57,22 +55,21 @@ func SectionWithInfo(text string, width int, info string) string {
 	if info != "" {
 		remainingWidth -= lipgloss.Width(info) + 1 // 1 for the space before info
 	}
-	lineStyle := t.S().Base.Foreground(t.Border)
+	lineStyle := s.Base.Foreground(s.Border)
 	if remainingWidth > 0 {
 		text = text + " " + lineStyle.Render(strings.Repeat(char, remainingWidth)) + " " + info
 	}
 	return text
 }
 
-func Title(title string, width int) string {
-	t := styles.CurrentTheme()
+func Title(s *styles.Styles, title string, width int) string {
 	char := "╱"
 	length := lipgloss.Width(title) + 1
 	remainingWidth := width - length
-	titleStyle := t.S().Base.Foreground(t.Primary)
+	titleStyle := s.Base.Foreground(s.Primary)
 	if remainingWidth > 0 {
 		lines := strings.Repeat(char, remainingWidth)
-		lines = styles.ApplyForegroundGrad(lines, t.Primary, t.Secondary)
+		lines = styles.ApplyForegroundGrad(s, lines, s.Primary, s.Secondary)
 		title = titleStyle.Render(title) + " " + lines
 	}
 	return title
@@ -87,27 +84,26 @@ type StatusOpts struct {
 	ExtraContent     string // additional content to append after the description
 }
 
-func Status(opts StatusOpts, width int) string {
-	t := styles.CurrentTheme()
+func Status(s *styles.Styles, opts StatusOpts, width int) string {
 	icon := opts.Icon
 	title := opts.Title
-	titleColor := t.FgMuted
+	titleColor := s.FgMuted
 	if opts.TitleColor != "" {
 		titleColor = opts.TitleColor
 	}
 	description := opts.Description
-	descriptionColor := t.FgSubtle
+	descriptionColor := s.FgSubtle
 	if opts.DescriptionColor != "" {
 		descriptionColor = opts.DescriptionColor
 	}
-	title = t.S().Base.Foreground(titleColor).Render(title)
+	title = s.Base.Foreground(titleColor).Render(title)
 	if description != "" {
 		extraContentWidth := lipgloss.Width(opts.ExtraContent)
 		if extraContentWidth > 0 {
 			extraContentWidth += 1
 		}
 		description = ansi.Truncate(description, width-lipgloss.Width(icon)-lipgloss.Width(title)-2-extraContentWidth, "…")
-		description = t.S().Base.Foreground(descriptionColor).Render(description)
+		description = s.Base.Foreground(descriptionColor).Render(description)
 	}
 
 	content := []string{}
@@ -132,17 +128,15 @@ type ButtonOpts struct {
 }
 
 // SelectableButton creates a button with an underlined character and selection state
-func SelectableButton(opts ButtonOpts) string {
-	t := styles.CurrentTheme()
-
+func SelectableButton(s *styles.Styles, opts ButtonOpts) string {
 	// Base style for the button
-	buttonStyle := t.S().Text
+	buttonStyle := s.Base
 
 	// Apply selection styling
 	if opts.Selected {
-		buttonStyle = buttonStyle.Foreground(t.White).Background(t.Secondary)
+		buttonStyle = buttonStyle.Foreground(s.White).Background(s.Secondary)
 	} else {
-		buttonStyle = buttonStyle.Background(t.BgSubtle)
+		buttonStyle = buttonStyle.Background(s.BgSubtle)
 	}
 
 	// Create the button text with underlined character
@@ -164,14 +158,14 @@ func SelectableButton(opts ButtonOpts) string {
 }
 
 // SelectableButtons creates a horizontal row of selectable buttons
-func SelectableButtons(buttons []ButtonOpts, spacing string) string {
+func SelectableButtons(s *styles.Styles, buttons []ButtonOpts, spacing string) string {
 	if spacing == "" {
 		spacing = "  "
 	}
 
 	var parts []string
 	for i, button := range buttons {
-		parts = append(parts, SelectableButton(button))
+		parts = append(parts, SelectableButton(s, button))
 		if i < len(buttons)-1 {
 			parts = append(parts, spacing)
 		}
@@ -181,10 +175,10 @@ func SelectableButtons(buttons []ButtonOpts, spacing string) string {
 }
 
 // SelectableButtonsVertical creates a vertical row of selectable buttons
-func SelectableButtonsVertical(buttons []ButtonOpts, spacing int) string {
+func SelectableButtonsVertical(s *styles.Styles, buttons []ButtonOpts, spacing int) string {
 	var parts []string
 	for i, button := range buttons {
-		parts = append(parts, SelectableButton(button))
+		parts = append(parts, SelectableButton(s, button))
 		if i < len(buttons)-1 {
 			for range spacing {
 				parts = append(parts, "")

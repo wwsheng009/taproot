@@ -78,7 +78,7 @@ go test ./...
 go test -cover ./...
 
 # Run specific package tests
-go test ./internal/tui/styles/...
+go test ./internal/ui/styles/...
 ```
 
 ### 4. Commit Changes
@@ -117,8 +117,7 @@ package util
 
 **Files**: `snake_case.go` for examples, `lowercase.go` for code
 ```go
-internal/tui/styles/theme.go
-internal/tui/styles/markdown.go
+internal/ui/styles/styles.go
 examples/demo/main.go
 ```
 

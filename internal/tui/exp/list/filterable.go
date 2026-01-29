@@ -5,11 +5,12 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/yourorg/taproot/internal/tui/styles"
+	"github.com/yourorg/taproot/internal/ui/styles"
 )
 
 // FilterableList is a list with filtering support
 type FilterableList struct {
+	styles      *styles.Styles
 	allItems    []ListItem
 	filtered    []ListItem
 	cursor      int
@@ -32,7 +33,9 @@ type ListItem struct {
 
 // NewFilterableList creates a new filterable list
 func NewFilterableList(items []ListItem) *FilterableList {
+	s := styles.DefaultStyles()
 	return &FilterableList{
+		styles:    &s,
 		allItems:  items,
 		filtered:  items,
 		selected:  make(map[string]struct{}),
@@ -156,12 +159,12 @@ func (l *FilterableList) applyFilter() {
 }
 
 func (l *FilterableList) View() string {
-	t := styles.CurrentTheme()
+	s := l.styles
 
 	var b strings.Builder
 
 	// Header
-	headerStyle := t.S().Base.Bold(true).Foreground(t.Primary)
+	headerStyle := s.Base.Bold(true).Foreground(s.Primary)
 	if l.filtering {
 		b.WriteString(headerStyle.Render("Filter: " + l.query + "_"))
 	} else {
@@ -189,9 +192,9 @@ func (l *FilterableList) View() string {
 			checked = "x"
 		}
 
-		itemStyle := t.S().Base
+		itemStyle := s.Base
 		if l.cursor == i && l.focused {
-			itemStyle = t.S().TextSelected
+			itemStyle = s.TextSelection
 		}
 
 		// Highlight matching text
@@ -213,7 +216,7 @@ func (l *FilterableList) View() string {
 	if len(l.filtered) > l.visible {
 		footer += fmt.Sprintf(" | Showing %d-%d of %d", start+1, end, len(l.filtered))
 	}
-	b.WriteString("\n" + t.S().Base.Foreground(t.FgMuted).Render(footer))
+	b.WriteString("\n" + s.Base.Foreground(s.FgMuted).Render(footer))
 
 	return b.String()
 }
@@ -223,7 +226,7 @@ func (l *FilterableList) highlightMatches(text, query string) string {
 		return text
 	}
 
-	t := styles.CurrentTheme()
+	s := l.styles
 	lowerText := strings.ToLower(text)
 	lowerQuery := strings.ToLower(query)
 
@@ -237,7 +240,7 @@ func (l *FilterableList) highlightMatches(text, query string) string {
 		}
 		matchStart += i
 		result += text[i:matchStart]
-		result += t.S().Base.Foreground(t.Primary).Bold(true).Render(text[matchStart:matchStart+len(query)])
+		result += s.Base.Foreground(s.Primary).Bold(true).Render(text[matchStart:matchStart+len(query)])
 		i = matchStart + len(query)
 		lowerText = strings.ToLower(text[i:])
 	}
