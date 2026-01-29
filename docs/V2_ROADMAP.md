@@ -199,13 +199,14 @@ selected, ok := auto.Select()  // 选择
 **目标**: 创建通用的文件列表显示组件
 
 **任务**:
-- [ ] 创建 `internal/ui/components/files/`
-- [ ] 迁移 `internal/tui/components/files/` 逻辑
-- [ ] 实现 FileItem 结构
-- [ ] 文件图标系统
-- [ ] 排序功能
-- [ ] 过滤功能
-- [ ] 添加/删除行数显示
+- [x] 创建 `internal/ui/components/files/` ✅
+- [x] 迁移 `internal/tui/components/files/` 逻辑 ✅
+- [x] 实现 FileItem 结构 ✅
+- [x] 文件图标系统 ✅
+- [x] 排序功能 ✅
+- [x] 过滤功能 ✅
+- [x] 添加/删除行数显示 ✅
+- [x] 创建示例程序 ✅ (`examples/files/main.go`, 250 lines, 演示所有功能)
 
 **源文件**:
 ```
@@ -215,7 +216,26 @@ E:/projects/ai/crush/internal/ui/chat/sidebar/ (参考)
 
 ---
 
-### 7.2 状态显示组件 ⭐⭐
+### 7.2 树文件组件 ⭐⭐⭐
+
+**目标**: 创建树形文件浏览器组件，支持目录展开/折叠
+
+**任务**:
+- [x] 添加 `internal/ui/components/treefiles/` ✅
+- [x] 文件节点结构 (`FileNode`, `FileTree`) - 480+ lines ✅
+- [x] 树形可视化图标系统 - 190+ lines ✅
+- [x] 展开/折叠功能 ✅
+- [x] 扁平化显示 (`Flatten()` 方法) ✅
+- [x] 排序支持 (名称/大小/时间/类型) ✅
+- [x] 隐藏文件切换 ✅
+- [x] 最大深度限制 ✅
+- [x] 树统计信息 (`Stats()`) ✅
+- [x] 综合测试套件 - 490+ lines, 20+ tests ✅
+- [x] 交互式树形浏览器演示 (`examples/treefiles/main.go`, 340 lines) ✅
+
+---
+
+### 7.3 状态显示组件 ⭐⭐
 
 **目标**: LSP 和 MCP 状态显示
 
@@ -235,7 +255,7 @@ E:/projects/ai/crush/internal/tui/components/mcp/mcp.go
 
 ---
 
-### 7.3 Diff 查看器完善 ⭐⭐
+### 7.4 Diff 查看器完善 ⭐⭐
 
 **目标**: 实现分屏 diff 视图
 
@@ -506,13 +526,14 @@ E:/projects/ai/crush/internal/ui/model/pills.go
 | 6.1 | Ultraviolet 集成 | 1周 | ⭐⭐⭐ |
 | 6.2 | 增强对话框系统 | 1周 | ⭐⭐⭐ |
 | 7.1 | 文件列表组件 | 1周 | ⭐⭐⭐ |
+| 7.2 | 树文件组件 | 1周 | ⭐⭐⭐ |
 | 8.1 | 消息渲染框架 | 2周 | ⭐⭐⭐ |
 
 ### P1 - 强烈推荐 (常用功能)
 
 | Phase | 组件 | 预估时间 | 价值 |
 |-------|------|----------|------|
-| 7.2 | 状态显示组件 | 1周 | ⭐⭐ |
+| 7.3 | 状态显示组件 | 1周 | ⭐⭐ |
 | 9.1 | 通用布局组件 | 1周 | ⭐⭐⭐ |
 | 9.2 | 侧边栏组件 | 1周 | ⭐⭐ |
 | 12.1 | 文档完善 | 持续 | ⭐⭐⭐ |
@@ -522,7 +543,7 @@ E:/projects/ai/crush/internal/ui/model/pills.go
 | Phase | 组件 | 预估时间 | 价值 |
 |-------|------|----------|------|
 | ~~6.3~~ | ~~自动完成组件~~ | ~~1周~~ | ~~⭐⭐~~ |
-| 7.3 | Diff 查看器完善 | 1周 | ⭐⭐ |
+| 7.4 | Diff 查看器完善 | 1周 | ⭐⭐ |
 | 8.2 | Markdown 渲染增强 | 1周 | ⭐⭐ |
 | 10.1 | 附件系统 | 1周 | ⭐⭐ |
 
@@ -641,3 +662,24 @@ E:/projects/ai/crush/internal/tui/
   - 图标系统 (icons.go)
 - ✅ 移除旧的 `internal/tui/styles/` 包
 - ✅ 所有组件已更新为使用注入式样式
+- ✅ Phase 7.1 完成: File list component
+  - FileList manager with sorting/filtering (`files.go`, 290 lines)
+  - FileItem interface and FileInfo implementation (`types.go`, 206 lines)
+  - Icon system with file type detection (`icon.go`)
+  - Flexible sorting by name/size/time/extension (`sort.go`)
+  - Pattern filtering with wildcard support (`filter.go`)
+  - Comprehensive test suite (`files_test.go`, 200+ lines)
+  - Interactive file browser demo (`examples/files/main.go`, 250 lines)
+- ✅ Phase 7.2 完成: Tree file component
+  - FileNode and FileTree structures (`tree.go`, 480+ lines)
+  - Tree visualization with expand/collapse support
+  - Tree icon system (│ └ ├ ─) (`icons.go`, 190+ lines)
+  - File type icons for 50+ formats
+  - Flatten() method for visible node traversal
+  - ExpandAll() / CollapseAll() bulk operations
+  - Sorting by name/size/time/type
+  - Hidden file toggle support
+  - Max depth limiting for large trees
+  - Tree statistics (nodes, files, dirs, size)
+  - Comprehensive test suite (`tree_test.go`, 490+ lines, 20+ tests)
+  - Interactive tree browser demo (`examples/treefiles/main.go`, 340 lines)
