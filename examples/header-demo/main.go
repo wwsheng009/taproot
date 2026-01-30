@@ -23,8 +23,12 @@ type model struct {
 }
 
 func initialModel() *model {
+	brand := "Charm™"
+	title := "CRUSH"
+
 	h := header.New()
-	h.SetSize(100, 2)
+	h.SetSize(100, 1)
+	h.SetBrand(brand, title)
 	h.SetWorkingDirectory("/projects/ai/Taproot")
 	h.SetTokenUsage(0, 128000, 0.00)
 	h.SetErrorCount(3)
@@ -38,8 +42,8 @@ func initialModel() *model {
 		cost:         0.00,
 		detailsOpen:  false,
 		compactMode:  false,
-		brand:        "Charm™",
-		title:        "CRUSH",
+		brand:        brand,
+		title:        title,
 	}
 }
 
@@ -102,9 +106,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		}
 
 	case tea.WindowSizeMsg:
-		// Update header size
-		m.header.SetSize(msg.Width, 2)
-		m.contentHeight = msg.Height - 2
+		// Update header size (header is 1 line tall)
+		m.header.SetSize(msg.Width, 1)
+		m.contentHeight = msg.Height - 1
 	}
 
 	return m, nil
@@ -113,8 +117,9 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m *model) View() string {
 	var b strings.Builder
 
-	// Render header
+	// Render header on its own line
 	b.WriteString(m.header.View())
+	b.WriteString("\n")
 
 	// Build content string
 	content := strings.Builder{}
@@ -179,13 +184,10 @@ func (m *model) View() string {
 
 	contentStr := content.String()
 
-	// Count lines in content (including the newline before it)
-	headerLines := 1 // Header occupies 1 line
-	contentLines := strings.Count(contentStr, "\n") + 1 // +1 for the last line
-
 	// Calculate how many empty lines are needed after content
-	totalContentLines := headerLines + contentLines
-	emptyLinesNeeded := m.contentHeight - totalContentLines
+	// header + content lines should fill the screen
+	totalLines := strings.Count(contentStr, "\n")
+	emptyLinesNeeded := max(0, m.contentHeight-totalLines)
 
 	// Write content followed by empty lines
 	b.WriteString(contentStr)
