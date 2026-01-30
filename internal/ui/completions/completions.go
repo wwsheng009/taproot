@@ -3,7 +3,7 @@ package completions
 import (
 	"strings"
 
-	"github.com/yourorg/taproot/internal/ui/list"
+	"github.com/wwsheng009/taproot/internal/ui/list"
 )
 
 // Provider is a data source for completion items.

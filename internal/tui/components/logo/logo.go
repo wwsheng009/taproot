@@ -7,7 +7,7 @@ import (
 	"sync"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/ui/styles"
+	"github.com/wwsheng009/taproot/internal/ui/styles"
 )
 
 var (

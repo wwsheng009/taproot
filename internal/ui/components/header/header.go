@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/layout"
-	"github.com/yourorg/taproot/internal/ui/styles"
+	"github.com/wwsheng009/taproot/internal/layout"
+	"github.com/wwsheng009/taproot/internal/ui/styles"
 )
 
 var _ headerImpl = (*HeaderComponent)(nil)

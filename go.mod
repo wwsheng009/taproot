@@ -1,4 +1,4 @@
-module github.com/yourorg/taproot
+module github.com/wwsheng009/taproot
 
 go 1.24.2
 

@@ -8,7 +8,7 @@ import (
 	"github.com/alecthomas/chroma/v2/lexers"
 	chromaStyles "github.com/alecthomas/chroma/v2/styles"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/ui/styles"
+	"github.com/wwsheng009/taproot/internal/ui/styles"
 )
 
 // SyntaxHighlight performs syntax highlighting on source code

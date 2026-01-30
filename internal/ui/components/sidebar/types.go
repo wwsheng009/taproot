@@ -1,7 +1,7 @@
 package sidebar
 
 import (
-	"github.com/yourorg/taproot/internal/layout"
+	"github.com/wwsheng009/taproot/internal/layout"
 )
 
 // Sidebar represents a sidebar component for navigation and information display.

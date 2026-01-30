@@ -21,7 +21,7 @@ Taproot provides reusable, composable components and utilities for building term
 ## 🚀 Quick Start
 
 ```bash
-go get github.com/yourorg/taproot
+go get github.com/wwsheng009/taproot
 ```
 
 ```go
@@ -29,11 +29,11 @@ package main
 
 import (
     tea "github.com/charmbracelet/bubbletea"
-    "github.com/yourorg/taproot/internal/tui/app"
-    "github.com/yourorg/taproot/internal/tui/components/dialogs"
-    "github.com/yourorg/taproot/internal/tui/components/dialogs/commands"
-    "github.com/yourorg/taproot/internal/tui/page"
-    "github.com/yourorg/taproot/internal/tui/util"
+    "github.com/wwsheng009/taproot/internal/tui/app"
+    "github.com/wwsheng009/taproot/internal/tui/components/dialogs"
+    "github.com/wwsheng009/taproot/internal/tui/components/dialogs/commands"
+    "github.com/wwsheng009/taproot/internal/tui/page"
+    "github.com/wwsheng009/taproot/internal/tui/util"
 )
 
 func main() {
@@ -83,7 +83,7 @@ func (h HomePage) View() string { return "Hello, Taproot!" }
 ## 🎨 Themes
 
 ```go
-import "github.com/yourorg/taproot/internal/ui/styles"
+import "github.com/wwsheng009/taproot/internal/ui/styles"
 
 // Get current theme
 t := styles.CurrentTheme()

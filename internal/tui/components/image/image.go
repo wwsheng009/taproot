@@ -8,8 +8,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/ui/styles"
-	"github.com/yourorg/taproot/internal/tui/util"
+	"github.com/wwsheng009/taproot/internal/ui/styles"
+	"github.com/wwsheng009/taproot/internal/tui/util"
 )
 
 // RendererType represents the image rendering protocol

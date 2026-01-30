@@ -3,8 +3,8 @@ package dialog
 import (
 	"testing"
 
-	"github.com/yourorg/taproot/internal/ui/list"
-	"github.com/yourorg/taproot/internal/ui/render"
+	"github.com/wwsheng009/taproot/internal/ui/list"
+	"github.com/wwsheng009/taproot/internal/ui/render"
 )
 
 func TestButton(t *testing.T) {

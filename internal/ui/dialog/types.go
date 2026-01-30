@@ -1,8 +1,8 @@
 package dialog
 
 import (
-	"github.com/yourorg/taproot/internal/ui/list"
-	"github.com/yourorg/taproot/internal/ui/render"
+	"github.com/wwsheng009/taproot/internal/ui/list"
+	"github.com/wwsheng009/taproot/internal/ui/render"
 )
 
 // DialogID uniquely identifies a dialog.
