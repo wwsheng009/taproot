@@ -1,1 +1,15 @@
 *.exe
+*.dll
+*.so
+*.dylib
+vendor/
+docs/troubleshooting/
+bin/
+main.exe
+quit.exe
+reasoning.exe
+ui-dialogs.exe
+ui-filtergroup.exe
+ui-list.exe
+examples/*/demo.exe
+examples/treefiles/treefiles.exe

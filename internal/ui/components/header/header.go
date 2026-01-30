@@ -128,30 +128,31 @@ func (h *HeaderComponent) View() string {
 	b.WriteString(styles.ApplyBoldForegroundGrad(&s, h.title, s.Secondary, s.Primary))
 	b.WriteString(gap)
 
-	// Calculate progress bar width (25% of available content width), only if there's token usage
+	// Calculate progress bar width (25% of available content width)
 	availableWidth := h.width - leftPadding - rightPadding
 	progressBarWidth := int(float64(availableWidth) * 0.25)
 
-	// Only render progress bar if there's actual token usage to show
-	if progressBarWidth > minDiags && h.tokenUsed > 0 && h.tokenMax > 0 {
-		// Calculate percentage based ONLY on token usage
-		percentage := float64(h.tokenUsed) / float64(h.tokenMax)
+	// Always render progress bar area with fixed width
+	if progressBarWidth > minDiags {
+		// Calculate percentage (0 if no token usage)
+		var percentage float64
+		if h.tokenUsed > 0 && h.tokenMax > 0 {
+			percentage = float64(h.tokenUsed) / float64(h.tokenMax)
+		}
 
 		// Calculate number of diags based purely on token percentage
+		// At 0%, we still show minDiags, not 0
 		diagsCount := minDiags + int(float64(progressBarWidth-minDiags)*percentage)
 
-		// Only render if there are visible diags beyond the minimum
-		if diagsCount > minDiags {
-			// Render progress bar with padding
-			diagsStr := strings.Repeat(diag, diagsCount)
-			paddingCount := progressBarWidth - diagsCount
-			if paddingCount > 0 {
-				diagsStr += strings.Repeat(" ", paddingCount)
-			}
-
-			b.WriteString(s.Base.Foreground(s.Primary).Render(diagsStr))
-			b.WriteString(gap)
+		// Render progress bar with padding to fill fixed width
+		diagsStr := strings.Repeat(diag, diagsCount)
+		paddingCount := progressBarWidth - diagsCount
+		if paddingCount > 0 {
+			diagsStr += strings.Repeat(" ", paddingCount)
 		}
+
+		b.WriteString(s.Base.Foreground(s.Primary).Render(diagsStr))
+		b.WriteString(gap)
 	}
 
 	// Calculate remaining width for details

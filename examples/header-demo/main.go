@@ -26,16 +26,16 @@ func initialModel() *model {
 	h := header.New()
 	h.SetSize(100, 2)
 	h.SetWorkingDirectory("/projects/ai/Taproot")
-	h.SetTokenUsage(64000, 128000, 1.50)
+	h.SetTokenUsage(0, 128000, 0.00)
 	h.SetErrorCount(3)
 
 	return &model{
 		header:       h,
 		errorCount:   3,
 		workingDir:   "/projects/ai/Taproot",
-		tokenUsed:    64000,
+		tokenUsed:    0,
 		tokenMax:     128000,
-		cost:         1.50,
+		cost:         0.00,
 		detailsOpen:  false,
 		compactMode:  false,
 		brand:        "Charm™",
