@@ -109,6 +109,8 @@ func (m *model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Update header size (header is 1 line tall)
 		m.header.SetSize(msg.Width, 1)
 		m.contentHeight = msg.Height - 1
+		// Clear screen on resize to prevent artifacts
+		return m, tea.ClearScreen
 	}
 
 	return m, nil
@@ -184,9 +186,15 @@ func (m *model) View() string {
 
 	contentStr := content.String()
 
+	// Calculate actual number of lines in content
+	contentLines := len(strings.Split(strings.TrimRight(contentStr, "\n"), "\n"))
+	if contentStr != "" && contentStr[len(contentStr)-1] == '\n' {
+		contentLines++
+	}
+
 	// Calculate how many empty lines are needed after content
-	// header + content lines should fill the screen
-	totalLines := strings.Count(contentStr, "\n")
+	// header (1 line) + content lines + empty lines should fill the screen
+	totalLines := 1 + contentLines
 	emptyLinesNeeded := max(0, m.contentHeight-totalLines)
 
 	// Write content followed by empty lines

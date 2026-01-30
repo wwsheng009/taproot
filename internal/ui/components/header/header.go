@@ -170,16 +170,87 @@ func (h *HeaderComponent) View() string {
 		b.WriteString(details)
 	}
 
-	// Ensure content fills exactly the available width
-	// This prevents artifact/leftover content on resize
+	// Ensure content fits within available width to prevent multi-line rendering
+	// We use string manipulation rather than lipgloss.MaxWidth for reliability
+	// with ANSI sequences.
 	content := b.String()
-	currentWidth := lipgloss.Width(content)
-	if currentWidth < availableWidth {
-		content += strings.Repeat(" ", availableWidth-currentWidth)
+	contentWidth := lipgloss.Width(content)
+
+	// If content exceeds available width, truncate it to available columns
+	if contentWidth > availableWidth {
+		// Manually truncate by iterating through runes to preserve ANSI sequences
+		var truncated strings.Builder
+		currentWidth := 0
+		runes := []rune(content)
+		i := 0
+
+		for i < len(runes) && currentWidth < availableWidth {
+			r := runes[i]
+
+			// If we hit an ANSI escape sequence, include it entirely
+			if r == '\x1b' {
+				// Find the sequence end
+				end := i + 1
+				for end < len(runes) && runes[end] != 'm' {
+					end++
+				}
+				if end < len(runes) {
+					for j := i; j <= end; j++ {
+						truncated.WriteRune(runes[j])
+					}
+					i = end + 1
+					continue
+				}
+			}
+
+			// Check if this rune adds visible width
+			runeWidth := lipgloss.Width(string(r))
+			if currentWidth+runeWidth > availableWidth {
+				break
+			}
+
+			truncated.WriteRune(r)
+			currentWidth += runeWidth
+			i++
+		}
+
+		// If we still exceeded the width (due to ANSI sequences), use lipgloss as fallback
+		currentResult := truncated.String()
+		if lipgloss.Width(currentResult) > availableWidth {
+			// Fallback: use lipgloss with both MaxWidth and MaxHeight
+			truncatedStyle := lipgloss.NewStyle().
+				MaxWidth(availableWidth).
+				MaxHeight(1)
+			currentResult = truncatedStyle.Render(content)
+		}
+		content = currentResult
+		contentWidth = lipgloss.Width(content)
 	}
 
-	// Wrap with padding to ensure full coverage without wrapping
-	return s.Base.Padding(0, rightPadding, 0, leftPadding).Render(content)
+	// Pad with spaces to fill exactly availableWidth
+	if contentWidth < availableWidth {
+		content += strings.Repeat(" ", availableWidth-contentWidth)
+	}
+
+	// Apply padding without any width constraints
+	// The padding should not introduce any newlines
+	result := s.Base.Padding(0, rightPadding, 0, leftPadding).Render(content)
+
+	// CRITICAL: Final safety check - ensure absolutely no line breaks
+	if strings.ContainsAny(result, "\n\r") {
+		// If somehow line breaks were introduced, remove them as a last resort
+		result = strings.ReplaceAll(result, "\n", "")
+		result = strings.ReplaceAll(result, "\r", "")
+
+		// Ensure we still have correct width after removing newlines
+		resultWidth := lipgloss.Width(result)
+		targetWidth := h.width
+		if resultWidth < targetWidth {
+			result += strings.Repeat(" ", targetWidth-resultWidth)
+		}
+	}
+
+	return result
 }
 
 // renderDetails renders the details section.
@@ -229,7 +300,10 @@ func (h *HeaderComponent) renderDetails(availWidth int) string {
 		cwd = "…" + cwd
 	}
 
-	cwd = lipgloss.NewStyle().MaxWidth(max(0, availWidth-lipgloss.Width(metadata))).Render(cwd)
+	cwd = lipgloss.NewStyle().
+		MaxWidth(max(0, availWidth-lipgloss.Width(metadata))).
+		MaxHeight(1). // Ensure CWD rendering never exceeds 1 line
+		Render(cwd)
 	cwd = s.Muted.Render(cwd)
 
 	return cwd + metadata
