@@ -191,10 +191,29 @@ func (dv *DiffView) Render() string {
 
 	var result strings.Builder
 
-	// Header
+	// Header - show layout type
+	layoutName := "Unified"
+	if dv.layout == LayoutSplit {
+		layoutName = "Split"
+	}
 	header := s.Base.Bold(true).Foreground(s.Primary).
-		Render("─ Diff View (Unified) ─")
+		Render(fmt.Sprintf("─ Diff View (%s) ─", layoutName))
 	result.WriteString(header + "\n\n")
+
+	// Render based on layout type
+	if dv.layout == LayoutSplit {
+		result.WriteString(dv.renderSplit())
+	} else {
+		result.WriteString(dv.renderUnified())
+	}
+
+	return result.String()
+}
+
+// renderUnified renders unified diff view
+func (dv *DiffView) renderUnified() string {
+	s := dv.styles
+	var result strings.Builder
 
 	// Calculate visible range
 	start := dv.yOffset
@@ -212,6 +231,122 @@ func (dv *DiffView) Render() string {
 	result.WriteString("\n" + footer)
 
 	return result.String()
+}
+
+// renderSplit renders side-by-side split diff view
+func (dv *DiffView) renderSplit() string {
+	s := dv.styles
+	var result strings.Builder
+
+	// Calculate column widths for split view
+	totalWidth := dv.width
+	if totalWidth <= 0 {
+		totalWidth = 80
+	}
+
+	// Reserve space for line numbers and divider
+	lineNumWidth := 6
+	dividerWidth := 3 // " │ "
+	
+	// Calculate available code width for each column
+	availableWidth := totalWidth - lineNumWidth*2 - dividerWidth
+	leftColWidth := availableWidth / 2
+	rightColWidth := availableWidth - leftColWidth
+
+	// Calculate visible range
+	start := dv.yOffset
+	end := min(start+dv.height, len(dv.lines))
+
+	// Render each line
+	for i := start; i < end; i++ {
+		if i >= len(dv.lines) {
+			break
+		}
+
+		line := dv.lines[i]
+		
+		// Split the content into left (before) and right (after) parts
+		leftContent, rightContent := dv.splitLineContent(line)
+		
+		// Build the line
+		var lineBuilder strings.Builder
+
+		// Left side (before)
+		if dv.lineNumbers {
+			lineNum := "      " // Empty for insertions
+			if line.Type == LineDeleted || line.Type == LineContext {
+				lineNum = fmt.Sprintf("%6d", line.LineNum)
+			}
+			lineBuilder.WriteString(s.Base.Foreground(s.FgMuted).Render(lineNum))
+		}
+
+		leftStyle := dv.getStyleForLineType(line.Type)
+		leftContent = leftStyle.Render(leftContent)
+		if lipgloss.Width(leftContent) > leftColWidth {
+			leftContent = lipgloss.NewStyle().MaxWidth(leftColWidth).Render(leftContent)
+		}
+		lineBuilder.WriteString(leftContent + "\n")
+
+		// Right side (after)
+		if dv.lineNumbers {
+			lineNum := "      " // Empty for deletions
+			if line.Type == LineAdded || line.Type == LineContext {
+				lineNum = fmt.Sprintf("%6d", line.LineNum)
+			}
+			lineBuilder.WriteString(s.Base.Foreground(s.FgMuted).Render(lineNum))
+		}
+
+		rightStyle := dv.getStyleForLineType(line.Type)
+		rightContent = rightStyle.Render(rightContent)
+		if lipgloss.Width(rightContent) > rightColWidth {
+			rightContent = lipgloss.NewStyle().MaxWidth(rightColWidth).Render(rightContent)
+		}
+		lineBuilder.WriteString(rightContent + "\n")
+
+		result.WriteString(lineBuilder.String())
+	}
+
+	// Footer
+	footer := s.Base.Foreground(s.FgMuted).
+		Render(fmt.Sprintf("Lines %d-%d of %d | Scroll: ←/→ ↑/↓",
+			start+1, end, dv.totalLines))
+	result.WriteString("\n" + footer)
+
+	return result.String()
+}
+
+// splitLineContent splits a diff line into before and after content
+func (dv *DiffView) splitLineContent(line DiffLine) (string, string) {
+	switch line.Type {
+	case LineAdded:
+		return "", line.Content
+	case LineDeleted:
+		return line.Content, ""
+	case LineContext:
+		return line.Content, line.Content
+	case LineHeader:
+		return line.Content, line.Content
+	default:
+		return "", ""
+	}
+}
+
+// getStyleForLineType returns the style for a given line type
+func (dv *DiffView) getStyleForLineType(lineType LineType) lipgloss.Style {
+	s := dv.styles
+	
+	switch lineType {
+	case LineAdded:
+		return s.Base.Foreground(s.Green).Background(lipgloss.Color("#d8f8dd"))
+	case LineDeleted:
+		return s.Base.Foreground(s.Error).Background(lipgloss.Color("#ffebe9"))
+	case LineContext:
+		return s.Base.Foreground(s.FgBase)
+	case LineHeader:
+		return s.Base.Bold(true).Foreground(s.FgMuted)
+	default:
+		return s.Base
+	}
 }
 
 // renderLine renders a single diff line
