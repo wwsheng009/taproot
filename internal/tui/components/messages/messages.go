@@ -185,7 +185,11 @@ func (m *MessagesModel) View() string {
 			Render(lipgloss.NewStyle().Foreground(s.FgMuted).Italic(true).Render("No messages yet"))
 	}
 
+	// Pre-allocate builder with estimated size (width * height + padding)
+	estimatedSize := m.width * m.height * 2 // Multiplier for ANSI codes and formatting
 	var sb strings.Builder
+	sb.Grow(estimatedSize)
+
 	currentY := 0
 
 	for _, msg := range m.messages {
@@ -229,7 +233,10 @@ func (m *MessagesModel) renderMessage(msg Message, s *styles.Styles) string {
 		contentWidth = maxWidth
 	}
 
+	// Estimate size: content + header + footer + padding + ANSI codes
+	estimatedSize := len(msg.Content) + contentWidth*2 + 200
 	var sb strings.Builder
+	sb.Grow(estimatedSize)
 
 	// Role header with color
 	var roleStyle lipgloss.Style

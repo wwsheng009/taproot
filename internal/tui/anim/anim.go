@@ -247,7 +247,10 @@ func (m *Anim) View() string {
 	cyclingIndex := frameIndex % len(m.cyclingFrames)
 	ellipsisIndex := (frameIndex / ellipsisAnimSpeed) % len(m.ellipsisFrames)
 
+	// Pre-allocate with estimated size (width + label + ellipsis + padding)
+	estimatedSize := m.width + len(m.label) + 10 + 20 // extra for ANSI codes
 	var b strings.Builder
+	b.Grow(estimatedSize)
 
 	// Draw cycling characters
 	for i := 0; i < m.cyclingCharWidth; i++ {

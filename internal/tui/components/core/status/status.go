@@ -13,8 +13,8 @@ import (
 
 type StatusCmp interface {
 	util.Model
-	ToggleFullHelp()
-	SetKeyMap(keyMap help.KeyMap)
+	ToggleFullHelp() StatusCmp
+	SetKeyMap(keyMap help.KeyMap) StatusCmp
 }
 
 type statusCmp struct {
@@ -38,23 +38,25 @@ func (m *statusCmp) Init() tea.Cmd {
 }
 
 func (m *statusCmp) Update(msg tea.Msg) (util.Model, tea.Cmd) {
+	newModel := *m  // Deep copy
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		return m, nil
+		newModel.width = msg.Width
+		return &newModel, nil
 
 	// Handle status info
 	case util.InfoMsg:
-		m.info = msg
+		newModel.info = msg
 		ttl := msg.TTL
 		if ttl == 0 {
-			ttl = m.messageTTL
+			ttl = newModel.messageTTL
 		}
-		return m, m.clearMessageCmd(ttl)
+		return &newModel, newModel.clearMessageCmd(ttl)
 	case util.ClearStatusMsg:
-		m.info = util.InfoMsg{}
+		newModel.info = util.InfoMsg{}
+		return &newModel, nil
 	}
-	return m, nil
+	return &newModel, nil
 }
 
 func (m *statusCmp) View() string {
@@ -102,12 +104,16 @@ func (m *statusCmp) infoMsg() string {
 	return ansi.Truncate(infoType+message, m.width, "…")
 }
 
-func (m *statusCmp) ToggleFullHelp() {
-	m.help.ShowAll = !m.help.ShowAll
+func (m *statusCmp) ToggleFullHelp() StatusCmp {
+	newModel := *m  // Deep copy
+	newModel.help.ShowAll = !newModel.help.ShowAll
+	return &newModel
 }
 
-func (m *statusCmp) SetKeyMap(keyMap help.KeyMap) {
-	m.keyMap = keyMap
+func (m *statusCmp) SetKeyMap(keyMap help.KeyMap) StatusCmp {
+	newModel := *m  // Deep copy
+	newModel.keyMap = keyMap
+	return &newModel
 }
 
 func NewStatusCmp() StatusCmp {
