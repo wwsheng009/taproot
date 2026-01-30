@@ -1,10 +1,13 @@
 package app
 
 import (
+	"context"
+
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/wwsheng009/taproot/internal/tui/components/core/status"
 	"github.com/wwsheng009/taproot/internal/tui/components/dialogs"
+	"github.com/wwsheng009/taproot/internal/tui/lifecycle"
 	"github.com/wwsheng009/taproot/internal/tui/page"
 	"github.com/wwsheng009/taproot/internal/tui/util"
 )
@@ -18,19 +21,21 @@ type AppModel struct {
 	pages        map[page.PageID]util.Model
 	pageStack    []page.PageID
 
-	status     status.StatusCmp
-	dialogs    dialogs.DialogCmp
-	quitting   bool
+	status        status.StatusCmp
+	dialogs       dialogs.DialogCmp
+	lifecycleMgr  *lifecycle.LifecycleManager
+	quitting      bool
 	showingFullHelp bool
 }
 
 // NewApp creates a new application model.
 func NewApp() AppModel {
 	return AppModel{
-		pages:     make(map[page.PageID]util.Model),
-		pageStack: []page.PageID{},
-		status:    status.NewStatusCmp(),
-		dialogs:   dialogs.NewDialogCmp(),
+		pages:        make(map[page.PageID]util.Model),
+		pageStack:    []page.PageID{},
+		status:       status.NewStatusCmp(),
+		dialogs:      dialogs.NewDialogCmp(),
+		lifecycleMgr: lifecycle.NewLifecycleManager(),
 	}
 }
 
@@ -39,16 +44,17 @@ func (a *AppModel) RegisterPage(id page.PageID, model util.Model) {
 	a.pages[id] = model
 }
 
-// SetPage sets the current page.
-func (a *AppModel) SetPage(id page.PageID) tea.Cmd {
+// SetPage sets the current page and returns new model.
+func (a *AppModel) SetPage(id page.PageID) *AppModel {
 	if _, ok := a.pages[id]; !ok {
-		return nil
+		return a
 	}
-	if a.currentPage != "" {
-		a.pageStack = append(a.pageStack, a.currentPage)
+	newApp := *a  // Deep copy
+	if newApp.currentPage != "" {
+		newApp.pageStack = append(newApp.pageStack, newApp.currentPage)
 	}
-	a.currentPage = id
-	return a.initPage(id)
+	newApp.currentPage = id
+	return &newApp
 }
 
 func (a *AppModel) initPage(id page.PageID) tea.Cmd {
@@ -72,120 +78,134 @@ func (a AppModel) Init() tea.Cmd {
 }
 
 func (a AppModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	newApp := a  // Create copy
+
 	// Handle dialog messages first
-	if a.dialogs.HasDialogs() {
+	if newApp.dialogs.HasDialogs() {
 		switch msg.(type) {
 		case tea.KeyMsg:
 			// Forward to dialog
-			_, cmd := a.dialogs.Update(msg)
-			return a, cmd
+			updatedDialogs, cmd := newApp.dialogs.Update(msg)
+			newApp.dialogs = updatedDialogs.(dialogs.DialogCmp)
+			return newApp, cmd
 		default:
 			// Forward other messages
-			_, cmd := a.dialogs.Update(msg)
-			return a, cmd
+			updatedDialogs, cmd := newApp.dialogs.Update(msg)
+			newApp.dialogs = updatedDialogs.(dialogs.DialogCmp)
+			return newApp, cmd
 		}
 	}
 
 	switch msg := msg.(type) {
 	case tea.QuitMsg:
-		a.quitting = true
-		return a, tea.Quit
+		newApp.quitting = true
+		return newApp, tea.Quit
 
 	case tea.KeyMsg:
 		// Handle global keys
 		switch msg.String() {
 		case "ctrl+c", "q":
-			a.quitting = true
-			return a, tea.Quit
+			newApp.quitting = true
+			return newApp, tea.Quit
 		case "ctrl+g":
-			a.showingFullHelp = !a.showingFullHelp
-			a.status.ToggleFullHelp()
+			newApp.showingFullHelp = !newApp.showingFullHelp
+			newApp.status.ToggleFullHelp()
 		case "ctrl+m":
-			// Forward OpenDialogMsg to current page to handle
-			if currentPage, ok := a.pages[a.currentPage]; ok {
+			// Forward to current page to handle
+			if currentPage, ok := newApp.pages[newApp.currentPage]; ok {
 				updated, cmd := currentPage.Update(msg)
-				a.pages[a.currentPage] = updated
-				return a, cmd
+				newApp.pages[newApp.currentPage] = updated
+				return newApp, cmd
 			}
 		case "ctrl+p":
-			// Forward OpenDialogMsg to current page to handle
-			if currentPage, ok := a.pages[a.currentPage]; ok {
+			// Forward to current page to handle
+			if currentPage, ok := newApp.pages[newApp.currentPage]; ok {
 				updated, cmd := currentPage.Update(msg)
-				a.pages[a.currentPage] = updated
-				return a, cmd
+				newApp.pages[newApp.currentPage] = updated
+				return newApp, cmd
 			}
 		case "esc":
 			// Go back to previous page
-			if len(a.pageStack) > 0 {
-				lastIdx := len(a.pageStack) - 1
-				a.currentPage = a.pageStack[lastIdx]
-				a.pageStack = a.pageStack[:lastIdx]
-				return a, a.initPage(a.currentPage)
+			if len(newApp.pageStack) > 0 {
+				lastIdx := len(newApp.pageStack) - 1
+				newApp.currentPage = newApp.pageStack[lastIdx]
+				newApp.pageStack = newApp.pageStack[:lastIdx]
+				return newApp, newApp.initPage(newApp.currentPage)
 			}
 		}
 
 	case page.PageChangeMsg:
-		if _, ok := a.pages[msg.ID]; ok {
-			if a.currentPage != "" {
-				a.pageStack = append(a.pageStack, a.currentPage)
+		if _, ok := newApp.pages[msg.ID]; ok {
+			// Cancel old page lifecycle if exists
+			if newApp.currentPage != "" {
+				newApp.lifecycleMgr.CancelContext(string(newApp.currentPage))
+				newApp.pageStack = append(newApp.pageStack, newApp.currentPage)
 			}
-			a.currentPage = msg.ID
-			cmd := a.initPage(msg.ID)
-			return a, cmd
+			// Register new page lifecycle
+			newApp.currentPage = msg.ID
+			newApp.lifecycleMgr.Register(string(msg.ID))
+			cmd := newApp.initPage(msg.ID)
+			return newApp, cmd
 		}
-		return a, nil
+		return newApp, nil
 
 	case page.PageBackMsg:
-		if len(a.pageStack) > 0 {
-			lastIdx := len(a.pageStack) - 1
-			a.currentPage = a.pageStack[lastIdx]
-			a.pageStack = a.pageStack[:lastIdx]
-			return a, a.initPage(a.currentPage)
+		if len(newApp.pageStack) > 0 {
+			// Cancel current page lifecycle
+			if newApp.currentPage != "" {
+				newApp.lifecycleMgr.CancelContext(string(newApp.currentPage))
+			}
+			lastIdx := len(newApp.pageStack) - 1
+			newApp.currentPage = newApp.pageStack[lastIdx]
+			newApp.pageStack = newApp.pageStack[:lastIdx]
+			// Register new page lifecycle
+			newApp.lifecycleMgr.Register(string(newApp.currentPage))
+			return newApp, newApp.initPage(newApp.currentPage)
 		}
-		return a, nil
+		return newApp, nil
 
 	case dialogs.OpenDialogMsg:
-		updatedDialogs, cmd := a.dialogs.Update(msg)
-		a.dialogs = updatedDialogs.(dialogs.DialogCmp)
-		return a, cmd
+		updatedDialogs, cmd := newApp.dialogs.Update(msg)
+		newApp.dialogs = updatedDialogs.(dialogs.DialogCmp)
+		return newApp, cmd
 
 	case dialogs.CloseDialogMsg:
-		updatedDialogs, cmd := a.dialogs.Update(msg)
-		a.dialogs = updatedDialogs.(dialogs.DialogCmp)
-		return a, cmd
+		updatedDialogs, cmd := newApp.dialogs.Update(msg)
+		newApp.dialogs = updatedDialogs.(dialogs.DialogCmp)
+		return newApp, cmd
 
 	case tea.WindowSizeMsg:
-		a.width = msg.Width
-		a.height = msg.Height
+		newApp.width = msg.Width
+		newApp.height = msg.Height
 		// Forward to status and dialogs
-		a.status.Update(msg)
-		a.dialogs.Update(msg)
+		newApp.status.Update(msg)
+		newApp.dialogs.Update(msg)
 
 		// Forward to current page
-		if currentPage, ok := a.pages[a.currentPage]; ok {
+		if currentPage, ok := newApp.pages[newApp.currentPage]; ok {
 			updated, cmd := currentPage.Update(msg)
-			a.pages[a.currentPage] = updated
-			return a, cmd
+			newApp.pages[newApp.currentPage] = updated
+			return newApp, cmd
 		}
 	}
 
 	// Forward to current page
-	if currentPage, ok := a.pages[a.currentPage]; ok {
+	if currentPage, ok := newApp.pages[newApp.currentPage]; ok {
 		updated, cmd := currentPage.Update(msg)
-		a.pages[a.currentPage] = updated
+		newApp.pages[newApp.currentPage] = updated
 
 		// Also forward to status and dialogs
-		_, statusCmd := a.status.Update(msg)
+		_, statusCmd := newApp.status.Update(msg)
 		if statusCmd != nil {
-			return a, tea.Batch(cmd, statusCmd)
+			return newApp, tea.Batch(cmd, statusCmd)
 		}
 
-		return a, cmd
+		return newApp, cmd
 	}
 
 	// Forward to status
-	_, cmd := a.status.Update(msg)
-	return a, cmd
+	_, cmd := newApp.status.Update(msg)
+	return newApp, cmd
 }
 
 func (a AppModel) View() string {
@@ -237,3 +257,14 @@ func (a AppModel) Status() status.StatusCmp {
 func (a AppModel) Dialogs() dialogs.DialogCmp {
 	return a.dialogs
 }
+
+// GetPageContext returns the lifecycle context for a page.
+func (a AppModel) GetPageContext(pageID page.PageID) (context.Context, bool) {
+	return a.lifecycleMgr.GetContext(string(pageID))
+}
+
+// CancelPageContext cancels the lifecycle context for a page.
+func (a AppModel) CancelPageContext(pageID page.PageID) {
+	a.lifecycleMgr.CancelContext(string(pageID))
+}
+

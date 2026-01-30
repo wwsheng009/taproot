@@ -57,50 +57,53 @@ func (d dialogCmp) Init() tea.Cmd {
 
 // Update handles dialog lifecycle and forwards messages to the active dialog.
 func (d *dialogCmp) Update(msg tea.Msg) (util.Model, tea.Cmd) {
+	newDialogs := *d  // Deep copy
+
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
 		var cmds []tea.Cmd
-		d.width = msg.Width
-		d.height = msg.Height
-		for i := range d.dialogs {
-			u, cmd := d.dialogs[i].Update(msg)
-			d.dialogs[i] = u.(DialogModel)
+		newDialogs.width = msg.Width
+		newDialogs.height = msg.Height
+		for i := range newDialogs.dialogs {
+			u, cmd := newDialogs.dialogs[i].Update(msg)
+			newDialogs.dialogs[i] = u.(DialogModel)
 			cmds = append(cmds, cmd)
 		}
-		return d, tea.Batch(cmds...)
+		return &newDialogs, tea.Batch(cmds...)
 	case OpenDialogMsg:
-		return d.handleOpen(msg)
+		return newDialogs.handleOpen(msg)
 	case CloseDialogMsg:
-		if len(d.dialogs) == 0 {
-			return d, nil
+		if len(newDialogs.dialogs) == 0 {
+			return &newDialogs, nil
 		}
 		// Call Close callback if available
-		if cc, ok := d.dialogs[len(d.dialogs)-1].(CloseCallback); ok {
+		if cc, ok := newDialogs.dialogs[len(newDialogs.dialogs)-1].(CloseCallback); ok {
 			cmd := cc.Close()
 			// Remove the dialog
-			d.pop()
-			return d, cmd
+			newDialogs.pop()
+			return &newDialogs, cmd
 		}
-		d.pop()
-		return d, nil
+		newDialogs.pop()
+		return &newDialogs, nil
 	}
 
 	// Forward messages to the active dialog
-	if len(d.dialogs) > 0 {
-		activeIdx := len(d.dialogs) - 1
-		updated, cmd := d.dialogs[activeIdx].Update(msg)
-		d.dialogs[activeIdx] = updated.(DialogModel)
-		return d, cmd
+	if len(newDialogs.dialogs) > 0 {
+		activeIdx := len(newDialogs.dialogs) - 1
+		updated, cmd := newDialogs.dialogs[activeIdx].Update(msg)
+		newDialogs.dialogs[activeIdx] = updated.(DialogModel)
+		return &newDialogs, cmd
 	}
 
-	return d, nil
+	return &newDialogs, nil
 }
 
 func (d *dialogCmp) handleOpen(msg OpenDialogMsg) (util.Model, tea.Cmd) {
 	dialog := msg.Model
-	d.dialogs = append(d.dialogs, dialog)
-	d.idMap[dialog.ID()] = len(d.dialogs) - 1
-	return d, nil
+	newDialogs := *d  // Deep copy
+	newDialogs.dialogs = append(newDialogs.dialogs, dialog)
+	newDialogs.idMap[dialog.ID()] = len(newDialogs.dialogs) - 1
+	return &newDialogs, nil
 }
 
 func (d *dialogCmp) pop() {

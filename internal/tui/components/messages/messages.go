@@ -48,28 +48,36 @@ func New() *MessagesModel {
 }
 
 // SetWidth sets the width for rendering
-func (m *MessagesModel) SetWidth(w int) {
-	m.width = w
+func (m *MessagesModel) SetWidth(w int) *MessagesModel {
+	newModel := *m  // Deep copy
+	newModel.width = w
+	return &newModel
 }
 
 // SetHeight sets the height for rendering
-func (m *MessagesModel) SetHeight(h int) {
-	m.height = h
+func (m *MessagesModel) SetHeight(h int) *MessagesModel {
+	newModel := *m  // Deep copy
+	newModel.height = h
+	return &newModel
 }
 
-// AddMessage appends a new message
-func (m *MessagesModel) AddMessage(msg Message) tea.Cmd {
-	m.messages = append(m.messages, msg)
-	return m.scrollToBottom()
+// AddMessage appends a new message and returns new model
+func (m *MessagesModel) AddMessage(msg Message) *MessagesModel {
+	newModel := *m  // Deep copy
+	newModel.messages = append(newModel.messages, msg)
+	newModel.scrollToBottom()
+	return &newModel
 }
 
-// Clear removes all messages
-func (m *MessagesModel) Clear() {
-	m.messages = []Message{}
-	m.scroll = 0
+// Clear removes all messages and returns new model
+func (m *MessagesModel) Clear() *MessagesModel {
+	newModel := *m  // Deep copy
+	newModel.messages = []Message{}
+	newModel.scroll = 0
+	return &newModel
 }
 
-func (m *MessagesModel) scrollToBottom() tea.Cmd {
+func (m *MessagesModel) scrollToBottom() {
 	// Calculate total content height
 	totalHeight := 0
 	for _, msg := range m.messages {
@@ -80,8 +88,6 @@ func (m *MessagesModel) scrollToBottom() tea.Cmd {
 	if totalHeight > m.height {
 		m.scroll = totalHeight - m.height
 	}
-
-	return nil
 }
 
 func (m *MessagesModel) Init() tea.Cmd {
@@ -89,34 +95,35 @@ func (m *MessagesModel) Init() tea.Cmd {
 }
 
 func (m *MessagesModel) Update(msg tea.Msg) (util.Model, tea.Cmd) {
+	newModel := *m  // Deep copy
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
 		case "up", "k":
-			if m.scroll > 0 {
-				m.scroll--
+			if newModel.scroll > 0 {
+				newModel.scroll--
 			}
 		case "down", "j":
-			maxScroll := m.maxScroll()
-			if m.scroll < maxScroll {
-				m.scroll++
+			maxScroll := newModel.maxScroll()
+			if newModel.scroll < maxScroll {
+				newModel.scroll++
 			}
 		case "home", "g":
-			m.scroll = 0
+			newModel.scroll = 0
 		case "end", "G":
-			m.scroll = m.maxScroll()
+			newModel.scroll = newModel.maxScroll()
 		}
 	case tea.WindowSizeMsg:
-		m.width = msg.Width
-		m.height = msg.Height
+		newModel.width = msg.Width
+		newModel.height = msg.Height
 		// Ensure scroll is within bounds
-		maxScroll := m.maxScroll()
-		if m.scroll > maxScroll {
-			m.scroll = maxScroll
+		maxScroll := newModel.maxScroll()
+		if newModel.scroll > maxScroll {
+			newModel.scroll = maxScroll
 		}
 	}
 
-	return m, nil
+	return &newModel, nil
 }
 
 func (m *MessagesModel) maxScroll() int {
@@ -298,10 +305,9 @@ func (m *MessagesModel) Size() (int, int) {
 	return m.width, m.height
 }
 
-// ScrollToBottom returns a command that scrolls to the bottom
-func (m *MessagesModel) ScrollToBottom() tea.Cmd {
-	return func() tea.Msg {
-		m.scrollToBottom()
-		return nil
-	}
+// ScrollToBottom returns a new model scrolled to the bottom
+func (m *MessagesModel) ScrollToBottom() *MessagesModel {
+	newModel := *m
+	newModel.scrollToBottom()
+	return &newModel
 }

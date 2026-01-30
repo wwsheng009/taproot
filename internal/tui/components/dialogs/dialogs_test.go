@@ -7,109 +7,209 @@ import (
 	"github.com/wwsheng009/taproot/internal/tui/util"
 )
 
-// mockDialogModel implements DialogModel for testing
-type mockDialogModel struct {
-	id      DialogID
-	initCnt int
-	updateCnt int
-	viewCnt  int
+// MockDialog is a simple dialog for testing
+type MockDialog struct {
+	id     DialogID
+	closed bool
 }
 
-func (m *mockDialogModel) Init() tea.Cmd {
-	m.initCnt++
+func (m *MockDialog) Init() tea.Cmd {
 	return nil
 }
 
-func (m *mockDialogModel) Update(msg tea.Msg) (util.Model, tea.Cmd) {
-	m.updateCnt++
+func (m *MockDialog) Update(msg tea.Msg) (util.Model, tea.Cmd) {
 	return m, nil
 }
 
-func (m *mockDialogModel) View() string {
-	m.viewCnt++
+func (m *MockDialog) View() string {
 	return "mock dialog"
 }
 
-func (m *mockDialogModel) Position() (int, int) {
+func (m *MockDialog) Position() (int, int) {
 	return 0, 0
 }
 
-func (m *mockDialogModel) ID() DialogID {
+func (m *MockDialog) ID() DialogID {
 	return m.id
 }
 
-func TestOpenDialogMsg(t *testing.T) {
-	t.Run("OpenDialogMsg contains model", func(t *testing.T) {
-		mock := &mockDialogModel{id: "test"}
-		msg := OpenDialogMsg{Model: mock}
+func TestDialogCmpImmutability(t *testing.T) {
+	d := NewDialogCmp()
 
-		if msg.Model == nil {
-			t.Error("OpenDialogMsg.Model should not be nil")
-		}
-		if msg.Model.ID() != "test" {
-			t.Errorf("OpenDialogMsg.Model.ID() = %s, want 'test'", msg.Model.ID())
-		}
-	})
+	// Store original dialog count
+	originalCount := len(d.Dialogs())
+
+	// Add a dialog
+	mockDialog := &MockDialog{id: "test1"}
+	openMsg := OpenDialogMsg{Model: mockDialog}
+	updatedModel, _ := d.Update(openMsg)
+
+	// Convert back to DialogCmp interface
+	updated, ok := updatedModel.(DialogCmp)
+	if !ok {
+		t.Fatal("Updated model is not DialogCmp")
+	}
+
+	// Original should be unchanged
+	if len(d.Dialogs()) != originalCount {
+		t.Errorf("Original dialog count was modified. Expected %d, got %d",
+			originalCount, len(d.Dialogs()))
+	}
+
+	// Updated should have dialog
+	if len(updated.Dialogs()) != originalCount+1 {
+		t.Errorf("Updated dialog count incorrect. Expected %d, got %d",
+			originalCount+1, len(updated.Dialogs()))
+	}
 }
 
-func TestCloseDialogMsg(t *testing.T) {
-	t.Run("CloseDialogMsg is a valid message type", func(t *testing.T) {
-		msg := CloseDialogMsg{}
-		// Just verify it can be created and passed as tea.Msg
-		var _ tea.Msg = msg
-	})
+func TestDialogCmpOpenDialog(t *testing.T) {
+	d := NewDialogCmp()
+
+	mockDialog := &MockDialog{id: "test1"}
+	openMsg := OpenDialogMsg{Model: mockDialog}
+
+	// Open dialog
+	updatedModel, _ := d.Update(openMsg)
+
+	// Convert back to DialogCmp interface
+	updated, ok := updatedModel.(DialogCmp)
+	if !ok {
+		t.Fatal("Updated model is not DialogCmp")
+	}
+
+	// Check dialog was added
+	dialogs := updated.Dialogs()
+	if len(dialogs) != 1 {
+		t.Errorf("Expected 1 dialog, got %d", len(dialogs))
+	}
+
+	// Check active dialog
+	activeID := updated.ActiveDialogID()
+	if activeID != "test1" {
+		t.Errorf("Expected active dialog ID 'test1', got '%s'", activeID)
+	}
 }
 
-func TestDialogID(t *testing.T) {
-	t.Run("DialogID can be created and compared", func(t *testing.T) {
-		id1 := DialogID("dialog1")
-		id2 := DialogID("dialog1")
-		id3 := DialogID("dialog2")
+func TestDialogCmpCloseDialog(t *testing.T) {
+	d := NewDialogCmp()
 
-		if id1 != id2 {
-			t.Error("DialogID 'dialog1' should equal 'dialog1'")
-		}
-		if id1 == id3 {
-			t.Error("DialogID 'dialog1' should not equal 'dialog2'")
-		}
-	})
+	// Open dialog
+	mockDialog := &MockDialog{id: "test1"}
+	openMsg := OpenDialogMsg{Model: mockDialog}
+	dUpdated, _ := d.Update(openMsg)
+
+	// Convert back to DialogCmp
+	d, _ = dUpdated.(DialogCmp)
+
+	// Store count
+	countBefore := len(d.Dialogs())
+
+	// Close dialog
+	updatedModel, _ := d.Update(CloseDialogMsg{})
+
+	// Convert back to DialogCmp
+	updated, _ := updatedModel.(DialogCmp)
+
+	// Check dialog was removed
+	if len(updated.Dialogs()) != countBefore-1 {
+		t.Errorf("Expected %d dialogs, got %d", countBefore-1, len(updated.Dialogs()))
+	}
+
+	// Original should be unchanged
+	if len(d.Dialogs()) != countBefore {
+		t.Errorf("Original dialog count was modified")
+	}
 }
 
-func TestDialogModelInterface(t *testing.T) {
-	t.Run("DialogModel interface is satisfied", func(t *testing.T) {
-		var _ DialogModel = &mockDialogModel{}
-		mock := &mockDialogModel{id: "test"}
+func TestDialogCmpMultipleDialogs(t *testing.T) {
+	d := NewDialogCmp()
 
-		// Test Init
-		mock.Init()
-		if mock.initCnt != 1 {
-			t.Errorf("Init() called count = %d, want 1", mock.initCnt)
-		}
+	// Open multiple dialogs
+	var model util.Model
+	model, _ = d.Update(OpenDialogMsg{Model: &MockDialog{id: "dialog1"}})
+	d, _ = model.(DialogCmp)
 
-		// Test Update
-		mock.Update(tea.KeyMsg{})
-		if mock.updateCnt != 1 {
-			t.Errorf("Update() called count = %d, want 1", mock.updateCnt)
-		}
+	model, _ = d.Update(OpenDialogMsg{Model: &MockDialog{id: "dialog2"}})
+	d, _ = model.(DialogCmp)
 
-		// Test View
-		view := mock.View()
-		if mock.viewCnt != 1 {
-			t.Errorf("View() called count = %d, want 1", mock.viewCnt)
-		}
-		if view != "mock dialog" {
-			t.Errorf("View() = %s, want 'mock dialog'", view)
-		}
+	model, _ = d.Update(OpenDialogMsg{Model: &MockDialog{id: "dialog3"}})
+	d, _ = model.(DialogCmp)
 
-		// Test ID
-		if mock.ID() != "test" {
-			t.Errorf("ID() = %s, want 'test'", mock.ID())
-		}
+	// Check count
+	if len(d.Dialogs()) != 3 {
+		t.Errorf("Expected 3 dialogs, got %d", len(d.Dialogs()))
+	}
 
-		// Test Position
-		x, y := mock.Position()
-		if x != 0 || y != 0 {
-			t.Errorf("Position() = (%d, %d), want (0, 0)", x, y)
-		}
-	})
+	// Check active dialog (should be the last one)
+	activeID := d.ActiveDialogID()
+	if activeID != "dialog3" {
+		t.Errorf("Expected active dialog 'dialog3', got '%s'", activeID)
+	}
+
+	// Close should remove last dialog
+	updatedModel, _ := d.Update(CloseDialogMsg{})
+	updated, _ := updatedModel.(DialogCmp)
+	if len(updated.Dialogs()) != 2 {
+		t.Errorf("Expected 2 dialogs after close, got %d", len(updated.Dialogs()))
+	}
+
+	activeID = updated.ActiveDialogID()
+	if activeID != "dialog2" {
+		t.Errorf("Expected active dialog 'dialog2', got '%s'", activeID)
+	}
+}
+
+func TestDialogCmpCloseAllDialogs(t *testing.T) {
+	d := NewDialogCmp()
+
+	// Open multiple dialogs
+	var model util.Model
+	model, _ = d.Update(OpenDialogMsg{Model: &MockDialog{id: "dialog1"}})
+	d, _ = model.(DialogCmp)
+
+	model, _ = d.Update(OpenDialogMsg{Model: &MockDialog{id: "dialog2"}})
+	d, _ = model.(DialogCmp)
+
+	model, _ = d.Update(OpenDialogMsg{Model: &MockDialog{id: "dialog3"}})
+	d, _ = model.(DialogCmp)
+
+	// Store original
+	original := d
+
+	// Close all
+	updatedModel, _ := d.Update(CloseDialogMsg{})
+	updated, _ := updatedModel.(DialogCmp)
+	updatedModel, _ = updated.Update(CloseDialogMsg{})
+	updated, _ = updatedModel.(DialogCmp)
+	updatedModel, _ = updated.Update(CloseDialogMsg{})
+	updated, _ = updatedModel.(DialogCmp)
+
+	// Check no dialogs
+	if len(updated.Dialogs()) != 0 {
+		t.Errorf("Expected 0 dialogs, got %d", len(updated.Dialogs()))
+	}
+
+	// Original should be unchanged
+	if len(original.Dialogs()) != 3 {
+		t.Errorf("Original dialog count was modified")
+	}
+}
+
+func TestDialogCmpHasDialogs(t *testing.T) {
+	d := NewDialogCmp()
+
+	// Initially no dialogs
+	if d.HasDialogs() {
+		t.Error("Should not have dialogs initially")
+	}
+
+	// Add dialog
+	model, _ := d.Update(OpenDialogMsg{Model: &MockDialog{id: "test1"}})
+	d, _ = model.(DialogCmp)
+
+	// Now should have dialogs
+	if !d.HasDialogs() {
+		t.Error("Should have dialogs after adding")
+	}
 }
