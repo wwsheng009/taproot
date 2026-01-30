@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/yourorg/taproot/internal/ui/components/header"
+	"github.com/wwsheng009/taproot/internal/ui/components/header"
 )
 
 type model struct {
@@ -115,9 +115,8 @@ func (m *model) View() string {
 
 	// Render header
 	b.WriteString(m.header.View())
-	b.WriteString("\n")
 
-	// Render content area
+	// Build content string
 	content := strings.Builder{}
 	content.WriteString(strings.Repeat(" ", 2))
 	content.WriteString("Header Component Demo\n\n")
@@ -178,12 +177,21 @@ func (m *model) View() string {
 		content.WriteString("No\n")
 	}
 
-	// Pad remaining height
-	lines := strings.Split(content.String(), "\n")
-	for i := len(lines); i < m.contentHeight; i++ {
+	contentStr := content.String()
+
+	// Count lines in content (including the newline before it)
+	headerLines := 1 // Header occupies 1 line
+	contentLines := strings.Count(contentStr, "\n") + 1 // +1 for the last line
+
+	// Calculate how many empty lines are needed after content
+	totalContentLines := headerLines + contentLines
+	emptyLinesNeeded := m.contentHeight - totalContentLines
+
+	// Write content followed by empty lines
+	b.WriteString(contentStr)
+	for i := 0; i < emptyLinesNeeded; i++ {
 		b.WriteString("\n")
 	}
-	b.WriteString(content.String())
 
 	return b.String()
 }

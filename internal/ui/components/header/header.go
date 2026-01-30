@@ -128,7 +128,7 @@ func (h *HeaderComponent) View() string {
 	b.WriteString(styles.ApplyBoldForegroundGrad(&s, h.title, s.Secondary, s.Primary))
 	b.WriteString(gap)
 
-	// Calculate progress bar width (25% of available content width)
+	// Calculate available width for content (excluding padding)
 	availableWidth := h.width - leftPadding - rightPadding
 	progressBarWidth := int(float64(availableWidth) * 0.25)
 
@@ -170,7 +170,21 @@ func (h *HeaderComponent) View() string {
 		b.WriteString(details)
 	}
 
-	return s.Base.Padding(0, rightPadding, 0, leftPadding).Render(b.String())
+	// Ensure content fills exactly the available width
+	// This prevents artifact/leftover content on resize
+	content := b.String()
+	currentWidth := lipgloss.Width(content)
+	if currentWidth < availableWidth {
+		content += strings.Repeat(" ", availableWidth-currentWidth)
+	}
+
+	// Wrap with padding and apply explicit width to ensure full coverage
+	style := s.Base.
+		Padding(0, rightPadding, 0, leftPadding).
+		Width(h.width).
+		MaxWidth(h.width)
+
+	return style.Render(content)
 }
 
 // renderDetails renders the details section.
