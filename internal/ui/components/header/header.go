@@ -178,13 +178,8 @@ func (h *HeaderComponent) View() string {
 		content += strings.Repeat(" ", availableWidth-currentWidth)
 	}
 
-	// Wrap with padding and apply explicit width to ensure full coverage
-	style := s.Base.
-		Padding(0, rightPadding, 0, leftPadding).
-		Width(h.width).
-		MaxWidth(h.width)
-
-	return style.Render(content)
+	// Wrap with padding to ensure full coverage without wrapping
+	return s.Base.Padding(0, rightPadding, 0, leftPadding).Render(content)
 }
 
 // renderDetails renders the details section.

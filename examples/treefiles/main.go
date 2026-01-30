@@ -8,7 +8,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/ui/components/treefiles"
+	"github.com/wwsheng009/taproot/internal/ui/components/treefiles"
 )
 
 const (

@@ -6,8 +6,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/tui/components/messages"
-	"github.com/yourorg/taproot/internal/tui/util"
+	"github.com/wwsheng009/taproot/internal/tui/components/messages"
+	"github.com/wwsheng009/taproot/internal/tui/util"
 )
 
 func main() {

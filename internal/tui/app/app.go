@@ -3,10 +3,10 @@ package app
 import (
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/tui/components/core/status"
-	"github.com/yourorg/taproot/internal/tui/components/dialogs"
-	"github.com/yourorg/taproot/internal/tui/page"
-	"github.com/yourorg/taproot/internal/tui/util"
+	"github.com/wwsheng009/taproot/internal/tui/components/core/status"
+	"github.com/wwsheng009/taproot/internal/tui/components/dialogs"
+	"github.com/wwsheng009/taproot/internal/tui/page"
+	"github.com/wwsheng009/taproot/internal/tui/util"
 )
 
 // AppModel represents the main application model that manages pages and dialogs.

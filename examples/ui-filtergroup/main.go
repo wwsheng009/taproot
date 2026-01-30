@@ -7,8 +7,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/ui/list"
-	"github.com/yourorg/taproot/internal/ui/styles"
+	"github.com/wwsheng009/taproot/internal/ui/list"
+	"github.com/wwsheng009/taproot/internal/ui/styles"
 )
 
 // InteractiveFilterGroupModel demonstrates filter and group with Bubbletea

@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/yourorg/taproot/internal/ui/render"
+	"github.com/wwsheng009/taproot/internal/ui/render"
 )
 
 // DualEngineModel demonstrates the same model working with both engines

@@ -2,7 +2,7 @@ package dialogs
 
 import (
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/yourorg/taproot/internal/tui/util"
+	"github.com/wwsheng009/taproot/internal/tui/util"
 )
 
 type DialogID string

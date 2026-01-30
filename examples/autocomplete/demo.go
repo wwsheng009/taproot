@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/yourorg/taproot/internal/ui/completions"
-	"github.com/yourorg/taproot/internal/ui/render"
+	"github.com/wwsheng009/taproot/internal/ui/completions"
+	"github.com/wwsheng009/taproot/internal/ui/render"
 )
 
 // AutoCompleteModel demonstrates auto-completion with different providers

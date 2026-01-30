@@ -4,7 +4,7 @@ import (
 	"testing"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/yourorg/taproot/internal/tui/util"
+	"github.com/wwsheng009/taproot/internal/tui/util"
 )
 
 // mockDialogModel implements DialogModel for testing

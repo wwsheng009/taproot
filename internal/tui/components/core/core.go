@@ -7,7 +7,7 @@ import (
 	"github.com/charmbracelet/bubbles/key"
 	"github.com/charmbracelet/lipgloss"
 	"github.com/charmbracelet/x/ansi"
-	"github.com/yourorg/taproot/internal/ui/styles"
+	"github.com/wwsheng009/taproot/internal/ui/styles"
 )
 
 type KeyMapHelp interface {

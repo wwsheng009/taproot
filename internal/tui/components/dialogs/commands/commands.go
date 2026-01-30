@@ -7,10 +7,10 @@ import (
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/yourorg/taproot/internal/tui/components/completions"
-	"github.com/yourorg/taproot/internal/tui/components/dialogs"
-	"github.com/yourorg/taproot/internal/ui/styles"
-	"github.com/yourorg/taproot/internal/tui/util"
+	"github.com/wwsheng009/taproot/internal/tui/components/completions"
+	"github.com/wwsheng009/taproot/internal/tui/components/dialogs"
+	"github.com/wwsheng009/taproot/internal/tui/util"
+	"github.com/wwsheng009/taproot/internal/ui/styles"
 )
 
 const (
