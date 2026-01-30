@@ -4,7 +4,7 @@
 
 Taproot is a TUI (Terminal User Interface) framework for Go built on top of [Bubbletea](https://github.com/charmbracelet/bubbletea). It provides reusable interfaces, components, and utilities extracted from the Crush CLI project for building terminal applications.
 
-**Module**: `github.com/yourorg/taproot`
+**Module**: `github.com/wwsheng009/taproot`
 **Go Version**: 1.24.2
 
 ## Project Structure
@@ -456,7 +456,7 @@ The v2.0.0 release adds engine-agnostic UI components for dual-engine support (B
 ### Using v2.0.0 Components
 
 ```go
-import "github.com/yourorg/taproot/internal/ui/list"
+import "github.com/wwsheng009/taproot/internal/ui/list"
 
 // Create items
 items := []list.FilterableItem{
@@ -522,7 +522,7 @@ action := keyMap.MatchAction("k")  // Returns ActionMoveUp
 ### Using Dialog Components
 
 ```go
-import "github.com/yourorg/taproot/internal/ui/dialog"
+import "github.com/wwsheng009/taproot/internal/ui/dialog"
 
 // Info dialog
 info := dialog.NewInfoDialog("Success", "Operation completed successfully!")
