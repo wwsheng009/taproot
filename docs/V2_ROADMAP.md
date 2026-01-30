@@ -60,8 +60,8 @@ E:/projects/ai/crush/internal/ui/common/elements.go
 package main
 
 import (
-    "github.com/yourorg/taproot/internal/ui"
-    "github.com/yourorg/taproot/internal/ui/list"
+    "github.com/wwsheng009/taproot/internal/ui"
+    "github.com/wwsheng009/taproot/internal/ui/list"
     uv "github.com/charmbracelet/ultraviolet"
 )
 

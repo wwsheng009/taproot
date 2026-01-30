@@ -259,7 +259,7 @@ package main
 
 import (
     tea "github.com/charmbracelet/bubbletea"
-    "github.com/yourorg/taproot/internal/tui/..."
+    "github.com/wwsheng009/taproot/internal/tui/..."
 )
 
 func main() {

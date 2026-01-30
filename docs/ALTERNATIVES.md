@@ -473,10 +473,10 @@ jobs:
 ### 选项 B: 模块化发布
 
 ```
-github.com/yourorg/taproot
-github.com/yourorg/taproot/dialogs
-github.com/yourorg/taproot/list
-github.com/yourorg/taproot/diffview
+github.com/wwsheng009/taproot
+github.com/wwsheng009/taproot/dialogs
+github.com/wwsheng009/taproot/list
+github.com/wwsheng009/taproot/diffview
 ```
 
 **优点**:

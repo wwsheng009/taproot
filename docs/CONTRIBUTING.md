@@ -34,7 +34,7 @@ Be respectful, inclusive, and collaborative. We aim to maintain a welcoming envi
    ```
 3. Add upstream remote:
    ```bash
-   git remote add upstream https://github.com/yourorg/taproot.git
+   git remote add upstream https://github.com/wwsheng009/taproot.git
    ```
 4. Install dependencies:
    ```bash

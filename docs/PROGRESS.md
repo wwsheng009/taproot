@@ -196,11 +196,11 @@ Taproot 是从 Crush CLI 提取的 TUI 框架，提供可复用的终端 UI 组�
 
 ```bash
 $ go test ./...
-?   	github.com/yourorg/taproot/examples/app	[no test files]
-?   	github.com/yourorg/taproot/examples/demo	[no test files]
-?   	github.com/yourorg/taproot/examples/list	[no test files]
-ok  	github.com/yourorg/taproot/internal/layout	(cached)
-?   	github.com/yourorg/taproot/internal/tui/*	[no test files]
+?   	github.com/wwsheng009/taproot/examples/app	[no test files]
+?   	github.com/wwsheng009/taproot/examples/demo	[no test files]
+?   	github.com/wwsheng009/taproot/examples/list	[no test files]
+ok  	github.com/wwsheng009/taproot/internal/layout	(cached)
+?   	github.com/wwsheng009/taproot/internal/tui/*	[no test files]
 ```
 
 ✅ 所有包编译通过
@@ -217,8 +217,8 @@ package main
 
 import (
     tea "github.com/charmbracelet/bubbletea"
-    "github.com/yourorg/taproot/internal/tui/app"
-    "github.com/yourorg/taproot/internal/tui/page"
+    "github.com/wwsheng009/taproot/internal/tui/app"
+    "github.com/wwsheng009/taproot/internal/tui/page"
 )
 
 func main() {
