@@ -128,28 +128,22 @@ func (h *HeaderComponent) View() string {
 	b.WriteString(styles.ApplyBoldForegroundGrad(&s, h.title, s.Secondary, s.Primary))
 	b.WriteString(gap)
 
-	// Render details first so we can calculate fixed separator width
-	details := h.renderDetails(h.width) // full width available for details calculation
+	// Calculate fixed progress bar width (40% of total width, excluding padding)
+	progressBarWidth := int(float64(h.width-leftPadding-rightPadding) * 0.4)
 
-	// Calculate separator space (remaining width after brand/title and details)
-	brandWidth := lipgloss.Width(b.String())
-	detailsWidth := lipgloss.Width(details)
-	separatorWidth := h.width - leftPadding - rightPadding - brandWidth - detailsWidth
-
-	if separatorWidth > 0 && separatorWidth > minDiags {
-		// Calculate number of diags based on percentage
-		var diagsCount int
+	if progressBarWidth > minDiags {
+		// Calculate percentage based ONLY on token usage
+		percentage := 0.0
 		if h.tokenMax > 0 {
-			percentage := float64(h.tokenUsed) / float64(h.tokenMax)
-			// Scale from minDiags to separatorWidth based on percentage
-			diagsCount = minDiags + int(float64(separatorWidth-minDiags)*percentage)
-		} else {
-			diagsCount = minDiags
+			percentage = float64(h.tokenUsed) / float64(h.tokenMax)
 		}
 
-		// Render separator with padding to keep content position fixed
+		// Calculate number of diags based purely on token percentage
+		diagsCount := minDiags + int(float64(progressBarWidth-minDiags)*percentage)
+
+		// Render progress bar with padding
 		diagsStr := strings.Repeat(diag, diagsCount)
-		paddingCount := separatorWidth - diagsCount
+		paddingCount := progressBarWidth - diagsCount
 		if paddingCount > 0 {
 			diagsStr += strings.Repeat(" ", paddingCount)
 		}
@@ -158,6 +152,8 @@ func (h *HeaderComponent) View() string {
 		b.WriteString(gap)
 	}
 
+	// Render details (can be truncated if space is tight)
+	details := h.renderDetails(h.width - leftPadding - rightPadding - lipgloss.Width(b.String()) - minDiags)
 	b.WriteString(details)
 
 	return s.Base.Padding(0, rightPadding, 0, leftPadding).Render(b.String())
