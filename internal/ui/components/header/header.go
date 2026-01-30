@@ -128,33 +128,46 @@ func (h *HeaderComponent) View() string {
 	b.WriteString(styles.ApplyBoldForegroundGrad(&s, h.title, s.Secondary, s.Primary))
 	b.WriteString(gap)
 
-	// Calculate fixed progress bar width (40% of total width, excluding padding)
-	progressBarWidth := int(float64(h.width-leftPadding-rightPadding) * 0.4)
+	// Calculate progress bar width (25% of available content width), only if there's token usage
+	availableWidth := h.width - leftPadding - rightPadding
+	progressBarWidth := int(float64(availableWidth) * 0.25)
 
-	if progressBarWidth > minDiags {
+	// Only render progress bar if there's actual token usage to show
+	if progressBarWidth > minDiags && h.tokenUsed > 0 && h.tokenMax > 0 {
 		// Calculate percentage based ONLY on token usage
-		percentage := 0.0
-		if h.tokenMax > 0 {
-			percentage = float64(h.tokenUsed) / float64(h.tokenMax)
-		}
+		percentage := float64(h.tokenUsed) / float64(h.tokenMax)
 
 		// Calculate number of diags based purely on token percentage
 		diagsCount := minDiags + int(float64(progressBarWidth-minDiags)*percentage)
 
-		// Render progress bar with padding
-		diagsStr := strings.Repeat(diag, diagsCount)
-		paddingCount := progressBarWidth - diagsCount
-		if paddingCount > 0 {
-			diagsStr += strings.Repeat(" ", paddingCount)
-		}
+		// Only render if there are visible diags beyond the minimum
+		if diagsCount > minDiags {
+			// Render progress bar with padding
+			diagsStr := strings.Repeat(diag, diagsCount)
+			paddingCount := progressBarWidth - diagsCount
+			if paddingCount > 0 {
+				diagsStr += strings.Repeat(" ", paddingCount)
+			}
 
-		b.WriteString(s.Base.Foreground(s.Primary).Render(diagsStr))
-		b.WriteString(gap)
+			b.WriteString(s.Base.Foreground(s.Primary).Render(diagsStr))
+			b.WriteString(gap)
+		}
 	}
 
-	// Render details (can be truncated if space is tight)
-	details := h.renderDetails(h.width - leftPadding - rightPadding - lipgloss.Width(b.String()) - minDiags)
-	b.WriteString(details)
+	// Calculate remaining width for details
+	usedWidth := lipgloss.Width(b.String())
+	detailsAvailWidth := availableWidth - usedWidth
+
+	// Render details and pad to fill remaining width
+	if detailsAvailWidth > minDiags {
+		details := h.renderDetails(detailsAvailWidth)
+		detailsWidth := lipgloss.Width(details)
+		if detailsWidth < detailsAvailWidth {
+			// Pad with space to fill remaining width
+			details += strings.Repeat(" ", detailsAvailWidth-detailsWidth)
+		}
+		b.WriteString(details)
+	}
 
 	return s.Base.Padding(0, rightPadding, 0, leftPadding).Render(b.String())
 }
