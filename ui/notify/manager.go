@@ -167,7 +167,8 @@ func (m *Manager) renderNotification(n Notification) string {
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(color).
 		Padding(0, 1).
-		Width(30) // Fixed width for toasts
+		Width(30).
+		MarginBottom(1) // Add margin to prevent overlap
 
 	// Title
 	title := titleStyle.Render(n.Title)
