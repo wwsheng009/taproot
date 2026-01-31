@@ -1,10 +1,36 @@
-# Taproot
+<p align="center">
+  <pre>
+  ██████╗██╗   ██╗███████╗██████╗     ███████╗██████╗ ██████╗██████╗ ███████╗
+  ██╔════╝██║   ██║██╔════╝██╔══██╗    ██╔════╝██╔══╝██╔════╝██╔══██╗██╔════╝
+  █████╗  ██║   ██║█████╗  ██████╔╝ █████╗    █████╗  ██║  █████╗  ██████╔╝███████╗
+  ██╔══╝  ██║   ██║██╔══╝  ██╔══██╗    ██╔══╝  ██║  ██╔══╝ ██╔═══╝ ██╔════╝
+  ██║     ╚██████╔╝██║     ███████║    ███████╗███████╗╚██████║██║     ╚███████╗
+  ╚═╝      ╚═════╝ ╚═╝     ╚═════╝     ╚═════╝╚═════╝ ╚═════╝ ╚═╝     ╚══════╝
+  </pre>
+</p>
 
-> A composable TUI (Terminal User Interface) framework for Go, built on top of [Bubbletea](https://github.com/charmbracelet/bubbletea).
+<h1 align="center">Taproot</h1>
 
-[![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://go.dev/)
-[![License](https://img.shields.io/badge/License-MIT-FF6C6C?style=flat)](LICENSE)
-[![Go Report Card](https://goreportcard.com/badge/github.com/wwsheng009/taproot)](https://goreportcard.com/report/github.com/wwsheng009/taproot)
+<p align="center">
+  <em>A composable TUI (Terminal User Interface) framework for Go, built on top of <a href="https://github.com/charmbracelet/bubbletea">Bubbletea</a>.</em>
+</p>
+
+<p align="center">
+  <a href="https://github.com/wwsheng009/taproot/actions/workflows/ci.yml">
+    <img src="https://github.com/wwsheng009/taproot/actions/workflows/ci.yml/badge.svg" alt="CI" />
+  </a>
+  <a href="https://goreportcard.com/report/github.com/wwsheng009/taproot">
+    <img src="https://goreportcard.com/badge/github.com/wwsheng009/taproot" alt="Go Report Card" />
+  </a>
+  <a href="https://github.com/wwsheng009/taproot/blob/main/LICENSE">
+    <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" />
+  </a>
+  <a href="https://github.com/wwsheng009/taproot/releases">
+    <img src="https://img.shields.io/badge/v1.0.0-green.svg" alt="Version: 1.0.0" />
+  </a>
+</p>
+
+---
 
 Taproot provides reusable, composable components and utilities for building terminal applications in Go. Extracted from production use, it offers a solid foundation for TUI development without the boilerplate.
 
