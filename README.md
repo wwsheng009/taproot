@@ -1,5 +1,15 @@
 <p align="center">
-  <b>TAPROOT</b> — A composable TUI (Terminal User Interface) framework for Go
+  <pre>
+     taproot
+        │
+        ├─┬─┐
+        │ │ │
+        │ │ └── view
+        │ └──── model
+        └────── runtime
+  </pre>
+
+  <b>A composable TUI (Terminal User Interface) framework for Go</b>
 
   <em>Built on top of <a href="https://github.com/charmbracelet/bubbletea">Bubbletea</a></em>
 </p>
