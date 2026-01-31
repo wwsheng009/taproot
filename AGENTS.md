@@ -11,44 +11,66 @@ Taproot is a TUI (Terminal User Interface) framework for Go built on top of [Bub
 
 ```
 taproot/
-├── internal/
-│   ├── layout/           # Core TUI component interfaces
-│   │   ├── layout.go     # Focusable, Sizeable, Positional, Help interfaces
-│   │   └── layout_test.go
-│   ├── ui/
-│   │   ├── styles/       # Theme system with gradient support
-│   │   │   ├── styles.go     # Theme manager, color blending, gradients
-│   │   │   ├── markdown.go   # Markdown rendering with glamour
-│   │   │   ├── chroma.go     # Chroma syntax highlighting theme
-│   │   │   ├── palette.go    # Charmtone color palette constants
-│   │   │   └── icons.go      # Icon definitions
-│   │   ├── list/         # Engine-agnostic list components (v2.0)
-│   │   │   ├── types.go      # Core interfaces (Item, Filterable, Selectable, etc.)
-│   │   │   ├── item.go       # Basic item implementations
-│   │   │   ├── list.go       # Base list with key bindings
-│   │   │   ├── viewport.go   # Virtualized scroll management
-│   │   │   ├── filter.go     # Filtering with match highlighting
-│   │   │   ├── selection.go  # Selection state management
-│   │   │   ├── group.go      # Grouped/expanding list support
-│   │   │   └── list_test.go  # Tests
-│   │   └── render/       # Rendering engine abstraction (v2.0)
-│   │       ├── types.go      # Model, Msg, Cmd interfaces
-│   │       ├── engine.go     # Engine registry and factory
-│   │       ├── direct.go     # DirectEngine for testing
-│   │       └── render_test.go # Tests
-│   └── tui/              # Extracted TUI framework from Crush
-│       ├── keys.go       # Global key bindings
-│       ├── util/         # TUI utilities (Model, InfoMsg, Cursor, etc.)
-│       │   └── util.go
-│       ├── highlight/    # Syntax highlighting support
-│       │   └── highlight.go  # Syntax highlight function using chroma
-│       ├── anim/         # Animated spinner component
-│       │   └── anim.go
-│       └── components/
-│           └── core/     # Core UI components
-│               ├── core.go       # Section, Title, Status, Button helpers
-│               └── status/       # Status bar component
-│                   └── status.go
+├── layout/           # Core TUI component interfaces
+│   ├── layout.go     # Focusable, Sizeable, Positional, Help interfaces
+│   └── layout_test.go
+├── ui/
+│   ├── styles/       # Theme system with gradient support
+│   │   ├── styles.go     # Theme manager, color blending, gradients
+│   │   ├── markdown.go   # Markdown rendering with glamour
+│   │   ├── chroma.go     # Chroma syntax highlighting theme
+│   │   ├── palette.go    # Charmtone color palette constants
+│   │   └── icons.go      # Icon definitions
+│   ├── list/         # Engine-agnostic list components (v2.0)
+│   │   ├── types.go      # Core interfaces (Item, Filterable, Selectable, etc.)
+│   │   ├── item.go       # Basic item implementations
+│   │   ├── list.go       # Base list with key bindings
+│   │   ├── viewport.go   # Virtualized scroll management
+│   │   ├── filter.go     # Filtering with match highlighting
+│   │   ├── selection.go  # Selection state management
+│   │   ├── group.go      # Grouped/expanding list support
+│   │   └── list_test.go  # Tests
+│   ├── render/       # Rendering engine abstraction (v2.0)
+│   │   ├── types.go      # Model, Msg, Cmd interfaces
+│   │   ├── engine.go     # Engine registry and factory
+│   │   ├── direct.go     # DirectEngine for testing
+│   │   └── render_test.go # Tests
+│   └── components/   # UI components
+│       ├── basic/       # Basic widgets (button, label, text)
+│       ├── files/       # File list with filtering
+│       ├── header/      # Header component
+│       ├── messages/    # Chat messages display
+│       ├── progress/    # Progress bars and spinners
+│       ├── sidebar/     # Sidebar navigation
+│       ├── status/      # Status indicators
+│       └── tasks/       # Task list component
+├── tui/              # TUI framework
+│   ├── keys.go       # Global key bindings
+│   ├── util/         # TUI utilities (Model, InfoMsg, Cursor, etc.)
+│   │   └── util.go
+│   ├── highlight/    # Syntax highlighting support
+│   │   └── highlight.go  # Syntax highlight function using chroma
+│   ├── anim/         # Animated spinner component
+│   │   └── anim.go
+│   ├── components/   # Framework-level components
+│   │   ├── core/       # Core UI components
+│   │   │   ├── core.go       # Section, Title, Status, Button helpers
+│   │   │   └── status/       # Status bar component
+│   │   │       └── status.go
+│   │   ├── completions/ # Auto-completion system
+│   │   ├── dialogs/     # Dialog system (commands, file picker, etc.)
+│   │   ├── logo/        # Logo component
+│   │   ├── messages/    # Message components
+│   │   └── image/       # Image rendering
+│   ├── exp/          # Experimental components
+│   │   ├── diffview/    # Diff viewer
+│   │   └── list/        # Experimental list implementations
+│   ├── app/          # Application framework
+│   │   └── app.go
+│   ├── lifecycle/    # Lifecycle management
+│   │   └── lifecycle.go
+│   └── page/         # Page management
+│       └── page.go
 ├── examples/             # Example applications demonstrating usage
 │   ├── demo/            # Basic counter demo
 │   └── list/            # Selectable list example
@@ -83,8 +105,8 @@ go test ./...
 go test -cover ./...
 
 # Run tests in specific package
-go test ./internal/layout/
-go test ./internal/tui/...
+go test ./layout/
+go test ./tui/util/
 
 # Run tests with verbose output
 go test -v ./...

@@ -29,11 +29,11 @@ package main
 
 import (
     tea "github.com/charmbracelet/bubbletea"
-    "github.com/wwsheng009/taproot/internal/tui/app"
-    "github.com/wwsheng009/taproot/internal/tui/components/dialogs"
-    "github.com/wwsheng009/taproot/internal/tui/components/dialogs/commands"
-    "github.com/wwsheng009/taproot/internal/tui/page"
-    "github.com/wwsheng009/taproot/internal/tui/util"
+    "github.com/wwsheng009/taproot/tui/app"
+    "github.com/wwsheng009/taproot/tui/components/dialogs"
+    "github.com/wwsheng009/taproot/tui/components/dialogs/commands"
+    "github.com/wwsheng009/taproot/tui/page"
+    "github.com/wwsheng009/taproot/tui/util"
 )
 
 func main() {
@@ -83,16 +83,16 @@ func (h HomePage) View() string { return "Hello, Taproot!" }
 ## 🎨 Themes
 
 ```go
-import "github.com/wwsheng009/taproot/internal/ui/styles"
+import "github.com/wwsheng009/taproot/ui/styles"
 
-// Get current theme
-t := styles.CurrentTheme()
+// Get default theme
+s := styles.DefaultStyles()
 
 // Use theme colors
-text := t.S().Base.Foreground(t.Primary).Render("Hello")
+text := s.Base.Foreground(s.Primary).Render("Hello")
 
 // Apply gradients
-gradient := styles.ApplyForegroundGrad("Gradient Text", t.Primary, t.Secondary)
+gradient := styles.ApplyForegroundGrad(&s, "Gradient Text", s.Primary, s.Secondary)
 ```
 
 ## 📚 Examples
@@ -163,8 +163,8 @@ go test ./...
 go test -cover ./...
 
 # Run specific package tests
-go test ./internal/layout/
-go test ./internal/tui/util/
+go test ./layout/
+go test ./tui/util/
 ```
 
 ## 🛠️ Development
@@ -179,20 +179,23 @@ go test ./internal/tui/util/
 
 ```
 taproot/
-├── internal/
-│   ├── layout/          # Core interfaces
-│   ├── ui/
-│   │   ├── styles/     # Theme system
-│   ├── tui/
-│   │   ├── app/        # Application framework
-│   │   ├── page/       # Page system
-│   │   ├── anim/       # Animations
-│   │   ├── util/       # Utilities
-│   │   ├── components/ # UI components
-│   │   └── exp/        # Experimental components
-│   └── ...
-├── examples/            # Example programs
-├── docs/               # Documentation
+├── layout/          # Core interfaces (Focusable, Sizeable, etc.)
+├── ui/              # UI components and theming
+│   ├── styles/     # Theme system with gradients
+│   ├── list/       # Virtualized list components
+│   ├── dialog/     # Dialog system
+│   ├── layout/     # Layout utilities
+│   ├── render/     # Rendering engine abstraction
+│   └── components/ # UI components (files, messages, etc.)
+├── tui/             # Framework-level components
+│   ├── app/        # Application framework
+│   ├── page/       # Page management
+│   ├── anim/       # Animations
+│   ├── util/       # Utilities
+│   ├── components/ # High-level components
+│   └── exp/        # Experimental features
+├── examples/        # Example programs
+├── docs/           # Documentation
 └── go.mod
 ```
 
@@ -223,7 +226,7 @@ Phase 4: ████████████████████ 100% ✅ D
 Phase 5: ██████████░░░░░░░░░░  60% ✅ Advanced Components
 ```
 
-**Current Version**: 0.9.0
+**Current Version**: 1.0.0
 
 **Components**: 38 core components, 15 examples
 
