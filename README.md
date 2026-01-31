@@ -4,6 +4,7 @@
 
 [![Go Version](https://img.shields.io/badge/Go-1.24+-00ADD8?style=flat&logo=go)](https://go.dev/)
 [![License](https://img.shields.io/badge/License-MIT-FF6C6C?style=flat)](LICENSE)
+[![Go Report Card](https://goreportcard.com/badge/github.com/wwsheng009/taproot)](https://goreportcard.com/report/github.com/wwsheng009/taproot)
 
 Taproot provides reusable, composable components and utilities for building terminal applications in Go. Extracted from production use, it offers a solid foundation for TUI development without the boilerplate.
 
