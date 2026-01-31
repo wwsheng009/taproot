@@ -1,18 +1,7 @@
 <p align="center">
-  <pre>
-  ██████╗██╗   ██╗███████╗██████╗     ███████╗██████╗ ██████╗██████╗ ███████╗
-  ██╔════╝██║   ██║██╔════╝██╔══██╗    ██╔════╝██╔══╝██╔════╝██╔══██╗██╔════╝
-  █████╗  ██║   ██║█████╗  ██████╔╝ █████╗    █████╗  ██║  █████╗  ██████╔╝███████╗
-  ██╔══╝  ██║   ██║██╔══╝  ██╔══██╗    ██╔══╝  ██║  ██╔══╝ ██╔═══╝ ██╔════╝
-  ██║     ╚██████╔╝██║     ███████║    ███████╗███████╗╚██████║██║     ╚███████╗
-  ╚═╝      ╚═════╝ ╚═╝     ╚═════╝     ╚═════╝╚═════╝ ╚═════╝ ╚═╝     ╚══════╝
-  </pre>
-</p>
+  <b>TAPROOT</b> — A composable TUI (Terminal User Interface) framework for Go
 
-<h1 align="center">Taproot</h1>
-
-<p align="center">
-  <em>A composable TUI (Terminal User Interface) framework for Go, built on top of <a href="https://github.com/charmbracelet/bubbletea">Bubbletea</a>.</em>
+  <em>Built on top of <a href="https://github.com/charmbracelet/bubbletea">Bubbletea</a></em>
 </p>
 
 <p align="center">
