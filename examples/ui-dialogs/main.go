@@ -7,8 +7,8 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/wwsheng009/taproot/internal/ui/dialog"
-	"github.com/wwsheng009/taproot/internal/ui/styles"
+	"github.com/wwsheng009/taproot/ui/dialog"
+	"github.com/wwsheng009/taproot/ui/styles"
 )
 
 // DialogsModel demonstrates all dialog types

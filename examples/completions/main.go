@@ -6,7 +6,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/wwsheng009/taproot/internal/tui/components/completions"
+	"github.com/wwsheng009/taproot/tui/components/completions"
 )
 
 // Model holds the application state

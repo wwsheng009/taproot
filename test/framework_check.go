@@ -4,12 +4,12 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/wwsheng009/taproot/internal/tui/app"
-	"github.com/wwsheng009/taproot/internal/tui/components/dialogs"
-	"github.com/wwsheng009/taproot/internal/tui/page"
-	"github.com/wwsheng009/taproot/internal/tui/util"
-	"github.com/wwsheng009/taproot/internal/tui/components/logo"
-	"github.com/wwsheng009/taproot/internal/ui/styles"
+	"github.com/wwsheng009/taproot/tui/app"
+	"github.com/wwsheng009/taproot/tui/components/dialogs"
+	"github.com/wwsheng009/taproot/tui/page"
+	"github.com/wwsheng009/taproot/tui/util"
+	"github.com/wwsheng009/taproot/tui/components/logo"
+	"github.com/wwsheng009/taproot/ui/styles"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 )

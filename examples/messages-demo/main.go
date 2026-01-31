@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/wwsheng009/taproot/internal/ui/components/messages"
+	"github.com/wwsheng009/taproot/ui/components/messages"
 )
 
 func main() {

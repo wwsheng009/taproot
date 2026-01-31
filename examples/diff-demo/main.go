@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/wwsheng009/taproot/internal/tui/exp/diffview"
+	"github.com/wwsheng009/taproot/tui/exp/diffview"
 )
 
 func main() {

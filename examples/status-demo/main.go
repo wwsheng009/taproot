@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/wwsheng009/taproot/internal/ui/components/status"
-	"github.com/wwsheng009/taproot/internal/ui/styles"
+	"github.com/wwsheng009/taproot/ui/components/status"
+	"github.com/wwsheng009/taproot/ui/styles"
 )
 
 type model struct {

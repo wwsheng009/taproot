@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/wwsheng009/taproot/internal/ui/render"
+	"github.com/wwsheng009/taproot/ui/render"
 )
 
 // UVCounterModel demonstrates the Ultraviolet engine with a simple counter

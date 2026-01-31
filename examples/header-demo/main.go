@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/wwsheng009/taproot/internal/ui/components/header"
+	"github.com/wwsheng009/taproot/ui/components/header"
 )
 
 type model struct {

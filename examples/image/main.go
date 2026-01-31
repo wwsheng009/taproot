@@ -7,7 +7,7 @@ import (
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	"github.com/wwsheng009/taproot/internal/tui/components/image"
+	"github.com/wwsheng009/taproot/tui/components/image"
 )
 
 func main() {

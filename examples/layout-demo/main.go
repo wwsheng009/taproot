@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
-	"github.com/wwsheng009/taproot/internal/ui/layout"
-	"github.com/wwsheng009/taproot/internal/ui/render"
+	"github.com/wwsheng009/taproot/ui/layout"
+	"github.com/wwsheng009/taproot/ui/render"
 )
 
 // Styles

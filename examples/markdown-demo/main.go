@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/wwsheng009/taproot/internal/ui/styles"
+	"github.com/wwsheng009/taproot/ui/styles"
 )
 
 func main() {

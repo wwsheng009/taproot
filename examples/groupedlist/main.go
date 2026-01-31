@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	tea "github.com/charmbracelet/bubbletea"
-	"github.com/wwsheng009/taproot/internal/tui/exp/list"
+	"github.com/wwsheng009/taproot/tui/exp/list"
 )
 
 // Model holds the application state
