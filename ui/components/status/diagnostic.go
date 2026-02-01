@@ -87,10 +87,10 @@ func (d *DiagnosticStatusCmp) renderCompact(sty styles.Styles) string {
 	}
 
 	// Render info count (only if no errors/warnings)
-	if d.summary.Error == 0 && d.summary.Warning == 0 && d.summary.Info > 0 {
+	if d.summary.Error == 0 && d.summary.Warning == 0 && d.summary.Information > 0 {
 		result += sty.LSP.InfoDiagnostic.Foreground(sty.Info).
 			Render(string(styles.InfoIcon) + " ")
-		result += sty.LSP.InfoDiagnostic.Render(fmt.Sprintf("%d", d.summary.Info))
+		result += sty.LSP.InfoDiagnostic.Render(fmt.Sprintf("%d", d.summary.Information))
 	}
 
 	if d.maxWidth > 0 && lipgloss.Width(result) > d.maxWidth {
@@ -113,7 +113,7 @@ func (d *DiagnosticStatusCmp) renderExpanded(sty styles.Styles) string {
 	// Render each severity type
 	hasErrors := d.summary.Error > 0
 	hasWarnings := d.summary.Warning > 0
-	hasInfo := d.summary.Info > 0
+	hasInfo := d.summary.Information > 0
 	hasHints := d.showHints && d.summary.Hint > 0
 
 	if hasErrors {
@@ -137,7 +137,7 @@ func (d *DiagnosticStatusCmp) renderExpanded(sty styles.Styles) string {
 		}
 		result += sty.LSP.InfoDiagnostic.Foreground(sty.Info).
 			Render(string(styles.InfoIcon)) + " "
-		result += sty.LSP.InfoDiagnostic.Render(fmt.Sprintf("%d", d.summary.Info))
+		result += sty.LSP.InfoDiagnostic.Render(fmt.Sprintf("%d", d.summary.Information))
 	}
 
 	if hasHints {
@@ -276,7 +276,7 @@ func (d *DiagnosticStatusCmp) WarningCount() int {
 
 // InfoCount returns the number of info diagnostics.
 func (d *DiagnosticStatusCmp) InfoCount() int {
-	return d.summary.Info
+	return d.summary.Information
 }
 
 // HintCount returns the number of hints.

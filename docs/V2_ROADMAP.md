@@ -240,12 +240,42 @@ E:/projects/ai/crush/internal/ui/chat/sidebar/ (参考)
 **目标**: LSP 和 MCP 状态显示
 
 **任务**:
-- [ ] 创建 `internal/ui/components/status/`
-- [ ] 迁移 `internal/tui/components/lsp/`
-- [ ] 迁移 `internal/tui/components/mcp/`
-- [ ] 诊断计数显示
-- [ ] 工具数量显示
-- [ ] 状态图标
+- [x] 创建 `ui/components/status/` ✅
+- [x] 核心类型定义 (types.go) ✅
+  - [x] State 枚举 (Disabled, Starting, Ready, Error)
+  - [x] DiagnosticCounts 结构
+  - [x] ToolCounts 结构
+  - [x] LSPService 和 MCPService 结构
+  - [x] Service 接口定义
+- [x] 单服务状态组件 (service.go) ✅
+  - [x] ServiceCmp 实现单个服务状态显示
+  - [x] 状态图标 (●, ×, ○, ⟳)
+  - [x] 错误计数显示
+  - [x] 紧凑模式支持
+- [x] 诊断状态组件 (diagnostic.go) ✅
+  - [x] DiagnosticStatusCmp 显示诊断汇总
+  - [x] 紧凑/展开两种模式
+  - [x] 错误/警告/信息/提示图标显示
+- [x] LSP 列表组件 (lsp.go) ✅
+  - [x] LSPList 显示多个 LSP 服务
+  - [x] 诊断计数显示 (× error, ⚠ warning, ∵ hint)
+  - [x] 截断支持 (…and X more)
+  - [x] OnlineCount, TotalErrors, TotalWarnings 统计
+- [x] MCP 列表组件 (mcp.go) ✅
+  - [x] MCPList 显示多个 MCP 服务
+  - [x] 工具/提示计数显示 (X tools, Y prompts)
+  - [x] 截断支持
+  - [x] ConnectedCount, TotalTools, TotalPrompts 统计
+- [x] 综合测试套件 ✅
+  - [x] 24+ 测试函数
+  - [x] 状态枚举、诊断计数、工具计数测试
+  - [x] ServiceCmp, DiagnosticStatusCmp 测试
+  - [x] LSPList, MCPList 测试
+  - [x] 向后兼容性测试
+- [x] 交互式演示 (examples/status-list-demo) ✅
+  - [x] 添加/清除 LSP/MCP 服务
+  - [x] 切换标题、调整宽度、最大项数
+  - [x] 实时状态更新
 
 **源文件**:
 ```
@@ -281,15 +311,15 @@ E:/projects/ai/crush/internal/tui/exp/diffview/style.go
 **目标**: 创建解耦的消息渲染系统
 
 **任务**:
-- [ ] 创建 `internal/ui/components/messages/`
-- [ ] 迁移 `internal/ui/chat/` 组件
-  - [ ] messages.go - 基础消息
-  - [ ] assistant.go - 助手消息
-  - [ ] user.go - 用户消息
-  - [ ] tools.go - 工具调用
-  - [ ] fetch.go - Agentic fetch
-  - [ ] diagnostics.go - 诊断信息
-  - [ ] todos.go - 任务列表
+- [x] 创建 `ui/components/messages/` ✅
+- [x] 迁移消息组件 ✅
+  - [x] types.go - 基础接口 ✅
+  - [x] assistant.go - 助手消息 ✅
+  - [x] user.go - 用户消息 ✅
+  - [x] tools.go - 工具调用 ✅
+  - [x] fetch.go - Agentic fetch ✅
+  - [x] diagnostics.go - 诊断信息 ✅
+  - [x] todos.go - 任务列表 ✅
 - [ ] 解耦 message.Message 依赖
   - [ ] 定义通用接口
   - [ ] 适配器模式
@@ -842,7 +872,64 @@ E:/projects/ai/crush/internal/tui/
   - Interactive demo (`examples/sidebar-demo/main.go`, 240 lines)
     - Toggle compact mode, add/remove files, update session, reload data
     - Real-time resize support
-- ✅ Phase 9.3 完成: Header component
+- ✅ Phase 7.3 完成: Status display component
+  - Core types and interfaces (`types.go`)
+    - State enum (Disabled, Starting, Ready, Error)
+    - DiagnosticCounts with Total/HasAny/HasErrors/HasWarnings/HasProblems
+    - ToolCounts with Total/HasAny
+    - LSPService and MCPService structures
+    - Service interface definition
+  - Single service status component (`service.go`, 200+ lines)
+    - ServiceCmp implements render.Model
+    - Status icons (● online, × error, ○ offline, ⟳ starting)
+    - Error count display
+    - Compact mode support
+    - Focus/blur handling
+  - Diagnostic status component (`diagnostic.go`, 285+ lines)
+    - DiagnosticStatusCmp for diagnostic summary display
+    - Compact mode (errors and warnings only)
+    - Expanded mode (all severities with icons)
+    - Error (×), Warning (⚠), Info (ⓘ), Hint (∵) icons
+    - Source-specific diagnostic tracking
+  - LSP list component (`lsp.go`, 280+ lines)
+    - LSPList displays multiple LSP services
+    - Diagnostic counts by severity
+    - Truncation with "…and X more" indicator
+    - OnlineCount, TotalErrors, TotalWarnings, TotalDiagnostics statistics
+    - Configurable width, max items, title display
+  - MCP list component (`mcp.go`, 270+ lines)
+    - MCPList displays multiple MCP services
+    - Tool and prompt counts (singular/plural labels)
+    - Truncation support
+    - ConnectedCount, TotalTools, TotalPrompts statistics
+    - Configurable width, max items, title display
+  - Backward compatibility (service.go)
+    - ServiceStatus alias for State
+    - ServiceStatusOffline, ServiceStatusStarting, etc. constants
+  - Comprehensive test suite (`status_test.go`, 550+ lines)
+    - 24+ test functions
+    - State enum tests (String, Icon)
+    - DiagnosticCounts tests (Total, HasAny, HasErrors, HasWarnings, HasProblems, Add, Clear)
+    - ToolCounts tests
+    - ServiceCmp tests (Init, Update, SetStatus, SetErrorCount, FocusBlur, Compact, MaxWidth)
+    - DiagnosticStatusCmp tests
+    - LSPList tests (AddService, SetServices, ClearServices, TotalErrors, OnlineCount)
+    - MCPList tests (AddService, SetServices, TotalTools, ConnectedCount)
+    - Backward compatibility tests
+  - Interactive demo (`examples/status-list-demo/main.go`, 200+ lines)
+    - Add/clear LSP and MCP services dynamically
+    - Toggle title display, adjust width and max items
+    - Real-time status updates
+    - Keyboard controls:
+      - 1-4: Add various LSP services
+      - 5: Clear LSP services
+      - a/s/e/d: Add MCP services (various states)
+      - c: Clear MCP services
+      - +/-: Adjust max items
+      - w/n: Adjust width
+      - t: Toggle titles
+
+
   - Core types and interfaces (`types.go`, 55 lines)
     - Header interface extending layout.Sizeable
     - SessionInfo, DiagnosticInfo, Config
@@ -860,5 +947,48 @@ E:/projects/ai/crush/internal/tui/
     - Toggle details, add errors, update tokens
     - Change working directory, toggle compact mode
     - Custom brand support, real-time resize
-
+- ✅ Phase 8.1 部分: Message rendering framework
+  - Core interfaces and types (`types.go`)
+    - MessageItem interface for all message components
+    - MessageConfig for rendering options
+    - Identifiable, Expandable interfaces
+  - Assistant message (`assistant.go`, 200+ lines)
+    - Markdown rendering with code highlighting
+    - Token usage display
+    - Expandable content
+    - Configurable max width
+  - User message (`user.go`, 250+ lines)
+    - Plain text rendering
+    - Code block support
+    - File attachments display
+    - Copy mode
+  - Tool message (`tools.go`, 300+ lines)
+    - Tool call details display
+    - Arguments formatting
+    - Result rendering
+    - Error state indication
+  - Fetch message (`fetch.go`, 730+ lines)
+    - Four fetch types: Basic, WebFetch, WebSearch, Agentic
+    - Request and result structures
+    - Nested message support for agentic fetch
+    - Tree-structure rendering (├─, └─, │)
+    - Collapsible/expandable UI
+    - Error handling and loading states
+    - Support for saved files and large content
+  - Diagnostic message (`diagnostics.go`, 200+ lines)
+    - Diagnostic source and severity display
+    - Code snippet with issue highlighting
+    - Expandable details
+    - Multiple diagnostics per message
+  - Todo message (`todos.go`, 450+ lines)
+    - Todo list with status icons (✗ ✓ ⟳)
+    - Progress tracking
+    - Expandable todos
+    - Inactive/active state support
+    - Priority indicators
+  - Comprehensive test suite (`messages_test.go`, 570+ lines)
+    - All message types tested
+    - Interface compliance tests
+    - State management tests
+    - Rendering tests
 

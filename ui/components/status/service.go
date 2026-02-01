@@ -8,6 +8,18 @@ import (
 	"github.com/wwsheng009/taproot/ui/styles"
 )
 
+// Backward compatibility aliases
+type ServiceStatus = State
+
+const (
+	ServiceStatusOffline     = StateDisabled
+	ServiceStatusStarting    = StateStarting
+	ServiceStatusConnecting  = StateStarting
+	ServiceStatusOnline      = StateReady
+	ServiceStatusBusy        = StateStarting
+	ServiceStatusError       = StateError
+)
+
 var _ Service = (*ServiceCmp)(nil)
 
 // ServiceCmp is a component that displays the status of a single service.
@@ -58,27 +70,29 @@ func (s *ServiceCmp) Update(msg any) (render.Model, render.Cmd) {
 // View returns the string representation for rendering.
 // Implements render.Model interface.
 func (s *ServiceCmp) View() string {
+	return s.renderView()
+}
+
+// renderView renders the service status component.
+func (s *ServiceCmp) renderView() string {
 	sty := styles.DefaultStyles()
 
 	var statusIcon string
 	var statusStyle lipgloss.Style
 
 	switch s.status {
-	case ServiceStatusOnline:
+	case StateReady: // ServiceStatusOnline
 		statusIcon = "●"
 		statusStyle = sty.ItemOnlineIcon
-	case ServiceStatusOffline:
+	case StateDisabled: // ServiceStatusOffline
 		statusIcon = "●"
 		statusStyle = sty.ItemOfflineIcon
-	case ServiceStatusBusy:
+	case StateStarting: // ServiceStatusStarting, ServiceStatusConnecting, ServiceStatusBusy
 		statusIcon = "●"
 		statusStyle = sty.ItemBusyIcon
-	case ServiceStatusError:
-		statusIcon = "●"
+	case StateError: // ServiceStatusError
+		statusIcon = "×"
 		statusStyle = sty.ItemErrorIcon
-	case ServiceStatusStarting, ServiceStatusConnecting:
-		statusIcon = "●"
-		statusStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("#FFA500")) // Orange for transient states
 	default:
 		statusIcon = "●"
 		statusStyle = sty.ItemOfflineIcon
@@ -108,9 +122,9 @@ func (s *ServiceCmp) View() string {
 	// Add status label if focused
 	if s.focused {
 		statusColor := lipgloss.Color("#666666")
-		if s.status == ServiceStatusError {
+		if s.status == StateError {
 			statusColor = sty.Error
-		} else if s.status == ServiceStatusOnline {
+		} else if s.status == StateReady {
 			statusColor = sty.GreenLight
 		}
 		statusLabel := lipgloss.NewStyle().Foreground(statusColor).Render(" " + s.status.String())
@@ -151,7 +165,7 @@ func (s *ServiceCmp) SetStatus(status ServiceStatus) {
 // IsOnline returns whether the service is online.
 // Implements Service interface.
 func (s *ServiceCmp) IsOnline() bool {
-	return s.status == ServiceStatusOnline
+	return s.status == StateReady
 }
 
 // ErrorCount returns the error count.

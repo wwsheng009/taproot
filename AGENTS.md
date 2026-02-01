@@ -37,13 +37,19 @@ taproot/
 │   │   └── render_test.go # Tests
 │   └── components/   # UI components
 │       ├── basic/       # Basic widgets (button, label, text)
+│       ├── completions/ # Auto-completion system
+│       ├── dialogs/     # Dialog system
 │       ├── files/       # File list with filtering
+│       ├── forms/       # Form components
 │       ├── header/      # Header component
-│       ├── messages/    # Chat messages display
+│       ├── layout/      # Layout system (flex, grid, split)
+│       ├── list/        # Engine-agnostic list components
+│       ├── messages/    # Message components (user, assistant, tool, fetch, diagnostic, todo)
 │       ├── progress/    # Progress bars and spinners
+│       ├── render/      # Rendering engine abstraction
 │       ├── sidebar/     # Sidebar navigation
-│       ├── status/      # Status indicators
-│       └── tasks/       # Task list component
+│       ├── status/      # Status indicators (LSP, MCP, diagnostic)
+│       └── styles/      # Theme system with gradient support
 ├── tui/              # TUI framework
 │   ├── keys.go       # Global key bindings
 │   ├── util/         # TUI utilities (Model, InfoMsg, Cursor, etc.)
@@ -645,6 +651,408 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
         }
     }
     return m, cmd
+}
+```
+
+---
+
+## Message Components (`ui/components/messages/`)
+
+**Core Interfaces** (`types.go`):
+- `MessageItem`: Base interface for all message components (`ID() string`, implements `render.Model`)
+- `Identifiable`: ID-based identification
+- `Expandable`: Expand/collapse support (`Expanded()`, `SetExpanded()`, `ToggleExpanded()`)
+- `MessageConfig`: Rendering options (expanded state, max width, etc.)
+
+**Message Types**:
+
+1. **AssistantMessage** (`assistant.go`, 200+ lines):
+   - Markdown rendering with syntax highlighting
+   - Token usage display (input/output/total)
+   - Expandable content sections
+   - Configurable width and expansion state
+
+2. **UserMessage** (`user.go`, 250+ lines):
+   - Plain text rendering
+   - Code block support with language detection
+   - File attachments display (paths, add/remove counts)
+   - Copy mode toggle
+
+3. **ToolMessage** (`tools.go`, 300+ lines):
+   - Tool call details (type, name)
+   - Arguments formatting and display
+   - Result rendering (truncated for long content)
+   - Error state indication with error codes
+
+4. **FetchMessage** (`fetch.go`, 730+ lines):
+   - Four fetch types: `FetchTypeBasic`, `FetchTypeWebFetch`, `FetchTypeWebSearch`, `FetchTypeAgentic`
+   - **FetchTypeBasic**: Fast fetch for simple URL content retrieval
+   - **FetchTypeWebFetch**: Fetch with URL parameter for webpage analysis
+   - **FetchTypeWebSearch**: Web search with query term extraction
+   - **FetchTypeAgentic**: Multi-step search + fetch with tree-structured nested message rendering
+   - Request and result structures with status tracking
+   - Nested message support for agentic fetch (store []MessageItem)
+   - Tree-structure rendering with visual connectors (├─, └─, │)
+   - Collapsible/expandable UI with auto-collapse nested messages
+   - Error handling with error codes and messages
+   - Loading states and completion status
+   - Support for large content saved to file (SavedPath)
+   - Cache-based rendering optimization
+
+5. **DiagnosticMessage** (`diagnostics.go`, 200+ lines):
+   - Diagnostic source and severity (Error, Warning, Info, Hint)
+   - Code snippet with line/column highlighting
+   - Expandable full message display
+   - Multiple diagnostics per message support
+   - Color-coded severity indicators
+
+6. **TodoMessage** (`todos.go`, 450+ lines):
+   - Todo list with status icons (✗ pending, ✓ completed, ⟳ in-progress)
+   - Progress tracking (active/total counts)
+   - Expandable todo items with descriptions
+   - Inactive/active state support for visibility
+   - Priority indicators
+   - Automatic status validation
+
+**Testing** (`messages_test.go`, 570+ lines):
+- All 6 message types tested with 10+ test cases each
+- Interface compliance tests (Focusable, Identifiable, Expandable)
+- State management tests (expand/collapse, focus)
+- Rendering tests with various configurations
+- Edge case handling (empty content, large content, errors)
+
+### Using Message Components
+
+```go
+import "github.com/wwsheng009/taproot/ui/components/messages"
+
+// Assistant message with markdown
+assistant := messages.NewAssistantMessage(
+    "msg-1",
+    "This is **markdown** with `code` blocks",
+)
+assistant.SetInputTokens(100)
+assistant.SetOutputTokens(200)
+assistant.SetExpanded(true)
+
+// User message with attachments
+user := messages.NewUserMessage(
+    "msg-2",
+    "Here's a code snippet",
+)
+user.AddCodeBlock("go", "func main() { println(\"Hello\") }")
+user.SetFileAttachments([]string{"file1.go", "file2.go"})
+user.SetFilesAdded(2)
+user.SetFilesRemoved(0)
+
+// Tool message
+tool := messages.NewToolMessage(
+    "msg-3",
+    "bash",
+    []string{"run", "build"},
+    `Build started...`,
+)
+tool.SetResult(`Build completed in 1.2s
+Binary: /build/app.exe`)
+
+// Fetch message - Basic fetch (fast fetch for simple URL content)
+basicFetch := messages.NewFetchMessage(
+    "msg-4",
+    messages.FetchTypeBasic,
+    "Fast fetch example",
+)
+basicFetch.SetRequest(&messages.FetchRequest{
+    URL: "https://example.com/data.json",
+})
+basicFetch.SetResult(&messages.FetchResult{
+    Success: true,
+    Content: `{"data": "value"}`,
+})
+
+// Fetch message - WebFetch (fetch with URL parameter)
+webFetch := messages.NewFetchMessage(
+    "msg-5",
+    messages.FetchTypeWebFetch,
+    "Web fetch example",
+)
+webFetch.SetRequest(&messages.FetchRequest{
+    URL: "https://example.com/article",
+    Params: map[string]string{"format": "markdown"},
+})
+webFetch.SetResult(&messages.FetchResult{
+    Success: true,
+    Summary: "Article fetched successfully",
+    Content: "# Article Title\n\nContent here...",
+})
+
+// Fetch message - WebSearch (search with query)
+searchFetch := messages.NewFetchMessage(
+    "msg-6",
+    messages.FetchTypeWebSearch,
+    "Web search example",
+)
+searchFetch.SetRequest(&messages.FetchRequest{
+    Query: "golang tutorial",
+})
+searchFetch.SetResult(&messages.FetchResult{
+    Success: true,
+    Summary: "Found 5 results",
+    Content: "[websearch] 5 results found",
+})
+
+// Fetch message - Agentic (multi-step search + fetch with nested messages)
+agenticFetch := messages.NewFetchMessage(
+    "msg-7",
+    messages.FetchTypeAgentic,
+    "Agentic fetch example",
+)
+agenticFetch.SetRequest(&messages.FetchRequest{
+    Query: "What is Bubbletea?",
+    URL:   "https://charm.sh/blog/bubbletea/",
+})
+
+// Add nested tool messages for agentic fetch
+webSearchMsg := messages.NewToolMessage(
+    "tool-1",
+    "web_search",
+    []string{"Bubbletea TUI framework"},
+    "",
+)
+webSearchMsg.SetResult("[web_search] About Bubbletea...")
+
+webFetchMsg := messages.NewToolMessage(
+    "tool-2",
+    "web_fetch",
+    []string{"https://charm.sh/blog/bubbletea/"},
+    "",
+)
+webFetchMsg.SetResult(`An Elegant Terminal UI Framework for Go...`)
+
+// Add nested messages as MessageItem interface
+agenticFetch.AddNestedMessage(webSearchMsg)
+agenticFetch.AddNestedMessage(webFetchMsg)
+
+agenticFetch.SetResult(&messages.FetchResult{
+    Success: true,
+    Summary: "Bubbletea is a Go framework for building terminal UIs",
+    Content: "Answer based on search and fetch results...",
+})
+
+// Set message as loaded
+agenticFetch.SetLoaded(true)
+
+// Diagnostic message
+diag := messages.NewDiagnosticMessage(
+    "msg-8",
+    "compiler",
+    messages.SeverityError,
+    "invalid syntax",
+    42,
+    5,
+)
+diag.SetMessage("unexpected token in expression")
+diag.SetCode(`func main() {
+    x = 5 +  // error here
+    println(x)
+}`)
+
+// Todo message
+todo := messages.NewTodoMessage(
+    "msg-9",
+    "task-1",
+    "Fix memory leak",
+    messages.StatusPending,
+)
+todo.SetProgress(1, 5)
+todo.SetDescription("Track down the issue in the cache layer")
+
+// Add more todos
+todo.AddTodo("task-2", "Write tests", messages.StatusInProgress)
+todo.AddTodo("task-3", "Update docs", messages.StatusCompleted)
+
+// Set inactive state (hide from UI)
+todo.SetActive(false)
+
+// Using in Update loop
+func (m Model) Update(msg any) (render.Model, render.Cmd) {
+    switch msg := msg.(type) {
+    case render.KeyMsg:
+        // Handle keyboard input for expandable messages
+        if msg.Type == render.KeyEnter {
+            if assistant.Focused() {
+                assistant.ToggleExpanded()
+            }
+        }
+    }
+
+    // Update child components
+    var cmd render.Cmd
+    m.assistant, cmd = m.assistant.Update(msg)
+    return m, cmd
+}
+```
+
+---
+
+## Status Components (`ui/components/status/`)
+
+**Core Types** (`types.go`):
+- `State`: Service connection state enum
+  - `StateDisabled`: Service is disabled or inactive (○)
+  - `StateStarting`: Service is starting up (⟳)
+  - `StateReady`: Service is connected and ready (●)
+  - `StateError`: Service encountered an error (×)
+- `DiagnosticCounts`: Diagnostic summary by severity
+  - Error, Warning, Information, Hint counts
+  - Total(), HasAny(), HasErrors(), HasWarnings(), HasProblems()
+  - Add(severity), Clear()
+- `ToolCounts`: Tool and prompt counts for MCP services
+  - Tools, Prompts counts
+  - Total(), HasAny()
+- `DiagnosticSeverity`: Severity levels (Error, Warning, Info, Hint)
+- `Service`: Interface for service status components
+- `LSPService`/`MCPService`: Service information structures
+
+**Service Components**:
+
+1. **ServiceCmp** (`service.go`, 200+ lines):
+   - Single service status display component
+   - Implements `render.Model` and `Service` interface
+   - Status icons (●, ×, ○, ⟳) with colors
+   - Error count display
+   - Focus/blur support
+   - Compact mode (icon + name only)
+   - Configurable max width
+
+2. **DiagnosticStatusCmp** (`diagnostic.go`, 285+ lines):
+   - Diagnostic summary display component
+   - Compact mode: errors and warnings only
+   - Expanded mode: all severities with icons
+   - Icons: × (error), ⚠ (warning), ⓘ (info), ∵ (hint)
+   - Source-specific diagnostic tracking
+   - Focus/blur, compact mode, show hints toggle
+
+3. **LSPList** (`lsp.go`, 280+ lines):
+   - Multiple LSP services display
+   - Diagnostic counts per service
+   - Truncation with "…and X more" indicator
+   - Statistics: OnlineCount(), TotalErrors(), TotalWarnings(), TotalDiagnostics()
+   - Configurable width, max items, title display
+
+4. **MCPList** (`mcp.go`, 270+ lines):
+   - Multiple MCP services display
+   - Tool and prompt counts (singular/plural labels)
+   - Truncation support
+   - Statistics: ConnectedCount(), TotalTools(), TotalPrompts()
+   - Configurable width, max items, title display
+
+**Backward Compatibility**:
+- `ServiceStatus` is an alias for `State`
+- `ServiceStatusOffline`, `ServiceStatusStarting`, etc. constants map to new states
+
+### Using Status Components
+
+```go
+import "github.com/wwsheng009/taproot/ui/components/status"
+
+// Create a single service status component
+service := status.NewService("gopls", "Go LSP")
+service.SetStatus(status.StateReady)
+service.SetErrorCount(3)
+service.SetCompact(true)
+view := service.View()
+
+// Create diagnostic status component
+diag := status.NewDiagnosticStatus("workspace")
+diag.AddDiagnostic(status.DiagnosticSeverityError)
+diag.AddDiagnostic(status.DiagnosticSeverityWarning)
+diag.SetCompact(true)
+diagView := diag.View()
+
+// Create LSP list
+lspList := status.NewLSPList()
+lspList.SetWidth(50)
+lspList.SetMaxItems(5)
+lspList.SetShowTitle(true)
+
+// Add LSP services
+lspList.AddService(status.LSPServiceInfo{
+    Name:     "gopls",
+    Language: "go",
+    State:    status.StateReady,
+    Diagnostics: status.DiagnosticSummary{
+        Error:   0,
+        Warning: 2,
+        Hint:    5,
+    },
+})
+lspList.AddService(status.LSPServiceInfo{
+    Name:     "rust-analyzer",
+    Language: "rust",
+    State:    status.StateStarting,
+})
+lspList.AddService(status.LSPServiceInfo{
+    Name:     "clangd",
+    Language: "c++",
+    State:    status.StateError,
+    Error:    "failed to start",
+    Diagnostics: status.DiagnosticSummary{
+        Error: 3,
+    },
+})
+
+// Get statistics
+onlineCount := lspList.OnlineCount()       // Number of ready services
+totalErrors := lspList.TotalErrors()       // Total error count
+totalWarnings := lspList.TotalWarnings()   // Total warning count
+
+// Create MCP list
+mcpList := status.NewMCPList()
+mcpList.SetWidth(50)
+mcpList.SetMaxItems(5)
+
+// Add MCP services
+mcpList.AddService(status.MCPServiceInfo{
+    Name:  "filesystem",
+    State: status.StateReady,
+    ToolCounts: status.ToolCounts{
+        Tools:   5,
+        Prompts: 0,
+    },
+})
+mcpList.AddService(status.MCPServiceInfo{
+    Name:  "git",
+    State: status.StateReady,
+    ToolCounts: status.ToolCounts{
+        Tools:   3,
+        Prompts: 1,
+    },
+})
+mcpList.AddService(status.MCPServiceInfo{
+    Name:  "database",
+    State: status.StateStarting,
+})
+
+// Get statistics
+connectedCount := mcpList.ConnectedCount()  // Number of ready services
+totalTools := mcpList.TotalTools()          // Total tool count
+totalPrompts := mcpList.TotalPrompts()      // Total prompt count
+
+// Using in Update loop
+func (m Model) Update(msg any) (render.Model, render.Cmd) {
+    // Update components
+    m.lspList.Update(msg)
+    m.mcpList.Update(msg)
+    return m, render.None()
+}
+
+// Render view
+func (m Model) View() string {
+    var b strings.Builder
+    b.WriteString(m.lspList.View())
+    b.WriteString("\n\n")
+    b.WriteString(m.mcpList.View())
+    return b.String()
 }
 ```
 

@@ -399,6 +399,171 @@ func TestTodoMessage(t *testing.T) {
 	})
 }
 
+func TestFetchMessage(t *testing.T) {
+	t.Run("NewAndID", func(t *testing.T) {
+		msg := NewFetchMessage("test-id", FetchTypeBasic)
+		if msg.ID() != "test-id" {
+			t.Errorf("Expected ID 'test-id', got '%s'", msg.ID())
+		}
+		if msg.FetchType() != FetchTypeBasic {
+			t.Errorf("Expected FetchTypeBasic, got %v", msg.FetchType())
+		}
+		if msg.Role() != RoleTool {
+			t.Errorf("Expected role RoleTool, got %v", msg.Role())
+		}
+	})
+
+	t.Run("BasicFetch", func(t *testing.T) {
+		msg := NewBasicFetchMessage("test-id", "https://example.com")
+		if msg.Request().URL != "https://example.com" {
+			t.Errorf("Expected URL 'https://example.com', got '%s'", msg.Request().URL)
+		}
+		if msg.FetchType() != FetchTypeBasic {
+			t.Errorf("Expected FetchTypeBasic, got %v", msg.FetchType())
+		}
+		if msg.Format() != "markdown" {
+			t.Errorf("Expected default format 'markdown', got '%s'", msg.Format())
+		}
+	})
+
+	t.Run("WebFetch", func(t *testing.T) {
+		msg := NewWebFetchMessage("test-id", "https://example.com")
+		if msg.FetchType() != FetchTypeWebFetch {
+			t.Errorf("Expected FetchTypeWebFetch, got %v", msg.FetchType())
+		}
+	})
+
+	t.Run("WebSearch", func(t *testing.T) {
+		msg := NewWebSearchMessage("test-id", "golang tutorials")
+		if msg.Request().Query != "golang tutorials" {
+			t.Errorf("Expected query 'golang tutorials', got '%s'", msg.Request().Query)
+		}
+		if msg.FetchType() != FetchTypeWebSearch {
+			t.Errorf("Expected FetchTypeWebSearch, got %v", msg.FetchType())
+		}
+	})
+
+	t.Run("AgenticFetch", func(t *testing.T) {
+		msg := NewAgenticFetchMessage("test-id", "Find documentation")
+		if msg.Prompt() != "Find documentation" {
+			t.Errorf("Expected prompt 'Find documentation', got '%s'", msg.Prompt())
+		}
+		if msg.FetchType() != FetchTypeAgentic {
+			t.Errorf("Expected FetchTypeAgentic, got %v", msg.FetchType())
+		}
+	})
+
+	t.Run("Setters", func(t *testing.T) {
+		msg := NewFetchMessage("test-id", FetchTypeBasic)
+
+		msg.SetURL("https://test.com")
+		if msg.Request().URL != "https://test.com" {
+			t.Errorf("Expected URL 'https://test.com', got '%s'", msg.Request().URL)
+		}
+
+		msg.SetFormat("text")
+		if msg.Format() != "text" {
+			t.Errorf("Expected format 'text', got '%s'", msg.Format())
+		}
+
+		timeout := 30 * time.Second
+		msg.SetTimeout(timeout)
+		if msg.Timeout() != timeout {
+			t.Errorf("Expected timeout %v, got %v", timeout, msg.Timeout())
+		}
+	})
+
+	t.Run("LoadingState", func(t *testing.T) {
+		msg := NewFetchMessage("test-id", FetchTypeBasic)
+		if msg.Loading() {
+			t.Error("Message should not be loading initially")
+		}
+
+		msg.SetLoading(true)
+		if !msg.Loading() {
+			t.Error("Message should be loading after SetLoading(true)")
+		}
+
+		msg.SetResult(&FetchResult{
+			Content:  "Test content",
+			Duration: 100 * time.Millisecond,
+		})
+		if msg.Loading() {
+			t.Error("Message should not be loading after result is set")
+		}
+	})
+
+	t.Run("Result", func(t *testing.T) {
+		msg := NewFetchMessage("test-id", FetchTypeBasic)
+
+		result := &FetchResult{
+			Content:   "Fetched content",
+			Error:     "",
+			Size:      100,
+			Duration:  250 * time.Millisecond,
+		}
+
+		msg.SetResult(result)
+		if msg.Result() == nil {
+			t.Error("Result should not be nil after SetResult")
+		}
+
+		if msg.Result().Content != "Fetched content" {
+			t.Errorf("Expected content 'Fetched content', got '%s'", msg.Result().Content)
+		}
+	})
+
+	t.Run("ErrorResult", func(t *testing.T) {
+		msg := NewFetchMessage("test-id", FetchTypeBasic)
+
+		result := &FetchResult{
+			Error: "Connection timeout",
+			Size:  0,
+		}
+
+		msg.SetResult(result)
+		if msg.Result().Error != "Connection timeout" {
+			t.Errorf("Expected error 'Connection timeout', got '%s'", msg.Result().Error)
+		}
+	})
+
+	t.Run("NestedMessagesForAgenticFetch", func(t *testing.T) {
+		msg := NewAgenticFetchMessage("test-id", "Test")
+		nested := NewWebFetchMessage("nested-1", "https://example.com")
+
+		msg.AddNested(nested)
+		if len(msg.Nested()) != 1 {
+			t.Errorf("Expected 1 nested message, got %d", len(msg.Nested()))
+		}
+
+		msg.SetNested([]MessageItem{
+			NewWebFetchMessage("nested-2", "https://test2.com"),
+		})
+		if len(msg.Nested()) != 1 {
+			t.Errorf("Expected 1 nested message after SetNested, got %d", len(msg.Nested()))
+		}
+	})
+
+	t.Run("Expansion", func(t *testing.T) {
+		msg := NewFetchMessage("test-id", FetchTypeBasic)
+		msg.SetResult(&FetchResult{Content: "Test"})
+
+		if msg.Expanded() {
+			t.Error("Message should not be expanded initially")
+		}
+
+		msg.ToggleExpanded()
+		if !msg.Expanded() {
+			t.Error("Message should be expanded after ToggleExpanded()")
+		}
+
+		msg.SetExpanded(false)
+		if msg.Expanded() {
+			t.Error("Message should be collapsed after SetExpanded(false)")
+		}
+	})
+}
+
 func TestMessageInterfaces(t *testing.T) {
 	t.Run("AllMessagesImplementModel", func(t *testing.T) {
 		messages := []struct {
@@ -411,6 +576,7 @@ func TestMessageInterfaces(t *testing.T) {
 			{"ToolMessage", NewToolMessage("t1", "tool"), "t1"},
 			{"DiagnosticMessage", NewDiagnosticMessage("d1", "test"), "d1"},
 			{"TodoMessage", NewTodoMessage("todo1", "test"), "todo1"},
+			{"FetchMessage", NewFetchMessage("f1", FetchTypeBasic), "f1"},
 		}
 
 		for _, tc := range messages {
@@ -434,6 +600,7 @@ func TestMessageInterfaces(t *testing.T) {
 			NewToolMessage("t1", "tool"),
 			NewDiagnosticMessage("d1", "test"),
 			NewTodoMessage("todo1", "test"),
+			NewFetchMessage("f1", FetchTypeBasic),
 		}
 
 		for i, msg := range messages {
@@ -456,9 +623,10 @@ func TestMessageInterfaces(t *testing.T) {
 			NewToolMessage("t1", "tool"),
 			NewDiagnosticMessage("d1", "test"),
 			NewTodoMessage("todo1", "test"),
+			NewFetchMessage("f1", FetchTypeBasic),
 		}
 
-		expectedIDs := []string{"u1", "a1", "t1", "d1", "todo1"}
+		expectedIDs := []string{"u1", "a1", "t1", "d1", "todo1", "f1"}
 
 		for i, idable := range idables {
 			if idable.ID() != expectedIDs[i] {
@@ -472,10 +640,11 @@ func TestMessageInterfaces(t *testing.T) {
 			NewToolMessage("t1", "tool"),
 			NewDiagnosticMessage("d1", "test"),
 			NewTodoMessage("todo1", "test"),
+			NewFetchMessage("f1", FetchTypeBasic),
 		}
 
 		for i, exp := range expandables {
-			
+
 			if exp.Expanded() {
 				t.Errorf("Expandable %d should not be expanded initially", i)
 			}
@@ -536,6 +705,21 @@ func TestEnums(t *testing.T) {
 		}
 		if TodoStatusCompleted.String() != "completed" {
 			t.Errorf("TodoStatusCompleted.String() should return 'completed'")
+		}
+	})
+
+	t.Run("FetchType", func(t *testing.T) {
+		if FetchTypeBasic.String() != "fetch" {
+			t.Errorf("FetchTypeBasic.String() should return 'fetch'")
+		}
+		if FetchTypeWebFetch.String() != "web_fetch" {
+			t.Errorf("FetchTypeWebFetch.String() should return 'web_fetch'")
+		}
+		if FetchTypeWebSearch.String() != "web_search" {
+			t.Errorf("FetchTypeWebSearch.String() should return 'web_search'")
+		}
+		if FetchTypeAgentic.String() != "agentic_fetch" {
+			t.Errorf("FetchTypeAgentic.String() should return 'agentic_fetch'")
 		}
 	})
 }
