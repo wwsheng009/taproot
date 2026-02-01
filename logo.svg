@@ -1,0 +1,21 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="200" height="200" fill="#f0f0f0"/>
+
+  <!-- Tree trunk -->
+  <path d="M100 180 Q100 150 90 120 Q80 90 100 50 Q120 90 110 120 Q100 150 100 180" fill="#8B4513"/>
+
+  <!-- Branches -->
+  <path d="M100 50 L70 30 L100 10" fill="#228B22"/>
+  <path d="M100 50 L130 30 L100 10" fill="#228B22"/>
+  <path d="M90 120 L60 100 L90 80" fill="#228B22"/>
+  <path d="M110 120 L140 100 L110 80" fill="#228B22"/>
+
+  <!-- Roots -->
+  <path d="M100 180 L70 200" stroke="#8B4513" stroke-width="5"/>
+  <path d="M100 180 L130 200" stroke="#8B4513" stroke-width="5"/>
+  <path d="M100 180 L100 200" stroke="#8B4513" stroke-width="5"/>
+
+  <!-- Text: Taproot -->
+  <text x="100" y="190" font-family="monospace" font-size="20" fill="#000" text-anchor="middle">Taproot</text>
+</svg>

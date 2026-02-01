@@ -13,3 +13,6 @@ ui-filtergroup.exe
 ui-list.exe
 examples/*/demo.exe
 examples/treefiles/treefiles.exe
+coverage.html
+coverage.out
+.coverage.*
