@@ -611,8 +611,8 @@ func DefaultStyles() Styles {
 		},
 		Task: ansi.StyleTask{
 			StylePrimitive: ansi.StylePrimitive{},
-			Ticked:         "[✓] ",
-			Unticked:       "[ ] ",
+			Ticked:         "☑ ",
+			Unticked:       "☐ ",
 		},
 		Link: ansi.StylePrimitive{
 			Color:     stringPtr(string(Zinc)),
@@ -731,8 +731,14 @@ func DefaultStyles() Styles {
 		},
 		Table: ansi.StyleTable{
 			StyleBlock: ansi.StyleBlock{
-				StylePrimitive: ansi.StylePrimitive{},
+				StylePrimitive: ansi.StylePrimitive{
+					Color: stringPtr(string(Smoke)),
+				},
+				Margin: uintPtr(1),
 			},
+			CenterSeparator: stringPtr("┼"),
+			ColumnSeparator: stringPtr("│"),
+			RowSeparator: stringPtr("─"),
 		},
 		DefinitionDescription: ansi.StylePrimitive{
 			BlockPrefix: "\n ",
@@ -847,8 +853,8 @@ func DefaultStyles() Styles {
 				Color:           plainFg,
 				BackgroundColor: plainBg,
 			},
-			Ticked:   "[✓] ",
-			Unticked: "[ ] ",
+			Ticked:   "☑ ",
+			Unticked: "☐ ",
 		},
 		Link: ansi.StylePrimitive{
 			Underline:       boolPtr(true),
@@ -893,7 +899,11 @@ func DefaultStyles() Styles {
 					Color:           plainFg,
 					BackgroundColor: plainBg,
 				},
+				Margin: uintPtr(1),
 			},
+			CenterSeparator: stringPtr("┼"),
+			ColumnSeparator: stringPtr("│"),
+			RowSeparator: stringPtr("─"),
 		},
 		DefinitionDescription: ansi.StylePrimitive{
 			BlockPrefix:     "\n ",

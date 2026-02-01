@@ -91,21 +91,12 @@ func (dv *DiffView) SetSize(width, height int) {
 
 // SetXOffset sets the horizontal scroll offset
 func (dv *DiffView) SetXOffset(offset int) {
-	dv.xOffset = offset
-	if dv.xOffset < 0 {
-		dv.xOffset = 0
-	}
+	dv.xOffset = max(0, offset)
 }
 
 // SetYOffset sets the vertical scroll offset
 func (dv *DiffView) SetYOffset(offset int) {
-	dv.yOffset = offset
-	if dv.yOffset < 0 {
-		dv.yOffset = 0
-	}
-	if dv.yOffset > dv.totalLines-dv.height {
-		dv.yOffset = max(0, dv.totalLines-dv.height)
-	}
+	dv.yOffset = max(0, min(offset, dv.totalLines-dv.height))
 }
 
 // Compute computes the diff
@@ -246,67 +237,76 @@ func (dv *DiffView) renderSplit() string {
 
 	// Reserve space for line numbers and divider
 	lineNumWidth := 6
-	dividerWidth := 3 // " │ "
-	
+	dividerWidth := 3
+
 	// Calculate available code width for each column
 	availableWidth := totalWidth - lineNumWidth*2 - dividerWidth
 	leftColWidth := availableWidth / 2
 	rightColWidth := availableWidth - leftColWidth
 
-	// Calculate visible range
+	// Calculate visible range (divide by 2 since each diff line takes 2 rows in split view)
 	start := dv.yOffset
-	end := min(start+dv.height, len(dv.lines))
+	visibleLines := dv.height
 
-	// Render each line
-	for i := start; i < end; i++ {
+	// Render each line pair
+	i := start
+	for renderedRows := 0; renderedRows < visibleLines && i < len(dv.lines); i++ {
 		if i >= len(dv.lines) {
 			break
 		}
 
 		line := dv.lines[i]
-		
-		// Split the content into left (before) and right (after) parts
-		leftContent, rightContent := dv.splitLineContent(line)
-		
-		// Build the line
-		var lineBuilder strings.Builder
 
-		// Left side (before)
+		leftContent, rightContent := dv.splitLineContent(line)
+
+		// Get line numbers for both sides
+		leftLineNum := ""
+		rightLineNum := ""
+
 		if dv.lineNumbers {
-			lineNum := "      " // Empty for insertions
 			if line.Type == LineDeleted || line.Type == LineContext {
-				lineNum = fmt.Sprintf("%6d", line.LineNum)
+				leftLineNum = fmt.Sprintf("%5d ", line.LineNum)
+			} else {
+				leftLineNum = "      "
 			}
-			lineBuilder.WriteString(s.Base.Foreground(s.FgMuted).Render(lineNum))
+			if line.Type == LineAdded || line.Type == LineContext {
+				rightLineNum = fmt.Sprintf("%5d ", line.LineNum)
+			} else {
+				rightLineNum = "      "
+			}
 		}
 
 		leftStyle := dv.getStyleForLineType(line.Type)
-		leftContent = leftStyle.Render(leftContent)
-		if lipgloss.Width(leftContent) > leftColWidth {
-			leftContent = lipgloss.NewStyle().MaxWidth(leftColWidth).Render(leftContent)
-		}
-		lineBuilder.WriteString(leftContent + "\n")
-
-		// Right side (after)
-		if dv.lineNumbers {
-			lineNum := "      " // Empty for deletions
-			if line.Type == LineAdded || line.Type == LineContext {
-				lineNum = fmt.Sprintf("%6d", line.LineNum)
-			}
-			lineBuilder.WriteString(s.Base.Foreground(s.FgMuted).Render(lineNum))
-		}
-
 		rightStyle := dv.getStyleForLineType(line.Type)
-		rightContent = rightStyle.Render(rightContent)
-		if lipgloss.Width(rightContent) > rightColWidth {
-			rightContent = lipgloss.NewStyle().MaxWidth(rightColWidth).Render(rightContent)
-		}
-		lineBuilder.WriteString(rightContent + "\n")
 
-		result.WriteString(lineBuilder.String())
+		leftStyled := leftStyle.Render(leftContent)
+		rightStyled := rightStyle.Render(rightContent)
+
+		if lipgloss.Width(leftStyled) > leftColWidth {
+			leftStyled = lipgloss.NewStyle().MaxWidth(leftColWidth).Render(leftStyled)
+		}
+		if lipgloss.Width(rightStyled) > rightColWidth {
+			rightStyled = lipgloss.NewStyle().MaxWidth(rightColWidth).Render(rightStyled)
+		}
+
+		leftPad := strings.Repeat(" ", leftColWidth-lipgloss.Width(leftStyled))
+		rightPad := strings.Repeat(" ", rightColWidth-lipgloss.Width(rightStyled))
+
+		divider := s.Base.Foreground(s.Border).Render(" │ ")
+
+		lineBuilder := strings.Builder{}
+		lineBuilder.WriteString(s.Base.Foreground(s.FgMuted).Render(leftLineNum))
+		lineBuilder.WriteString(leftStyled + leftPad)
+		lineBuilder.WriteString(divider)
+		lineBuilder.WriteString(s.Base.Foreground(s.FgMuted).Render(rightLineNum))
+		lineBuilder.WriteString(rightStyled + rightPad)
+
+		result.WriteString(lineBuilder.String() + "\n")
+		renderedRows++
 	}
 
 	// Footer
+	end:= i
 	footer := s.Base.Foreground(s.FgMuted).
 		Render(fmt.Sprintf("Lines %d-%d of %d | Scroll: ←/→ ↑/↓",
 			start+1, end, dv.totalLines))
@@ -374,7 +374,7 @@ func (dv *DiffView) renderLine(line DiffLine) string {
 	// Build line content
 	var content strings.Builder
 	if dv.lineNumbers && line.Type != LineHeader {
-		content.WriteString(fmt.Sprintf("%4d", line.LineNum))
+		fmt.Fprintf(&content, "%4d", line.LineNum)
 		content.WriteString(" | ")
 	}
 

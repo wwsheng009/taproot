@@ -9,9 +9,10 @@ import (
 
 // Model holds the application state
 type model struct {
-	diffView *diffview.DiffView
-	width    int
-	height   int
+	diffView   *diffview.DiffView
+	width      int
+	height     int
+	layoutMode diffview.Layout
 }
 
 // InitialModel creates the initial model
@@ -73,7 +74,8 @@ func main() {
 	dv.SetLineNumbers(true)
 
 	return model{
-		diffView: dv,
+		diffView:   dv,
+		layoutMode: diffview.LayoutUnified,
 	}
 }
 
@@ -92,6 +94,15 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		switch msg.String() {
 		case "q", "ctrl+c":
 			return m, tea.Quit
+		case "s":
+			// Toggle between unified and split layout
+			if m.layoutMode == diffview.LayoutUnified {
+				m.layoutMode = diffview.LayoutSplit
+				m.diffView.SetLayout(diffview.LayoutSplit)
+			} else {
+				m.layoutMode = diffview.LayoutUnified
+				m.diffView.SetLayout(diffview.LayoutUnified)
+			}
 		case "up", "k":
 			m.diffView.ScrollUp()
 		case "down", "j":
@@ -105,11 +116,11 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		case "G", "end":
 			m.diffView.ScrollToBottom()
 		case "ctrl+u":
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				m.diffView.ScrollUp()
 			}
 		case "ctrl+d":
-			for i := 0; i < 5; i++ {
+			for range 5 {
 				m.diffView.ScrollDown()
 			}
 		}
