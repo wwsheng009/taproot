@@ -22,7 +22,9 @@ func main() {
 	application := app.NewApp()
 	homePage := NewHomePage()
 	application.RegisterPage(pageHome, homePage)
-	application.SetPage(pageHome)
+	if newApp := application.SetPage(pageHome); newApp != nil {
+		application = *newApp
+	}
 
 	p := tea.NewProgram(application, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {

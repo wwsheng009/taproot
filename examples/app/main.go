@@ -31,7 +31,9 @@ func main() {
 	application.RegisterPage(pageAbout, aboutPage)
 
 	// Set initial page
-	application.SetPage(pageHome)
+	if newApp := application.SetPage(pageHome); newApp != nil {
+		application = *newApp
+	}
 
 	// Run the application
 	p := tea.NewProgram(application, tea.WithAltScreen())
