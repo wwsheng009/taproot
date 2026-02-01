@@ -592,6 +592,64 @@ overlay.Pop()
 
 ---
 
+## Form Components (`ui/forms/`)
+
+**Core Interfaces** (`types.go`):
+- `Input`: Interface for all form inputs (`Value()`, `SetValue()`, `Focus()`, `Validate()`)
+
+**Container** (`form.go`):
+- `Form`: Manages a collection of inputs
+- `NewForm(inputs ...Input)`: Create a new form
+- Handles focus traversal (Tab/Shift+Tab) automatically
+- Delegated event handling to child components
+
+**Input Components**:
+- `TextInput`: Single-line text input with validation and masking
+- `TextArea`: Multi-line text area with word wrap
+- `Select`: Dropdown selection
+- `Checkbox`: Boolean toggle
+- `RadioGroup`: Single selection from options
+
+### Using Forms
+
+```go
+import "github.com/wwsheng009/taproot/ui/forms"
+
+// Create inputs
+nameInput := forms.NewTextInput("Name", "Enter your name")
+nameInput.SetRequired(true)
+
+emailInput := forms.NewTextInput("Email", "Enter email")
+emailInput.SetValidation(func(s string) error {
+    if !strings.Contains(s, "@") {
+        return errors.New("invalid email")
+    }
+    return nil
+})
+
+// Create form
+form := forms.NewForm(nameInput, emailInput)
+
+// In your Update loop
+func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    // Form handles navigation and input updates
+    newForm, cmd := m.form.Update(msg)
+    m.form = newForm.(*forms.Form)
+    
+    // Check for submission
+    if key, ok := msg.(tea.KeyMsg); ok && key.Type == tea.KeyEnter {
+        // Check if form handles Enter (e.g. multiline), otherwise submit
+        if m.form.Validate() == nil {
+             // Process form data
+             name := nameInput.Value()
+        }
+    }
+    return m, cmd
+}
+```
+
+---
+
 ## Related Projects
 
 This framework is extracted from the Crush CLI tool (E:/projects/ai/crush), which contains extensive TUI implementations including:

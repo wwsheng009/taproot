@@ -10,164 +10,147 @@ import (
 )
 
 type model struct {
-	email    *forms.TextInput
-	password *forms.TextInput
-	age      *forms.NumberInput
-	bio      *forms.TextArea
-	focus    int // 0: email, 1: password, 2: age, 3: bio
+	form *forms.Form
 }
 
 func initialModel() model {
+	// 1. Email
 	email := forms.NewTextInput("Enter email")
 	email.SetShowBorder(true)
 	email.AddValidator(forms.Email)
 	email.AddValidator(forms.Required)
-	email.Focus()
 
+	// 2. Password
 	password := forms.NewTextInput("Enter password")
 	password.SetShowBorder(true)
 	password.SetHidden(true)
 	password.AddValidator(forms.Required)
 	password.AddValidator(forms.MinLength(8))
 
+	// 3. Role (Select)
+	role := forms.NewSelect("Role", []string{"Developer", "Designer", "Product Manager", "DevOps"})
+	role.SetPlaceholder("Select a role")
+	role.AddValidator(forms.Required)
+
+	// 4. Age
 	age := forms.NewNumberInput("Enter age")
 	age.SetShowBorder(true)
 	age.SetRange(0, 150)
 	age.SetStep(1)
 
+	// 5. Bio
 	bio := forms.NewTextArea("Enter bio")
 	bio.SetShowBorder(true)
 	bio.AddValidator(forms.Required)
 	bio.AddValidator(forms.MinLength(10))
 
+	// 6. Notification preferences
+	notify := forms.NewRadioGroup("Notifications:", []string{"Email", "SMS", "Push", "None"})
+	notify.AddValidator(forms.Required)
+
+	// 7. Terms
+	terms := forms.NewCheckbox("I accept the Terms and Conditions")
+
+	form := forms.NewForm(email, password, role, age, bio, notify, terms)
+
 	return model{
-		email:    email,
-		password: password,
-		age:      age,
-		bio:      bio,
-		focus:    0,
+		form: form,
 	}
 }
 
 func (m model) Init() tea.Cmd {
-	return m.updateFocus()
+	return adaptCmd(m.form.Init())
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	var cmds []tea.Cmd
-
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c":
+		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
-		case "tab":
-			m.focus = (m.focus + 1) % 4
-			return m, m.updateFocus()
-		case "shift+tab":
-			m.focus = (m.focus - 1 + 4) % 4
-			return m, m.updateFocus()
-		case "enter":
-			// Validate all
-			m.email.Validate()
-			m.password.Validate()
-			m.age.Validate()
-			m.bio.Validate()
 		}
+		// Optional: Handle global validation trigger?
+		// For now, let's rely on individual field validation state
 	}
 
-	// Update components
-	// Email
-	newEmail, cmd := m.email.Update(msg)
-	m.email = newEmail.(*forms.TextInput)
-	if cmd != nil {
-		cmds = append(cmds, adaptCmd(cmd))
-	}
+	newForm, cmd := m.form.Update(msg)
+	m.form = newForm.(*forms.Form)
 
-	// Password
-	newPass, cmd := m.password.Update(msg)
-	m.password = newPass.(*forms.TextInput)
-	if cmd != nil {
-		cmds = append(cmds, adaptCmd(cmd))
-	}
-
-	// Age
-	newAge, cmd := m.age.Update(msg)
-	m.age = newAge.(*forms.NumberInput)
-	if cmd != nil {
-		cmds = append(cmds, adaptCmd(cmd))
-	}
-
-	// Bio
-	newBio, cmd := m.bio.Update(msg)
-	m.bio = newBio.(*forms.TextArea)
-	if cmd != nil {
-		cmds = append(cmds, adaptCmd(cmd))
-	}
-
-	return m, tea.Batch(cmds...)
-}
-
-func (m *model) updateFocus() tea.Cmd {
-	focuses := []func() render.Cmd{
-		m.email.Focus,
-		m.password.Focus,
-		m.age.Focus,
-		m.bio.Focus,
-	}
-	blurs := []func(){
-		m.email.Blur,
-		m.password.Blur,
-		m.age.Blur,
-		m.bio.Blur,
-	}
-
-	var cmd tea.Cmd
-	for i := range 4 {
-		if i == m.focus {
-			if c := focuses[i](); c != nil {
-				cmd = adaptCmd(c)
-			}
-		} else {
-			blurs[i]()
-		}
-	}
-	return cmd
+	return m, adaptCmd(cmd)
 }
 
 func (m model) View() string {
 	var b strings.Builder
 
-	b.WriteString("Form Example (Tab/Shift+Tab to switch, Enter to validate, Ctrl+C to quit)\n\n")
-
-	b.WriteString("Email:\n")
-	b.WriteString(m.email.View())
+	b.WriteString("Form Example (Tab/Enter to navigate, Ctrl+C to quit)\n\n")
+	b.WriteString(m.form.View())
 	b.WriteString("\n\n")
 
-	b.WriteString("Password:\n")
-	b.WriteString(m.password.View())
-	b.WriteString("\n\n")
-
-	b.WriteString("Age:\n")
-	b.WriteString(m.age.View())
-	b.WriteString("\n\n")
-
-	b.WriteString("Bio:\n")
-	b.WriteString(m.bio.View())
-	b.WriteString("\n\n")
+	// Show validation status summary?
+	if err := m.form.Validate(); err == nil {
+		b.WriteString("Status: Valid\n")
+	} else {
+		fmt.Fprintf(&b, "Status: Invalid (%s)\n", err.Error())
+	}
 
 	return b.String()
 }
 
+// adaptCmd converts a render.Cmd (engine-agnostic) to a tea.Cmd (Bubbletea specific).
+// It recursively handles Batches and wrapping of function types.
 func adaptCmd(cmd render.Cmd) tea.Cmd {
 	if cmd == nil {
 		return nil
 	}
-	if fn, ok := cmd.(func() render.Msg); ok {
-		return func() tea.Msg {
-			return fn()
+
+	switch c := cmd.(type) {
+	case render.BatchCmd:
+		var cmds []tea.Cmd
+		for _, nested := range c {
+			if ac := adaptCmd(nested); ac != nil {
+				cmds = append(cmds, ac)
+			}
 		}
+		return tea.Batch(cmds...)
+	
+	case []render.Cmd: // Just in case it's a raw slice
+		var cmds []tea.Cmd
+		for _, nested := range c {
+			if ac := adaptCmd(nested); ac != nil {
+				cmds = append(cmds, ac)
+			}
+		}
+		return tea.Batch(cmds...)
+
+	case func() render.Msg:
+		return func() tea.Msg {
+			return c()
+		}
+
+	case func() error:
+		return func() tea.Msg {
+			if err := c(); err != nil {
+				return render.ErrorMsg{Error: err}
+			}
+			return nil
+		}
+	
+	case render.Command: // Alias for func() error
+		return func() tea.Msg {
+			if err := c(); err != nil {
+				return render.ErrorMsg{Error: err}
+			}
+			return nil
+		}
+
+	case render.Cmd:
+		// Check for Quit command interface
+		if render.IsQuit(c) {
+			return tea.Quit
+		}
+		// If it's a type we don't know but implements the empty interface (everything does),
+		// check if it's a batch implicitly? No, Go types are strict.
 	}
+
 	return nil
 }
 

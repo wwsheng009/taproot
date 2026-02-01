@@ -117,10 +117,7 @@ func (m *MessagesModel) Update(msg tea.Msg) (util.Model, tea.Cmd) {
 		newModel.width = msg.Width
 		newModel.height = msg.Height
 		// Ensure scroll is within bounds
-		maxScroll := newModel.maxScroll()
-		if newModel.scroll > maxScroll {
-			newModel.scroll = maxScroll
-		}
+		newModel.scroll = min(newModel.scroll, newModel.maxScroll())
 	}
 
 	return &newModel, nil
@@ -138,10 +135,7 @@ func (m *MessagesModel) maxScroll() int {
 }
 
 func (m *MessagesModel) messageHeight(msg Message) int {
-	contentWidth := m.width - 4 // Account for padding
-	if contentWidth > maxWidth {
-		contentWidth = maxWidth
-	}
+	contentWidth := min(m.width-4, maxWidth)
 
 	lines := 0
 
@@ -228,10 +222,7 @@ func (m *MessagesModel) View() string {
 }
 
 func (m *MessagesModel) renderMessage(msg Message, s *styles.Styles) string {
-	contentWidth := m.width - 4
-	if contentWidth > maxWidth {
-		contentWidth = maxWidth
-	}
+	contentWidth := min(m.width-4, maxWidth)
 
 	// Estimate size: content + header + footer + padding + ANSI codes
 	estimatedSize := len(msg.Content) + contentWidth*2 + 200

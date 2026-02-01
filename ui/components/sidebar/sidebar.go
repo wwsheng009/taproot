@@ -6,6 +6,8 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 )
 
 // defaultStyles provides default sidebar styling.
@@ -79,7 +81,7 @@ func (s *sidebarImpl) Init() error {
 }
 
 // Update handles messages and updates state.
-func (s *sidebarImpl) Update(msg any) (Sidebar, interface{}) {
+func (s *sidebarImpl) Update(msg any) (Sidebar, any) {
 	// For engine-agnostic design, Update just returns itself
 	// External components are responsible for calling SetXXX methods
 	return s, nil
@@ -187,7 +189,7 @@ func (s *sidebarImpl) renderModelInfo() string {
 			if s.modelInfo.ReasoningEffort != "" {
 				effort = s.modelInfo.ReasoningEffort
 			}
-			reasoningText = fmt.Sprintf("Reasoning %s", strings.Title(effort))
+			reasoningText = fmt.Sprintf("Reasoning %s", cases.Title(language.English).String(effort))
 		}
 		parts = append(parts, reasoningStyle.Render(reasoningText))
 	}
@@ -252,10 +254,7 @@ func (s *sidebarImpl) renderTokenUsage() string {
 
 // renderFilesSection renders the modified files section.
 func (s *sidebarImpl) renderFilesSection() string {
-	maxWidth := s.width - 2
-	if maxWidth > 60 {
-		maxWidth = 60
-	}
+	maxWidth := min(s.width-2, 60)
 
 	maxFiles := s.conf.MaxFiles
 	if maxFiles <= 0 {
@@ -267,10 +266,7 @@ func (s *sidebarImpl) renderFilesSection() string {
 
 // renderLSPSection renders the LSP services section.
 func (s *sidebarImpl) renderLSPSection() string {
-	maxWidth := s.width - 2
-	if maxWidth > 60 {
-		maxWidth = 60
-	}
+	maxWidth := min(s.width-2, 60)
 
 	maxLSPs := s.conf.MaxLSPs
 	if maxLSPs <= 0 {
@@ -282,10 +278,7 @@ func (s *sidebarImpl) renderLSPSection() string {
 
 // renderMCPSection renders the MCP services section.
 func (s *sidebarImpl) renderMCPSection() string {
-	maxWidth := s.width - 2
-	if maxWidth > 60 {
-		maxWidth = 60
-	}
+	maxWidth := min(s.width-2, 60)
 
 	maxMCPs := s.conf.MaxMCPs
 	if maxMCPs <= 0 {
@@ -299,9 +292,7 @@ func (s *sidebarImpl) renderMCPSection() string {
 func (s *sidebarImpl) renderSectionsHorizontal() string {
 	totalWidth := s.width - 4
 	sectionWidth := 50
-	if totalWidth/3 < sectionWidth {
-		sectionWidth = totalWidth / 3
-	}
+	sectionWidth = min(sectionWidth, totalWidth/3)
 
 	filesContent := s.filesSectionCompact("Modified Files", s.files, sectionWidth)
 	lspContent := s.lspSectionCompact("LSPs", s.lsps, sectionWidth)
@@ -320,9 +311,7 @@ func (s *sidebarImpl) filesSection(title string, files []FileInfo, maxWidth, max
 	header := s.styles.title.Render(title)
 
 	// Limit items
-	if maxItems > len(files) {
-		maxItems = len(files)
-	}
+	maxItems = min(maxItems, len(files))
 
 	var lines []string
 	for i := 0; i < maxItems; i++ {
@@ -386,9 +375,7 @@ func (s *sidebarImpl) lspSection(title string, lsps []LSPService, maxWidth, maxI
 		lines = append(lines, s.styles.error.Render(fmt.Sprintf("✗ %d errors", errorCount)))
 	}
 
-	if maxItems > len(lsps) {
-		maxItems = len(lsps)
-	}
+	maxItems = min(maxItems, len(lsps))
 
 	for i := 0; i < maxItems; i++ {
 		lsp := lsps[i]
@@ -433,9 +420,7 @@ func (s *sidebarImpl) mcpSection(title string, mcps []MCPService, maxWidth, maxI
 
 	header := s.styles.title.Render(title)
 
-	if maxItems > len(mcps) {
-		maxItems = len(mcps)
-	}
+	maxItems = min(maxItems, len(mcps))
 
 	var lines []string
 	for i := 0; i < maxItems; i++ {

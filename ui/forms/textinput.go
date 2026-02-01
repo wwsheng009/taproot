@@ -299,10 +299,7 @@ func scrollRunes(runes []rune, cursor, width int) ([]rune, int) {
 	if end > len(runes) {
 		end = len(runes)
 		// Adjust start if we're at the end of the text
-		start = end - width
-		if start < 0 {
-			start = 0
-		}
+		start = max(0, end-width)
 	}
 
 	return runes[start:end], start

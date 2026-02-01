@@ -35,6 +35,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Enhanced test coverage with 26 passing tests
 
 ### Fixed
+- Fixed TextArea to support automatic word wrapping
+  - Added `wrap` field to enable/disable word wrap (default: true)
+  - Long lines now automatically wrap to fit within width
+  - Added `SetWrap()` method to control wrapping behavior
+  - Removed horizontal scrolling in favor of word wrap
+  - Added Home/End key support for navigation
+- Fixed TextInput cursor following and text scrolling behavior
+  - Changed scroll strategy to keep cursor near right edge instead of center
+  - Cursor now follows text naturally when typing
+  - Text only scrolls left when cursor approaches right boundary
+  - Fixed `end` key to use `utf8.RuneCountInString` instead of `len()`
+- Fixed password masking display showing incorrect number of bullets when text exceeds display width
+  - Improved `scrollRunes()` to return both slice and start position
+  - Fixed cursor offset calculation to be relative to scrolled viewport
+  - Added comprehensive tests for password scrolling scenarios
 - Fixed scrolling tests in `tui/exp/diffview` to use correct content height
 - Fixed import paths in all example programs
 

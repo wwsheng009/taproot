@@ -100,10 +100,7 @@ func (d *ReasoningDialog) View() string {
 		Padding(1, 2)
 
 	// Calculate content width
-	contentWidth := d.width - 8 // Account for borders and padding
-	if contentWidth < 20 {
-		contentWidth = 20
-	}
+	contentWidth := max(d.width-8, 20)
 
 	var sb strings.Builder
 
@@ -125,10 +122,7 @@ func (d *ReasoningDialog) View() string {
 	}
 
 	// Render visible lines
-	end := d.scroll + d.visibleLines
-	if end > totalLines {
-		end = totalLines
-	}
+	end := min(d.scroll+d.visibleLines, totalLines)
 
 	if d.scroll < totalLines {
 		for i := d.scroll; i < end; i++ {
@@ -166,10 +160,7 @@ func (d *ReasoningDialog) View() string {
 	sb.WriteString(hints)
 
 	// Apply box style and center
-	dialogWidth := contentWidth + 6 // Account for padding
-	if dialogWidth > d.width-4 {
-		dialogWidth = d.width - 4
-	}
+	dialogWidth := min(contentWidth+6, d.width-4)
 
 	rendered := boxStyle.Width(dialogWidth).Render(sb.String())
 

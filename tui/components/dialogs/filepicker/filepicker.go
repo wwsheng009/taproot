@@ -98,14 +98,10 @@ func (m *FilePicker) Update(msg tea.Msg) (util.Model, tea.Cmd) {
 		case "esc":
 			return m, func() tea.Msg { return dialogs.CloseDialogMsg{} }
 		case "up", "k":
-			if m.cursor > -1 {
-				m.cursor--
-			}
+			m.cursor = max(-1, m.cursor-1)
 			m.updateScroll()
 		case "down", "j":
-			if m.cursor < len(m.files)-1 {
-				m.cursor++
-			}
+			m.cursor = min(len(m.files)-1, m.cursor+1)
 			m.updateScroll()
 		case "enter":
 			return m.handleSelect()
@@ -138,12 +134,8 @@ func (m *FilePicker) updateScroll() {
 		return
 	}
 	
-	if m.cursor < m.scrollOffset {
-		m.scrollOffset = m.cursor
-	}
-	if m.cursor >= m.scrollOffset+maxItems {
-		m.scrollOffset = m.cursor - maxItems + 1
-	}
+	m.scrollOffset = min(m.cursor, m.scrollOffset)
+	m.scrollOffset = max(m.scrollOffset, m.cursor-maxItems+1)
 }
 
 func (m *FilePicker) handleSelect() (util.Model, tea.Cmd) {

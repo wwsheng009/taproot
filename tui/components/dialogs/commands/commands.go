@@ -3,6 +3,7 @@ package commands
 import (
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -80,6 +81,7 @@ func NewCommandsDialog(provider CommandProvider) CommandsDialog {
 	}
 
 	ti := textinput.New()
+	ti.Cursor.BlinkSpeed = time.Second
 	ti.Focus()
 	ti.Width = defaultWidth - 4
 
@@ -187,12 +189,10 @@ func (d *commandDialogCmp) updateList(msg tea.Msg) (util.Model, tea.Cmd) {
 				}
 			}
 		case "up", "k":
-			if d.selectedIdx > 0 {
-				d.selectedIdx--
-			}
+			d.selectedIdx = max(0, d.selectedIdx-1)
 		case "down", "j":
-			if d.selectedIdx < len(d.filtered)-1 {
-				d.selectedIdx++
+			if len(d.filtered) > 0 {
+				d.selectedIdx = min(len(d.filtered)-1, d.selectedIdx+1)
 			}
 		default:
 			// Forward to completions for filtering

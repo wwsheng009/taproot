@@ -2,6 +2,7 @@ package render
 
 import (
 	"fmt"
+	"strings"
 	"sync"
 )
 
@@ -19,27 +20,23 @@ type DirectEngine struct {
 
 // stringWriter is a simple writer interface.
 type stringWriter struct {
-	buf []string
+	buf strings.Builder
 }
 
 func newStringWriter() *stringWriter {
-	return &stringWriter{buf: make([]string, 0, 100)}
+	return &stringWriter{}
 }
 
 func (w *stringWriter) Write(s string) {
-	w.buf = append(w.buf, s)
+	w.buf.WriteString(s)
 }
 
 func (w *stringWriter) String() string {
-	result := ""
-	for _, s := range w.buf {
-		result += s
-	}
-	return result
+	return w.buf.String()
 }
 
 func (w *stringWriter) Clear() {
-	w.buf = w.buf[:0]
+	w.buf.Reset()
 }
 
 // NewDirectEngine creates a new direct engine.

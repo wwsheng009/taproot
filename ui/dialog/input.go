@@ -377,9 +377,6 @@ func (d *SelectListDialog) SetItems(items []string) {
 }
 
 func centerText(text string, width int) string {
-	padding := (width - len(text)) / 2
-	if padding < 0 {
-		padding = 0
-	}
+	padding := max(0, (width-len(text))/2)
 	return strings.Repeat(" ", padding) + text
 }

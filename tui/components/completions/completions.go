@@ -244,12 +244,10 @@ func (c *completionsCmp) View() string {
 
 	// Calculate visible items
 	visibleCount := len(c.filteredItems)
-	if c.maxResults > 0 && visibleCount > c.maxResults {
-		visibleCount = c.maxResults
+	if c.maxResults > 0 {
+		visibleCount = min(visibleCount, c.maxResults)
 	}
-	if visibleCount > c.height {
-		visibleCount = c.height
-	}
+	visibleCount = min(visibleCount, c.height)
 
 	// Calculate offset to keep selected item visible
 	offset := 0
@@ -293,22 +291,33 @@ func (c *completionsCmp) View() string {
 }
 
 func (c *completionsCmp) highlightMatches(text, query string) string {
+	if query == "" {
+		return text
+	}
+
 	s := c.styles
 	lowerText := strings.ToLower(text)
 	lowerQuery := strings.ToLower(query)
 
-	result := ""
+	// Guard against potential unicode length mismatches
+	if len(lowerText) != len(text) {
+		return text
+	}
+
+	var sb strings.Builder
+	sb.Grow(len(text) + len(text)/2) // Pre-allocate with some buffer
+
 	i := 0
 	for i < len(text) {
 		if i <= len(text)-len(query) && lowerText[i:i+len(query)] == lowerQuery {
-			result += s.Base.Foreground(s.Primary).Bold(true).Render(text[i:i+len(query)])
+			sb.WriteString(s.Base.Foreground(s.Primary).Bold(true).Render(text[i : i+len(query)]))
 			i += len(query)
 		} else {
-			result += string(text[i])
+			sb.WriteByte(text[i])
 			i++
 		}
 	}
-	return result
+	return sb.String()
 }
 
 func (c *completionsCmp) Open() bool {

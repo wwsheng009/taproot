@@ -75,7 +75,7 @@ func (e *BubbleteaEngine) Stop() error {
 func (e *BubbleteaEngine) Send(msg Msg) error {
 	if e.program != nil {
 		// If msg is already a tea.Msg, send it directly.
-		// Otherwise, wrap it or send as is (tea.Msg is interface{}).
+		// Otherwise, wrap it or send as is (tea.Msg is any).
 		e.program.Send(msg)
 	}
 	return nil

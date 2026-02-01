@@ -204,7 +204,7 @@ func RenderTable(headers []string, rows [][]string, styles MarkdownTable, maxWid
 }
 
 // renderTableCell renders a single table cell with proper padding and truncation.
-func renderTableCell(content string, width int, align lipgloss.Style) string {
+func renderTableCell(content string, width int, _ lipgloss.Style) string {
 	contentWidth := lipgloss.Width(content)
 
 	if contentWidth > width {

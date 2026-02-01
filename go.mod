@@ -13,6 +13,7 @@ require (
 	github.com/charmbracelet/x/ansi v0.11.4
 	github.com/lucasb-eyer/go-colorful v1.3.0
 	github.com/rivo/uniseg v0.4.7
+	golang.org/x/text v0.24.0
 	mvdan.cc/sh/v3 v3.12.0
 )
 
@@ -46,5 +47,4 @@ require (
 	golang.org/x/net v0.33.0 // indirect
 	golang.org/x/sync v0.19.0 // indirect
 	golang.org/x/sys v0.40.0 // indirect
-	golang.org/x/text v0.24.0 // indirect
 )

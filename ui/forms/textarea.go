@@ -13,6 +13,7 @@ import (
 // TextArea is a multi-line text input component.
 type TextArea struct {
 	lines       []string
+	label       string // Label displayed above the text area
 	placeholder string
 	focused     bool
 	cursorRow   int
@@ -32,6 +33,7 @@ type TextArea struct {
 	showBorder   bool
 	focusedStyle lipgloss.Style
 	blurredStyle lipgloss.Style
+	labelStyle   lipgloss.Style
 }
 
 // NewTextArea creates a new text area.
@@ -53,6 +55,9 @@ func NewTextArea(placeholder string) *TextArea {
 			BorderStyle(lipgloss.RoundedBorder()).
 			BorderForeground(s.Border).
 			Padding(0, 1),
+		labelStyle: lipgloss.NewStyle().
+			Foreground(s.FgBase).
+			Bold(true),
 	}
 }
 
@@ -156,13 +161,17 @@ func (t *TextArea) Update(msg any) (render.Model, render.Cmd) {
 func (t *TextArea) View() string {
 	var b strings.Builder
 
+	// Render Label
+	if t.label != "" {
+		b.WriteString(t.labelStyle.Render(t.label))
+		b.WriteString("\n")
+	}
+
 	// Handle empty state with placeholder
 	if len(t.lines) == 1 && t.lines[0] == "" && t.placeholder != "" && !t.focused {
 		// Render placeholder
 		ph := t.placeholder
-		if len(ph) > t.width {
-			ph = ph[:t.width]
-		}
+		ph = ph[:min(len(ph), t.width)]
 		// Pad to width
 		if len(ph) < t.width {
 			ph += strings.Repeat(" ", t.width-utf8.RuneCountInString(ph))
@@ -196,10 +205,8 @@ func (t *TextArea) View() string {
 
 		// Calculate which display lines to show
 		startLine := t.offset
-		endLine := startLine + t.height
-		if endLine > len(displayLines) {
-			endLine = len(displayLines)
-		}
+		endLine := min(startLine+t.height, len(displayLines))
+
 
 		for i := startLine; i < endLine; i++ {
 			line := displayLines[i]
@@ -297,10 +304,7 @@ func (t *TextArea) getDisplayInfo() ([]string, int, int) {
 
 		// Break line into chunks of width
 		for i := 0; i < len(runes); i += t.width {
-			end := i + t.width
-			if end > len(runes) {
-				end = len(runes)
-			}
+			end := min(i+t.width, len(runes))
 
 			// Check if cursor falls in this chunk
 			if r == t.cursorRow {
@@ -496,9 +500,7 @@ func (t *TextArea) resolveVisualPos(targetVRow, targetVCol int) (int, int) {
 		}
 		// Clamp column
 		lineLen := utf8.RuneCountInString(t.lines[targetVRow])
-		if targetVCol > lineLen {
-			targetVCol = lineLen
-		}
+		targetVCol = min(targetVCol, lineLen)
 		return targetVRow, targetVCol
 	}
 
@@ -524,10 +526,7 @@ func (t *TextArea) resolveVisualPos(targetVRow, targetVCol int) (int, int) {
 
 		// Iterate chunks
 		for i := 0; i < len(runes); i += t.width {
-			end := i + t.width
-			if end > len(runes) {
-				end = len(runes)
-			}
+			end := min(i+t.width, len(runes))
 
 			if currentVRow == targetVRow {
 				// Found the visual row
@@ -535,9 +534,7 @@ func (t *TextArea) resolveVisualPos(targetVRow, targetVCol int) (int, int) {
 
 				// Clamp targetVCol to chunk length
 				colInChunk := targetVCol
-				if colInChunk > chunkLen {
-					colInChunk = chunkLen
-				}
+				colInChunk = min(colInChunk, chunkLen)
 
 				// Logical col = start of chunk + offset
 				return lRow, i + colInChunk
@@ -573,4 +570,9 @@ func (t *TextArea) SetWrap(wrap bool) {
 // SetShowBorder sets whether to show the border.
 func (t *TextArea) SetShowBorder(show bool) {
 	t.showBorder = show
+}
+
+// SetLabel sets the label displayed above the text area.
+func (t *TextArea) SetLabel(label string) {
+	t.label = label
 }

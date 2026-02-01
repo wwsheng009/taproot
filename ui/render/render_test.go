@@ -1,6 +1,7 @@
 package render
 
 import (
+	"slices"
 	"testing"
 )
 
@@ -31,14 +32,7 @@ func TestEngineRegistry(t *testing.T) {
 	// Test available engines
 	t.Run("AvailableEngines", func(t *testing.T) {
 		engines := AvailableEngines()
-		found := false
-		for _, e := range engines {
-			if e == EngineUltraviolet {
-				found = true
-				break
-			}
-		}
-		if !found {
+		if !slices.Contains(engines, EngineUltraviolet) {
 			t.Error("expected ultraviolet in available engines")
 		}
 	})
@@ -281,16 +275,28 @@ func TestCommand(t *testing.T) {
 			t.Fatal("expected non-nil batch")
 		}
 
-		// Batch returns a func() error
-		if fn, ok := batch.(func() error); ok {
-			if err := fn(); err != nil {
-				t.Errorf("unexpected error: %v", err)
+		// Batch returns a BatchCmd (slice of Cmd)
+		if cmds, ok := batch.(BatchCmd); ok {
+			if len(cmds) != 2 {
+				t.Errorf("expected 2 commands, got %d", len(cmds))
 			}
+
+			// We need to execute the commands manually since they are wrapped
+			for _, c := range cmds {
+				if cmd, ok := c.(Command); ok {
+					if err := cmd(); err != nil {
+						t.Errorf("unexpected error: %v", err)
+					}
+				} else {
+					t.Errorf("expected Command type in batch, got %T", c)
+				}
+			}
+
 			if executed != 11 {
 				t.Errorf("expected executed 11, got %d", executed)
 			}
 		} else {
-			t.Error("expected func() error type from Batch")
+			t.Errorf("expected BatchCmd type from Batch, got %T", batch)
 		}
 	})
 

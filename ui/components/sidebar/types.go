@@ -12,7 +12,7 @@ type Sidebar interface {
 	Init() error
 
 	// Update handles messages and updates state.
-	Update(msg any) (Sidebar, interface{})
+	Update(msg any) (Sidebar, any)
 
 	// View renders the sidebar.
 	View() string

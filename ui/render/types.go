@@ -19,7 +19,7 @@ type Model interface {
 }
 
 // Cmd represents a side effect command (async operations, etc.).
-type Cmd interface{}
+type Cmd any
 
 // Command is a helper type for simple commands.
 type Command func() error
@@ -34,23 +34,25 @@ func None() Cmd {
 	return nil
 }
 
+// BatchCmd represents a batch of commands.
+type BatchCmd []Cmd
+
 // Batch combines multiple commands into one.
 func Batch(cmds ...Cmd) Cmd {
-	if len(cmds) == 0 {
-		return None()
-	}
-	return func() error {
-		for _, cmd := range cmds {
-			if cmd != nil {
-				if c, ok := cmd.(Command); ok {
-					if err := c.Execute(); err != nil {
-						return err
-					}
-				}
+	var batch BatchCmd
+	for _, cmd := range cmds {
+		if cmd != nil {
+			if b, ok := cmd.(BatchCmd); ok {
+				batch = append(batch, b...)
+			} else {
+				batch = append(batch, cmd)
 			}
 		}
-		return nil
 	}
+	if len(batch) == 0 {
+		return None()
+	}
+	return batch
 }
 
 // Quit returns a command that will quit the application.
@@ -81,7 +83,7 @@ func IsQuit(cmd Cmd) bool {
 
 // Msg represents any message that can be sent to a Model.
 // This could be key events, mouse events, timer events, etc.
-type Msg interface{}
+type Msg any
 
 // KeyMsg represents a keyboard input message.
 type KeyMsg struct {
@@ -130,7 +132,7 @@ type ResizeMsg struct {
 
 // TickMsg represents a timer tick event.
 type TickMsg struct {
-	Time interface{} // time.Time, but using interface{} to avoid import
+	Time any // time.Time, but using any to avoid import
 }
 
 // FocusMsg represents a focus change event.
