@@ -46,7 +46,7 @@ func NewCheckbox(label string) *Checkbox {
 }
 
 // Init implements render.Model.
-func (c *Checkbox) Init() error {
+func (c *Checkbox) Init() render.Cmd {
 	return nil
 }
 

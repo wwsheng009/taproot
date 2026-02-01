@@ -62,7 +62,7 @@ func NewTextArea(placeholder string) *TextArea {
 }
 
 // Init implements render.Model.
-func (t *TextArea) Init() error {
+func (t *TextArea) Init() render.Cmd {
 	return nil
 }
 

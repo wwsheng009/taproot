@@ -31,14 +31,9 @@ type model struct {
 	screenHeight int
 }
 
-func (m *model) Init() error {
-	if err := m.sidebar.Init(); err != nil {
-		return err
-	}
-
-	// Initialize with sample data
+func (m *model) Init() render.Cmd {
+	m.sidebar.Init()
 	m.loadSampleData()
-
 	return nil
 }
 

@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/wwsheng009/taproot/ui/render"
 	"golang.org/x/text/cases"
 	"golang.org/x/text/language"
 )
@@ -70,7 +71,7 @@ func NewDefault() Sidebar {
 }
 
 // Init initializes the sidebar.
-func (s *sidebarImpl) Init() error {
+func (s *sidebarImpl) Init() render.Cmd {
 	if s.conf.Width > 0 {
 		s.width = s.conf.Width
 	}

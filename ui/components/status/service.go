@@ -38,7 +38,7 @@ func NewService(id, name string) *ServiceCmp {
 
 // Init initializes the component.
 // Implements render.Model interface.
-func (s *ServiceCmp) Init() error {
+func (s *ServiceCmp) Init() render.Cmd {
 	s.initialized = true
 	return nil
 }

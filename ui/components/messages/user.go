@@ -43,7 +43,7 @@ func NewUserMessage(id, content string) *UserMessage {
 
 // Init initializes the component.
 // Implements render.Model interface.
-func (m *UserMessage) Init() error {
+func (m *UserMessage) Init() render.Cmd {
 	m.initialized = true
 	return nil
 }

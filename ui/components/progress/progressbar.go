@@ -53,7 +53,7 @@ func NewProgressBar(total float64) *ProgressBar {
 
 // Init initializes the progress bar component.
 // Implements render.Model interface.
-func (pb *ProgressBar) Init() error {
+func (pb *ProgressBar) Init() render.Cmd {
 	pb.initialized = true
 	return nil
 }

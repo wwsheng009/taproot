@@ -64,7 +64,7 @@ func NewTodoMessageFromTodos(id, title string, todos []Todo) *TodoMessage {
 }
 
 // Init initializes the component. Implements render.Model.
-func (m *TodoMessage) Init() error {
+func (m *TodoMessage) Init() render.Cmd {
 	return nil
 }
 

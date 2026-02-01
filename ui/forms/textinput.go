@@ -65,7 +65,7 @@ func NewTextInput(placeholder string) *TextInput {
 }
 
 // Init implements render.Model.
-func (t *TextInput) Init() error {
+func (t *TextInput) Init() render.Cmd {
 	return nil
 }
 

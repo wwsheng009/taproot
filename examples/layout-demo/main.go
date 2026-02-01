@@ -83,7 +83,7 @@ type model struct {
 	showDetails bool
 }
 
-func (m *model) Init() error {
+func (m *model) Init() render.Cmd {
 	return nil
 }
 

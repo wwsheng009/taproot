@@ -37,7 +37,7 @@ func NewManager(config Config) *Manager {
 }
 
 // Init initializes the manager
-func (m *Manager) Init() error {
+func (m *Manager) Init() render.Cmd {
 	return nil
 }
 

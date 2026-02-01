@@ -37,7 +37,7 @@ func NewDiagnosticStatus(source string) *DiagnosticStatusCmp {
 
 // Init initializes the component.
 // Implements render.Model interface.
-func (d *DiagnosticStatusCmp) Init() error {
+func (d *DiagnosticStatusCmp) Init() render.Cmd {
 	d.initialized = true
 	return nil
 }

@@ -5,12 +5,13 @@ import (
 	"strings"
 
 	"github.com/wwsheng009/taproot/ui/components/messages"
+	"github.com/wwsheng009/taproot/ui/render"
 )
 
 func main() {
 	// Create sample messages
 	var msgItems []interface {
-		Init() error
+		Init() render.Cmd
 		View() string
 	}
 

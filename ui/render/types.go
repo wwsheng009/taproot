@@ -1,5 +1,9 @@
 package render
 
+import (
+	"time"
+)
+
 // Renderer is the interface for rendering UI components.
 // Different rendering engines (Bubbletea, Ultraviolet, etc.) implement this.
 type Renderer interface {
@@ -11,7 +15,7 @@ type Renderer interface {
 // It follows the Elm architecture (Model-View-Update).
 type Model interface {
 	// Init performs initial setup.
-	Init() error
+	Init() Cmd
 	// Update handles incoming messages and returns commands.
 	Update(msg any) (Model, Cmd)
 	// View returns the string representation for rendering.
@@ -132,7 +136,7 @@ type ResizeMsg struct {
 
 // TickMsg represents a timer tick event.
 type TickMsg struct {
-	Time any // time.Time, but using any to avoid import
+	Time time.Time
 }
 
 // FocusMsg represents a focus change event.

@@ -32,8 +32,11 @@ func (e *UltravioletEngine) Start(model Model) error {
 	e.running = true
 
 	// Initialize initialization command
-	if err := e.model.Init(); err != nil {
-		return err
+	cmd := e.model.Init()
+	if c, ok := cmd.(Command); ok {
+		if err := c.Execute(); err != nil {
+			return err
+		}
 	}
 
 	// Create terminal instance

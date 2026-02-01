@@ -43,7 +43,7 @@ func (d *InfoDialog) SetCallback(cb Callback) *InfoDialog {
 }
 
 // Init implements render.Model.
-func (d *InfoDialog) Init() error {
+func (d *InfoDialog) Init() render.Cmd {
 	return nil
 }
 
@@ -209,7 +209,7 @@ func (d *ConfirmDialog) SetCallback(cb Callback) *ConfirmDialog {
 }
 
 // Init implements render.Model.
-func (d *ConfirmDialog) Init() error {
+func (d *ConfirmDialog) Init() render.Cmd {
 	return nil
 }
 

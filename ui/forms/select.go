@@ -65,7 +65,7 @@ func NewSelect(label string, options []string) *Select {
 }
 
 // Init implements render.Model.
-func (s *Select) Init() error {
+func (s *Select) Init() render.Cmd {
 	return nil
 }
 

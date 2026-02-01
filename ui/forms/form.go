@@ -36,22 +36,14 @@ func NewForm(inputs ...Input) *Form {
 }
 
 // Init implements render.Model.
-func (f *Form) Init() error {
+func (f *Form) Init() render.Cmd {
 	// Initialize all inputs
+	var cmds []render.Cmd
 	for _, input := range f.Inputs {
-		if err := input.Init(); err != nil {
-			return err
-		}
+		cmds = append(cmds, input.Init())
 	}
 	
-	// Return blink command for the initially focused input if applicable
-	if len(f.Inputs) > 0 {
-		// We can't easily extract the Init cmd from here without calling Init again.
-		// But Focus() returns a Cmd.
-		// However, NewForm acts as a constructor. Init is called by the runtime.
-		// Let's rely on the inputs' Init.
-	}
-	return nil
+	return render.Batch(cmds...)
 }
 
 // Update implements render.Model.

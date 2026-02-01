@@ -2,6 +2,7 @@ package sidebar
 
 import (
 	"github.com/wwsheng009/taproot/layout"
+	"github.com/wwsheng009/taproot/ui/render"
 )
 
 // Sidebar represents a sidebar component for navigation and information display.
@@ -9,7 +10,7 @@ type Sidebar interface {
 	layout.Sizeable
 
 	// Init initializes the sidebar.
-	Init() error
+	Init() render.Cmd
 
 	// Update handles messages and updates state.
 	Update(msg any) (Sidebar, any)

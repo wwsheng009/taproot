@@ -22,7 +22,7 @@ func NewUVCounterModel() *UVCounterModel {
 }
 
 // Init initializes the model
-func (m *UVCounterModel) Init() error {
+func (m *UVCounterModel) Init() render.Cmd {
 	return nil
 }
 

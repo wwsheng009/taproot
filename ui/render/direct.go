@@ -68,8 +68,13 @@ func (e *DirectEngine) Start(model Model) error {
 	e.model = model
 
 	// Initialize the model
-	if err := model.Init(); err != nil {
-		return fmt.Errorf("model init failed: %w", err)
+	cmd := model.Init()
+	if cmd != nil {
+		if c, ok := cmd.(Command); ok {
+			if err := c.Execute(); err != nil {
+				return fmt.Errorf("model init failed: %w", err)
+			}
+		}
 	}
 
 	// Call custom init function if provided
@@ -207,7 +212,7 @@ func NewTestModel(content string) *TestModel {
 }
 
 // Init initializes the model.
-func (m *TestModel) Init() error {
+func (m *TestModel) Init() Cmd {
 	return nil
 }
 

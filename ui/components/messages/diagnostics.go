@@ -63,7 +63,7 @@ func NewDiagnosticMessageFromDiagnostics(id, title string, diagnostics []Diagnos
 }
 
 // Init initializes the component. Implements render.Model.
-func (m *DiagnosticMessage) Init() error {
+func (m *DiagnosticMessage) Init() render.Cmd {
 	return nil
 }
 

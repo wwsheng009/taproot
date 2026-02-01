@@ -64,7 +64,7 @@ func NewAutoCompleteModel() *AutoCompleteModel {
 }
 
 // Init initializes the model
-func (m *AutoCompleteModel) Init() error {
+func (m *AutoCompleteModel) Init() render.Cmd {
 	return nil
 }
 

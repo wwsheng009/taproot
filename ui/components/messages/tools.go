@@ -63,7 +63,7 @@ func NewToolMessageFromCalls(id, toolName string, calls []ToolCall) *ToolMessage
 }
 
 // Init initializes the component. Implements render.Model.
-func (m *ToolMessage) Init() error {
+func (m *ToolMessage) Init() render.Cmd {
 	return nil
 }
 

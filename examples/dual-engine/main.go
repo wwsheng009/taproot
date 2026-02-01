@@ -30,7 +30,7 @@ func NewDualEngineModel(engine string) *DualEngineModel {
 }
 
 // Init initializes the model
-func (m *DualEngineModel) Init() error {
+func (m *DualEngineModel) Init() render.Cmd {
 	return nil
 }
 

@@ -77,7 +77,7 @@ func (d *InputDialog) SetID(id DialogID) {
 }
 
 // Init implements render.Model.
-func (d *InputDialog) Init() error {
+func (d *InputDialog) Init() render.Cmd {
 	d.input.SetFocused(true)
 	return nil
 }
@@ -253,7 +253,7 @@ func (d *SelectListDialog) SetID(id DialogID) {
 }
 
 // Init implements render.Model.
-func (d *SelectListDialog) Init() error {
+func (d *SelectListDialog) Init() render.Cmd {
 	d.selectList.SetExpanded(true)
 	d.selectList.SetFocused(true)
 	return nil

@@ -61,7 +61,7 @@ func NewAssistantMessage(id, content string) *AssistantMessage {
 }
 
 // Init initializes the component. Implements render.Model.
-func (m *AssistantMessage) Init() error {
+func (m *AssistantMessage) Init() render.Cmd {
 	return nil
 }
 

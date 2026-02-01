@@ -75,7 +75,7 @@ func NewSpinner() *Spinner {
 
 // Init initializes the spinner component.
 // Implements render.Model interface.
-func (s *Spinner) Init() error {
+func (s *Spinner) Init() render.Cmd {
 	s.initialized = true
 	s.start()
 	return nil

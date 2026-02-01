@@ -53,7 +53,7 @@ func NewRadioGroup(label string, options []string) *RadioGroup {
 }
 
 // Init implements render.Model.
-func (r *RadioGroup) Init() error {
+func (r *RadioGroup) Init() render.Cmd {
 	return nil
 }
 
