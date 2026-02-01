@@ -9,10 +9,11 @@ import (
 
 // Model holds the application state
 type model struct {
-	diffView   *diffview.DiffView
-	width      int
-	height     int
-	layoutMode diffview.Layout
+	diffView              *diffview.DiffView
+	width                 int
+	height                int
+	layoutMode            diffview.Layout
+	syntaxHighlighting     bool
 }
 
 // InitialModel creates the initial model
@@ -72,10 +73,13 @@ func main() {
 	dv.After(after)
 	dv.SetLayout(diffview.LayoutUnified)
 	dv.SetLineNumbers(true)
+	dv.SetFilename("main.go")
+	dv.SetSyntaxHighlighting(true)
 
 	return model{
-		diffView:   dv,
-		layoutMode: diffview.LayoutUnified,
+		diffView:           dv,
+		layoutMode:         diffview.LayoutUnified,
+		syntaxHighlighting: true,
 	}
 }
 
@@ -103,6 +107,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.layoutMode = diffview.LayoutUnified
 				m.diffView.SetLayout(diffview.LayoutUnified)
 			}
+		case "i":
+			// Toggle syntax highlighting (i for "illuminate")
+			m.syntaxHighlighting = !m.syntaxHighlighting
+			m.diffView.SetSyntaxHighlighting(m.syntaxHighlighting)
 		case "up", "k":
 			m.diffView.ScrollUp()
 		case "down", "j":
@@ -130,7 +138,10 @@ func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m model) View() string {
-	return m.diffView.Render()
+	help := "\n" +
+		"  [s] Toggle Layout | [i] Toggle Syntax Highlighting | [j/k/down/up] Scroll | [h/l/left/right] Scroll horizontally\n" +
+		"  [g/Home] Top | [G/End] Bottom | [ctrl+u/d] Page Up/Down | [q/ctrl+c] Quit\n"
+	return m.diffView.Render() + help
 }
 
 func main() {

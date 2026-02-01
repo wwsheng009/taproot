@@ -287,3 +287,213 @@ func TestDefaultDarkStyle(t *testing.T) {
 		t.Error("Syntax highlighting should be enabled by default")
 	}
 }
+
+func TestSetFilename(t *testing.T) {
+	dv := New()
+	filename := "main.go"
+
+	dv.SetFilename(filename)
+
+	if dv.filename != filename {
+		t.Errorf("Expected filename '%s', got '%s'", filename, dv.filename)
+	}
+}
+
+func TestSetSyntaxHighlighting(t *testing.T) {
+	dv := New()
+
+	// Default should be disabled
+	if dv.useSyntaxHighlighting {
+		t.Error("Syntax highlighting should be disabled by default in DiffView")
+	}
+
+	dv.SetSyntaxHighlighting(true)
+
+	if !dv.useSyntaxHighlighting {
+		t.Error("Syntax highlighting should be enabled after SetSyntaxHighlighting(true)")
+	}
+
+	dv.SetSyntaxHighlighting(false)
+
+	if dv.useSyntaxHighlighting {
+		t.Error("Syntax highlighting should be disabled after SetSyntaxHighlighting(false)")
+	}
+}
+
+func TestSyntaxHighlightingRendering(t *testing.T) {
+	dv := New()
+	dv.SetSize(100, 20)
+
+	// Set content and filename
+	dv.SetFilename("test.go")
+	dv.before = `package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, World!")
+}
+`
+	dv.after = `package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, Taproot!")
+}
+`
+	dv.Compute()
+
+	// Render without syntax highlighting
+	dv.SetSyntaxHighlighting(false)
+	resultNoHighlight := dv.Render()
+
+	if resultNoHighlight == "" {
+		t.Error("Render() should not return empty string without syntax highlighting")
+	}
+
+	// Render with syntax highlighting
+	dv.SetSyntaxHighlighting(true)
+	resultWithHighlight := dv.Render()
+
+	if resultWithHighlight == "" {
+		t.Error("Render() should not return empty string with syntax highlighting")
+	}
+
+	// The highlighted version should be different from non-highlighted
+	// (due to ANSI color codes for syntax)
+	if resultNoHighlight == resultWithHighlight {
+		t.Error("Render() output should differ with syntax highlighting enabled")
+	}
+}
+
+func TestGetHighlightedLines(t *testing.T) {
+	dv := New()
+	dv.SetFilename("test.go")
+	dv.before = `package main
+
+func main() {}`
+	dv.after = `package main
+
+func main() {
+	fmt.Println("hello")
+}`
+
+	// Without syntax highlighting enabled
+	dv.SetSyntaxHighlighting(false)
+	beforeLines, afterLines := dv.getHighlightedLines()
+
+	// Before content: line1, empty, func line = 3 lines
+	if len(beforeLines) != 3 {
+		t.Errorf("Expected 3 before lines, got %d", len(beforeLines))
+	}
+
+	// After content: line1, empty, func line, fmt line, closing brace = 5 lines
+	if len(afterLines) != 5 {
+		t.Errorf("Expected 5 after lines, got %d", len(afterLines))
+	}
+
+	// With syntax highlighting enabled
+	dv.SetSyntaxHighlighting(true)
+	highlightedBefore, highlightedAfter := dv.getHighlightedLines()
+
+	if len(highlightedBefore) != 3 {
+		t.Errorf("Expected 3 highlighted before lines, got %d", len(highlightedBefore))
+	}
+
+	if len(highlightedAfter) != 5 {
+		t.Errorf("Expected 5 highlighted after lines, got %d", len(highlightedAfter))
+	}
+}
+
+func TestSplitLineContentWithHighlight(t *testing.T) {
+	dv := New()
+	dv.SetFilename("test.go")
+
+	beforeLines := []string{"line1", "line2", "line3"}
+	afterLines := []string{"line1", "line2 modified", "line3"}
+
+	// Test with syntax highlighting disabled (falls back to splitLineContent)
+	dv.SetSyntaxHighlighting(false)
+
+	tests := []struct {
+		name          string
+		line          DiffLine
+		expectedLeft  string
+		expectedRight string
+	}{
+		{
+			name:          "Deleted line",
+			line:          DiffLine{Type: LineDeleted, Content: "line2", LineNum: 2},
+			expectedLeft:  "line2",
+			expectedRight: "",
+		},
+		{
+			name:          "Added line",
+			line:          DiffLine{Type: LineAdded, Content: "line2 modified", LineNum: 2},
+			expectedLeft:  "",
+			expectedRight: "line2 modified",
+		},
+		{
+			name:          "Context line",
+			line:          DiffLine{Type: LineContext, Content: "line3", LineNum: 3},
+			expectedLeft:  "line3",
+			expectedRight: "line3",
+		},
+		{
+			name:          "Header line",
+			line:          DiffLine{Type: LineHeader, Content: "@@ line info @@", LineNum: 0},
+			expectedLeft:  "@@ line info @@",
+			expectedRight: "@@ line info @@",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			beforeIdx := 0
+			afterIdx := 0
+			left, right := dv.splitLineContentWithHighlight(tt.line, &beforeIdx, &afterIdx, beforeLines, afterLines)
+
+			if left != tt.expectedLeft {
+				t.Errorf("Expected left content '%s', got '%s'", tt.expectedLeft, left)
+			}
+			if right != tt.expectedRight {
+				t.Errorf("Expected right content '%s', got '%s'", tt.expectedRight, right)
+			}
+		})
+	}
+}
+
+func TestSplitLineContentWithHighlight_IndexTracking(t *testing.T) {
+	dv := New()
+	dv.SetFilename("test.go")
+	dv.SetSyntaxHighlighting(true)
+
+	beforeLines := []string{"line1", "line2", "line3"}
+	afterLines := []string{"line1", "line2 modified", "line3"}
+
+	beforeIdx := 0
+	afterIdx := 0
+
+	// Test deleted line - increments before index
+	line1 := DiffLine{Type: LineDeleted, Content: "line1"}
+	_, _ = dv.splitLineContentWithHighlight(line1, &beforeIdx, &afterIdx, beforeLines, afterLines)
+	if beforeIdx != 1 || afterIdx != 0 {
+		t.Errorf("Deleted line should increment beforeIdx, got beforeIdx=%d, afterIdx=%d", beforeIdx, afterIdx)
+	}
+
+	// Test added line - increments after index
+	line2 := DiffLine{Type: LineAdded, Content: "line1"}
+	_, _ = dv.splitLineContentWithHighlight(line2, &beforeIdx, &afterIdx, beforeLines, afterLines)
+	if beforeIdx != 1 || afterIdx != 1 {
+		t.Errorf("Added line should increment afterIdx, got beforeIdx=%d, afterIdx=%d", beforeIdx, afterIdx)
+	}
+
+	// Test context line - increments both indices
+	line3 := DiffLine{Type: LineContext, Content: "line2 modified"}
+	_, _ = dv.splitLineContentWithHighlight(line3, &beforeIdx, &afterIdx, beforeLines, afterLines)
+	if beforeIdx != 2 || afterIdx != 2 {
+		t.Errorf("Context line should increment both indices, got beforeIdx=%d, afterIdx=%d", beforeIdx, afterIdx)
+	}
+}
+

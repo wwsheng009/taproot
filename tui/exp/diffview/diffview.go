@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
+	"github.com/wwsheng009/taproot/tui/highlight"
 	"github.com/wwsheng009/taproot/ui/styles"
 )
 
@@ -40,6 +41,8 @@ type DiffView struct {
 	after       string
 	layout      Layout
 	lineNumbers bool
+	filename    string
+	useSyntaxHighlighting bool
 	width       int
 	height      int
 	xOffset     int
@@ -47,6 +50,9 @@ type DiffView struct {
 
 	lines      []DiffLine
 	totalLines int
+	
+	// Cache for highlighted content
+	highlightCache map[string]string
 }
 
 // New creates a new DiffView
@@ -80,6 +86,19 @@ func (dv *DiffView) SetLayout(layout Layout) *DiffView {
 // SetLineNumbers enables/disables line numbers
 func (dv *DiffView) SetLineNumbers(show bool) *DiffView {
 	dv.lineNumbers = show
+	return dv
+}
+
+// SetFilename sets the filename for syntax detection
+func (dv *DiffView) SetFilename(name string) *DiffView {
+	dv.filename = name
+	return dv
+}
+
+// SetSyntaxHighlighting enables/disables syntax highlighting in split view
+func (dv *DiffView) SetSyntaxHighlighting(enabled bool) *DiffView {
+	dv.useSyntaxHighlighting = enabled
+	dv.highlightCache = make(map[string]string)
 	return dv
 }
 
@@ -206,6 +225,11 @@ func (dv *DiffView) renderUnified() string {
 	s := dv.styles
 	var result strings.Builder
 
+	// If syntax highlighting is enabled, use highlighted version
+	if dv.useSyntaxHighlighting && dv.filename != "" {
+		return dv.renderUnifiedWithHighlight()
+	}
+
 	// Calculate visible range
 	start := dv.yOffset
 	end := min(start+dv.height, len(dv.lines))
@@ -222,6 +246,138 @@ func (dv *DiffView) renderUnified() string {
 	result.WriteString("\n" + footer)
 
 	return result.String()
+}
+
+// renderUnifiedWithHighlight renders unified diff view with syntax highlighting
+func (dv *DiffView) renderUnifiedWithHighlight() string {
+	s := dv.styles
+	var result strings.Builder
+
+	// Get syntax-highlighted lines
+	beforeLines, afterLines := dv.getHighlightedLines()
+
+	// Reconstruct line indices to map diff lines to highlighted content
+	beforeIdx := 0
+	afterIdx := 0
+
+	// Calculate visible range
+	start := dv.yOffset
+	renderedRows := 0
+	for i := 0; i < len(dv.lines) && renderedRows < dv.height; i++ {
+		line := dv.lines[i]
+
+		// Skip lines before the visible range
+		if i < start {
+			dv.updateLineIndices(line, &beforeIdx, &afterIdx)
+			continue
+		}
+
+		// Check if we should stop rendering
+		if renderedRows >= dv.height {
+			break
+		}
+
+		// Get highlighted content for this line
+		content := ""
+
+		switch line.Type {
+		case LineAdded:
+			if afterIdx < len(afterLines) {
+				content = afterLines[afterIdx]
+				afterIdx++
+			}
+		case LineDeleted:
+			if beforeIdx < len(beforeLines) {
+				content = beforeLines[beforeIdx]
+				beforeIdx++
+			}
+		case LineContext:
+			if beforeIdx < len(beforeLines) && afterIdx < len(afterLines) {
+				content = beforeLines[beforeIdx]
+				beforeIdx++
+				afterIdx++
+			}
+		case LineHeader:
+			content = line.Content
+		}
+
+		// Render the line with diff styling
+		result.WriteString(dv.renderHighlightedLine(line, content))
+		renderedRows++
+	}
+
+	// Footer
+	footer := s.Base.Foreground(s.FgMuted).
+		Render(fmt.Sprintf("Lines %d-%d of %d | Scroll: ←/→ ↑/↓ (Syntax: %s)",
+			start+1, min(start+dv.height, len(dv.lines)), dv.totalLines, dv.filename))
+	result.WriteString("\n" + footer)
+
+	return result.String()
+}
+
+// updateLineIndices updates before/after line indices for a diff line
+func (dv *DiffView) updateLineIndices(line DiffLine, beforeIdx, afterIdx *int) {
+	switch line.Type {
+	case LineAdded:
+		(*afterIdx)++
+	case LineDeleted:
+		(*beforeIdx)++
+	case LineContext:
+		(*beforeIdx)++
+		(*afterIdx)++
+	case LineHeader:
+		// Headers don't affect line indices
+	}
+}
+
+// renderHighlightedLine renders a diff line with syntax highlighting and diff styling
+func (dv *DiffView) renderHighlightedLine(line DiffLine, highlightedContent string) string {
+	s := dv.styles
+	var lineBuilder strings.Builder
+
+	// Line marker
+	var marker string
+	switch line.Type {
+	case LineAdded:
+		marker = "+ "
+	case LineDeleted:
+		marker = "- "
+	case LineContext:
+		marker = "  "
+	case LineHeader:
+		marker = "@@"
+	}
+
+	// Get the diff base style for this line type
+	diffStyle := dv.getStyleForLineType(line.Type)
+
+	// Render marker with diff style
+	markerStyled := diffStyle.Bold(true).Render(marker)
+
+	// Render highlighted content (already has syntax highlighting colors)
+	// Apply diff background color while preserving syntax colors
+	var contentStyled string
+	if highlightedContent != "" {
+		contentStyled = diffStyle.Render(highlightedContent)
+	} else if line.Content != "" {
+		contentStyled = diffStyle.Render(line.Content)
+	} else {
+		contentStyled = ""
+	}
+
+	// Line number
+	lineNumStr := ""
+	if dv.lineNumbers && line.LineNum > 0 {
+		lineNumStr = fmt.Sprintf("%5d ", line.LineNum)
+		lineNumStyled := s.Base.Foreground(s.FgMuted).Render(lineNumStr)
+		lineBuilder.WriteString(lineNumStyled)
+	}
+
+	lineBuilder.WriteString(markerStyled)
+	lineBuilder.WriteString(contentStyled)
+	lineBuilder.WriteString("\n")
+
+	return lineBuilder.String()
 }
 
 // renderSplit renders side-by-side split diff view
@@ -247,6 +403,13 @@ func (dv *DiffView) renderSplit() string {
 	// Calculate visible range (divide by 2 since each diff line takes 2 rows in split view)
 	start := dv.yOffset
 	visibleLines := dv.height
+
+	// If syntax highlighting is enabled, render unified view instead
+	// Split view with syntax highlighting is not currently supported due to
+	// complexity of aligning highlighted content with diff structure
+	if dv.useSyntaxHighlighting && dv.filename != "" {
+		return dv.renderUnifiedWithHighlight()
+	}
 
 	// Render each line pair
 	i := start
@@ -315,6 +478,43 @@ func (dv *DiffView) renderSplit() string {
 	return result.String()
 }
 
+// getHighlightedLines returns syntax-highlighted lines for the before/after content
+func (dv *DiffView) getHighlightedLines() (beforeLines, afterLines []string) {
+	if !dv.useSyntaxHighlighting || dv.filename == "" {
+		return strings.Split(dv.before, "\n"), strings.Split(dv.after, "\n")
+	}
+
+	// Check cache
+	beforeKey := "before:" + dv.filename
+	afterKey := "after:" + dv.filename
+
+	if cached, ok := dv.highlightCache[beforeKey]; ok {
+		beforeLines = strings.Split(cached, "\n")
+	} else {
+		highlighted, err := highlight.SyntaxHighlight(dv.styles, dv.before, dv.filename, dv.styles.BgSubtle)
+		if err == nil {
+			dv.highlightCache[beforeKey] = highlighted
+			beforeLines = strings.Split(highlighted, "\n")
+		} else {
+			beforeLines = strings.Split(dv.before, "\n")
+		}
+	}
+
+	if cached, ok := dv.highlightCache[afterKey]; ok {
+		afterLines = strings.Split(cached, "\n")
+	} else {
+		highlighted, err := highlight.SyntaxHighlight(dv.styles, dv.after, dv.filename, dv.styles.BgSubtle)
+		if err == nil {
+			dv.highlightCache[afterKey] = highlighted
+			afterLines = strings.Split(highlighted, "\n")
+		} else {
+			afterLines = strings.Split(dv.after, "\n")
+		}
+	}
+
+	return beforeLines, afterLines
+}
+
 // splitLineContent splits a diff line into before and after content
 func (dv *DiffView) splitLineContent(line DiffLine) (string, string) {
 	switch line.Type {
@@ -329,6 +529,52 @@ func (dv *DiffView) splitLineContent(line DiffLine) (string, string) {
 	default:
 		return "", ""
 	}
+}
+
+// splitLineContentWithHighlight splits a diff line using syntax-highlighted content
+func (dv *DiffView) splitLineContentWithHighlight(line DiffLine, beforeLineIndex, afterLineIndex *int, beforeLines, afterLines []string) (string, string) {
+	// If syntax highlighting is disabled, fall back to original method
+	if !dv.useSyntaxHighlighting || dv.filename == "" {
+		return dv.splitLineContent(line)
+	}
+
+	var leftContent, rightContent string
+
+	switch line.Type {
+	case LineAdded:
+		// Only right side, increment after line index
+		if *afterLineIndex < len(afterLines) {
+			rightContent = afterLines[*afterLineIndex]
+			(*afterLineIndex)++
+		}
+		leftContent = ""
+	case LineDeleted:
+		// Only left side, increment before line index
+		if *beforeLineIndex < len(beforeLines) {
+			leftContent = beforeLines[*beforeLineIndex]
+			(*beforeLineIndex)++
+		}
+		rightContent = ""
+	case LineContext:
+		// Both sides, increment both indices
+		if *beforeLineIndex < len(beforeLines) {
+			leftContent = beforeLines[*beforeLineIndex]
+			(*beforeLineIndex)++
+		}
+		if *afterLineIndex < len(afterLines) {
+			rightContent = afterLines[*afterLineIndex]
+			(*afterLineIndex)++
+		}
+	case LineHeader:
+		// Headers have no line indices, use content as-is
+		leftContent = line.Content
+		rightContent = line.Content
+	default:
+		leftContent = ""
+		rightContent = ""
+	}
+
+	return leftContent, rightContent
 }
 
 // getStyleForLineType returns the style for a given line type
