@@ -290,17 +290,43 @@ E:/projects/ai/crush/internal/tui/components/mcp/mcp.go
 **目标**: 实现分屏 diff 视图
 
 **任务**:
-- [ ] 迁移 `internal/tui/exp/diffview/split.go`
-- [ ] 实现分屏布局
-- [ ] 同步滚动
-- [ ] 语法高亮集成
-- [ ] 测试用例
+- [x] 迁移 `tui/exp/diffview/split.go` ✅
+- [x] 实现分屏布局 ✅
+- [x] 同步滚动 ✅
+- [x] 语法高亮集成 ✅ (Split view 现在支持语法高亮)
+- [x] 测试用例 ✅ (26 个测试全部通过，包括 split view 和水平滚动测试)
 
 **源文件**:
 ```
-E:/projects/ai/crush/internal/tui/exp/diffview/split.go
-E:/projects/ai/crush/internal/tui/exp/diffview/style.go
+tui/exp/diffview/split.go
+tui/exp/diffview/style.go
+tui/exp/diffview/diffview.go
 ```
+
+**完成内容**:
+- ✅ Split hunk 转换逻辑 (`split.go`, 71 lines)
+- ✅ 分屏布局实现 (`renderSplit()`, 支持左右分栏)
+- ✅ 同步滚动 (垂直和水平滚动支持)
+- ✅ 语法高亮集成 (Split view 现在也支持语法高亮)
+- ✅ 横向滚动支持 (xOffset 在 split view 中工作)
+- ✅ 26 个测试用例 (包括 split view specific tests)
+
+**文件结构**:
+```
+tui/exp/diffview/
+├── diffview.go       (687 lines) 主 diff 查看器实现
+├── split.go          (71 lines)  Split hunk 转换
+├── style.go          (101 lines) 样式定义
+└── diffview_test.go  (683 lines) 测试套件
+```
+
+**特性**:
+- Unified 和 Split 两种布局模式
+- 支持语法高亮（两种模式都支持）
+- 垂直和水平滚动
+- 行号显示
+- 响应式列宽
+- ANSI 颜色码正确处理
 
 ---
 

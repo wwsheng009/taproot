@@ -404,23 +404,31 @@ func (dv *DiffView) renderSplit() string {
 	start := dv.yOffset
 	visibleLines := dv.height
 
-	// If syntax highlighting is enabled, render unified view instead
-	// Split view with syntax highlighting is not currently supported due to
-	// complexity of aligning highlighted content with diff structure
-	if dv.useSyntaxHighlighting && dv.filename != "" {
-		return dv.renderUnifiedWithHighlight()
-	}
+	// Get syntax-highlighted lines if enabled
+	beforeLines, afterLines := dv.getHighlightedLines()
+
+	// Track line indices for both sides
+	beforeLineIdx := 0
+	afterLineIdx := 0
 
 	// Render each line pair
 	i := start
-	for renderedRows := 0; renderedRows < visibleLines && i < len(dv.lines); i++ {
+	renderedRows := 0
+	for renderedRows < visibleLines && i < len(dv.lines) {
 		if i >= len(dv.lines) {
 			break
 		}
 
 		line := dv.lines[i]
+		i++
 
-		leftContent, rightContent := dv.splitLineContent(line)
+		// Get left and right content with syntax highlighting
+		leftContent, rightContent := "", ""
+		if dv.useSyntaxHighlighting && dv.filename != "" {
+			leftContent, rightContent = dv.splitLineContentWithHighlight(line, &beforeLineIdx, &afterLineIdx, beforeLines, afterLines)
+		} else {
+			leftContent, rightContent = dv.splitLineContent(line)
+		}
 
 		// Get line numbers for both sides
 		leftLineNum := ""
@@ -428,11 +436,13 @@ func (dv *DiffView) renderSplit() string {
 
 		if dv.lineNumbers {
 			if line.Type == LineDeleted || line.Type == LineContext {
+				// For deleted or context lines, use the line number from the diff
 				leftLineNum = fmt.Sprintf("%5d ", line.LineNum)
 			} else {
 				leftLineNum = "      "
 			}
 			if line.Type == LineAdded || line.Type == LineContext {
+				// For added or context lines, use the line number from the diff
 				rightLineNum = fmt.Sprintf("%5d ", line.LineNum)
 			} else {
 				rightLineNum = "      "
@@ -444,6 +454,22 @@ func (dv *DiffView) renderSplit() string {
 
 		leftStyled := leftStyle.Render(leftContent)
 		rightStyled := rightStyle.Render(rightContent)
+
+		// Handle horizontal scrolling by applying offset
+		if dv.xOffset > 0 {
+			leftRunes := []rune(leftStyled)
+			rightRunes := []rune(rightStyled)
+			if dv.xOffset < len(leftRunes) {
+				leftStyled = string(leftRunes[dv.xOffset:])
+			} else {
+				leftStyled = ""
+			}
+			if dv.xOffset < len(rightRunes) {
+				rightStyled = string(rightRunes[dv.xOffset:])
+			} else {
+				rightStyled = ""
+			}
+		}
 
 		if lipgloss.Width(leftStyled) > leftColWidth {
 			leftStyled = lipgloss.NewStyle().MaxWidth(leftColWidth).Render(leftStyled)
@@ -469,10 +495,14 @@ func (dv *DiffView) renderSplit() string {
 	}
 
 	// Footer
-	end:= i
+	end := start + renderedRows
+	syntaxStatus := ""
+	if dv.useSyntaxHighlighting && dv.filename != "" {
+		syntaxStatus = fmt.Sprintf(" | Syntax: %s", dv.filename)
+	}
 	footer := s.Base.Foreground(s.FgMuted).
-		Render(fmt.Sprintf("Lines %d-%d of %d | Scroll: ←/→ ↑/↓",
-			start+1, end, dv.totalLines))
+		Render(fmt.Sprintf("Lines %d-%d of %d%s | Scroll: ←/→ ↑/↓",
+			start+1, end, dv.totalLines, syntaxStatus))
 	result.WriteString("\n" + footer)
 
 	return result.String()

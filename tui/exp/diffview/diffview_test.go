@@ -1,6 +1,8 @@
 package diffview
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -496,4 +498,193 @@ func TestSplitLineContentWithHighlight_IndexTracking(t *testing.T) {
 		t.Errorf("Context line should increment both indices, got beforeIdx=%d, afterIdx=%d", beforeIdx, afterIdx)
 	}
 }
+
+func TestSplitViewRendering(t *testing.T) {
+	dv := New()
+	dv.SetSize(120, 20)
+	dv.SetLayout(LayoutSplit)
+
+	before := `package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, World!")
+}`
+
+	after := `package main
+
+import "fmt"
+
+func main() {
+	fmt.Println("Hello, Taproot!")
+}`
+
+	dv.Before(before)
+	dv.After(after)
+	dv.Compute()
+
+	result := dv.Render()
+
+	if result == "" {
+		t.Error("Split view render should not return empty string")
+	}
+
+	// Check for split view indicators
+	if !strings.Contains(result, "│") {
+		t.Error("Split view should contain divider character")
+	}
+
+	// Check that we have the layout indicator
+	if !strings.Contains(result, "Split") {
+		t.Error("Split view header should indicate 'Split' layout")
+	}
+}
+
+func TestSplitViewWithSyntaxHighlighting(t *testing.T) {
+	dv := New()
+	dv.SetSize(120, 20)
+	dv.SetLayout(LayoutSplit)
+	dv.SetFilename("test.go")
+	dv.SetSyntaxHighlighting(true)
+
+	before := `package main
+
+func main() {}`
+
+	after := `package main
+
+func main() {
+	fmt.Println("test")
+}`
+
+	dv.Before(before)
+	dv.After(after)
+	dv.Compute()
+
+	result := dv.Render()
+
+	if result == "" {
+		t.Error("Split view with syntax highlighting should not return empty string")
+	}
+
+	// Should contain divider
+	if !strings.Contains(result, "│") {
+		t.Error("Split view should contain divider even with syntax highlighting")
+	}
+
+	// Should indicate syntax highlighting in footer
+	if !strings.Contains(result, "Syntax:") {
+		t.Error("Footer should indicate syntax highlighting is enabled")
+	}
+}
+
+func TestSplitViewScrolling(t *testing.T) {
+	dv := New()
+	dv.SetSize(120, 10) // Small height to test scrolling
+	dv.SetLayout(LayoutSplit)
+
+	// Create a longer diff
+	var beforeBuilder strings.Builder
+	var afterBuilder strings.Builder
+	for i := 1; i <= 30; i++ {
+		beforeBuilder.WriteString(fmt.Sprintf("line %d\n", i))
+		if i == 15 {
+			afterBuilder.WriteString(fmt.Sprintf("line %d modified\n", i))
+		} else {
+			afterBuilder.WriteString(fmt.Sprintf("line %d\n", i))
+		}
+	}
+
+	dv.Before(beforeBuilder.String())
+	dv.After(afterBuilder.String())
+	dv.Compute()
+
+	// Initial render
+	result1 := dv.Render()
+
+	// Scroll down
+	dv.ScrollDown()
+	result2 := dv.Render()
+
+	// Results should be different (due to different visible lines)
+	if result1 == result2 {
+		t.Error("Split view rendering should change after scrolling")
+	}
+
+	// Can scroll down
+	if !dv.CanScrollDown() {
+		t.Error("Should be able to scroll down from top")
+	}
+
+	// Scroll to bottom
+	dv.ScrollToBottom()
+	result3 := dv.Render()
+
+	// Should not be able to scroll further down
+	if dv.CanScrollDown() {
+		t.Error("Should not be able to scroll down at bottom")
+	}
+
+	// Results should be different from top
+	if result1 == result3 {
+		t.Error("Split view rendering at top and bottom should differ")
+	}
+
+	// Scroll up
+	dv.ScrollUp()
+	if !dv.CanScrollDown() {
+		t.Error("After scrolling up from bottom, should be able to scroll down again")
+	}
+}
+
+func TestSplitHorizontalScrolling(t *testing.T) {
+	dv := New()
+	dv.SetSize(80, 20) // Narrow width to test horizontal scrolling
+	dv.SetLayout(LayoutSplit)
+
+	// Create long lines that will be truncated
+	longLine := strings.Repeat("x", 200)
+	dv.Before(longLine + "\n")
+	dv.After(longLine + " modified\n")
+	dv.Compute()
+
+	// Test xOffset changes
+	initialOffset := dv.xOffset
+	dv.ScrollRight()
+
+	// Should increase xOffset
+	if dv.xOffset <= initialOffset {
+		t.Errorf("ScrollRight should increase xOffset, got %d (was %d)", dv.xOffset, initialOffset)
+	}
+
+	// Scroll back
+	dv.ScrollLeft()
+
+	// Should decrease offset
+	if dv.xOffset >= initialOffset + 4 {
+		t.Errorf("ScrollLeft should decrease offset, got %d", dv.xOffset)
+	}
+
+	// Test setting offset directly
+	dv.SetXOffset(50)
+	if dv.xOffset != 50 {
+		t.Errorf("SetXOffset(50) should set xOffset to 50, got %d", dv.xOffset)
+	}
+
+	// Test negative clamping
+	dv.SetXOffset(-10)
+	if dv.xOffset != 0 {
+		t.Errorf("SetXOffset with negative value should clamp to 0, got %d", dv.xOffset)
+	}
+
+	// Render should not panic with various offsets
+	dv.SetXOffset(0)
+	_ = dv.Render()
+
+	dv.SetXOffset(100)
+	_ = dv.Render()
+}
+
+
 
