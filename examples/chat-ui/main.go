@@ -398,32 +398,30 @@ func (m Model) renderMessages() string {
 		// Position the message based on type
 		if isUserMessage {
 			// User message - right aligned
-			// Use Place to position the message on the right side
+			// Calculate left padding to push message to right
+			msgWidth := lipgloss.Width(styledMessage)
 			var indicator string
 			if isSelected {
-				indicator = styleSelectedIndicator.Render("▶")
+				indicator = "▶"
 			} else {
 				indicator = " "
 			}
 
-			// Place indicator on left, message on right
-			leftSpace := strings.Repeat(" ", lipgloss.Width(indicator))
-			rightAlignedMsg := lipgloss.Place(
-				availableWidth,
-				lipgloss.Height(styledMessage),
-				lipgloss.Right,
-				lipgloss.Top,
-				styledMessage,
-			)
+			// Calculate padding: availableWidth - messageWidth - indicatorWidth
+			padding := availableWidth - msgWidth - 1
+			if padding < 0 {
+				padding = 0
+			}
+			paddingStr := strings.Repeat(" ", padding)
 
-			// Add indicator on the far left
-			b.WriteString(indicator + leftSpace + rightAlignedMsg)
+			// Build row: [indicator] [padding] [message]
+			b.WriteString(indicator + paddingStr + styledMessage)
 		} else {
 			// Assistant/other message - left aligned
 			// Add selection indicator on the left
 			var indent string
 			if isSelected {
-				indent = styleSelectedIndicator.Render("▶ ") + " "
+				indent = "▶  "
 			} else {
 				indent = "   "
 			}
@@ -479,16 +477,14 @@ var (
 			BorderForeground(lipgloss.Color("#89b4fa")).
 			Foreground(lipgloss.Color("#cdd6f4")).
 			Padding(0, 1).
-			MaxWidth(60).
-			Align(lipgloss.Right)
+			MaxWidth(60)
 
 	styleUserMessageSelected = lipgloss.NewStyle().
 			Border(lipgloss.ThickBorder()).
 			BorderForeground(lipgloss.Color("#b4befe")).
 			Foreground(lipgloss.Color("#cdd6f4")).
 			Padding(0, 1).
-			MaxWidth(60).
-			Align(lipgloss.Right)
+			MaxWidth(60)
 
 	// Assistant message styles (left-aligned with border)
 	styleAssistantMessage = lipgloss.NewStyle().
