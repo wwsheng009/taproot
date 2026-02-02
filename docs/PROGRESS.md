@@ -57,6 +57,28 @@ Taproot 是从 Crush CLI 提取的 TUI 框架，提供可复用的终端 UI 组�
 - 推理显示 (reasoning/)
 - 会话切换 (sessions/)
 
+---
+
+### Phase 8: 消息系统 (100%)
+
+|| 组件 | 文件 | 功能 | 代码行数 |
+||------|------|------|----------|
+|| **消息接口** | `ui/components/messages/types.go` | Message, MessageItem, Focusable, Expandable | ~250 |
+|| **助手消息** | `ui/components/messages/assistant.go` | Markdown渲染, Token统计, 可展开 | ~200 |
+|| **用户消息** | `ui/components/messages/user.go` | 代码块, 文件附件, 复制模式 | ~250 |
+|| **工具消息** | `ui/components/messages/tools.go` | 工具调用详情, 状态跟踪 | ~300 |
+|| **Fetch消息** | `ui/components/messages/fetch.go` | Agentic fetch, 嵌套消息, 树形渲染 | ~730 |
+|| **诊断消息** | `ui/components/messages/diagnostics.go` | 诊断汇总, 代码高亮, 可展开 | ~200 |
+|| **TODO消息** | `ui/components/messages/todos.go` | TODO列表, 进度条, 状态图标 | ~540 |
+|| **Markdown** | `ui/styles/markdown.go` | 表格, 任务列表, 链接, 图片渲染 | ~400 |
+
+**小计**: ~3,040 行 (组件) + ~400 行 (Markdown) = ~3,440 行
+
+**测试覆盖**:
+- `messages_test.go`: ~570 lines, 60+ tests
+- `markdown_test.go`: ~250 lines, 10+ tests
+- 所有测试通过 ✅
+
 | 示例 | 文件 | 功能 |
 |------|------|------|
 | **demo** | `examples/demo/main.go` | 简单计数器 |
@@ -82,17 +104,20 @@ Taproot 是从 Crush CLI 提取的 TUI 框架，提供可复用的终端 UI 组�
 | **替代方案** | `docs/ALTERNATIVES.md` | 技术选型分析 |
 | **任务清单** | `docs/TASKS.md` | 详细待办事项 |
 | **开发指南** | `AGENTS.md` | Agent 工作指南 |
+| **V2 路线图** | `docs/V2_ROADMAP.md` | v2.0 完整开发路线图 |
+| **Phase 7 摘要** | `docs/PHASE_7_SUMMARY.md` | Phase 7.1-7.3 完成报告 |
+| **Phase 8 摘要** | `docs/PHASE_8_SUMMARY.md` | Phase 8 消息系统完成报告 |
 
 ---
 
 ## 总体统计
 
 ```
-已完成代码: ~8,670 行
-完成阶段: Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 (100%)
-组件数量: 40+ 核心组件
+已完成代码: ~12,110 行
+完成阶段: Phase 1 + Phase 2 + Phase 3 + Phase 4 + Phase 5 + Phase 8 (100%)
+组件数量: 50+ 核心组件
 示例程序: 13 个
-文档页数: 5 个
+文档页数: 6 个
 ```
 
 ---

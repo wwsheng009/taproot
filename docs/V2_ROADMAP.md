@@ -330,6 +330,133 @@ tui/exp/diffview/
 
 ---
 
+## Phase 8: 消息系统 (3-4周) ✅
+
+### 8.1 消息渲染框架 ⭐⭐⭐
+
+**目标**: 创建解耦的消息渲染系统
+
+**任务**:
+- [x] 创建 `ui/components/messages/` ✅
+- [x] 迁移消息组件 ✅
+  - [x] types.go - 基础接口 ✅
+  - [x] assistant.go - 助手消息 ✅
+  - [x] user.go - 用户消息 ✅
+  - [x] tools.go - 工具调用 ✅
+  - [x] fetch.go - Agentic fetch ✅
+  - [x] diagnostics.go - 诊断信息 ✅
+  - [x] todos.go - 任务列表 ✅
+- [x] 解耦 message.Message 依赖 ✅
+  - [x] 定义通用接口 (Message 接口与 Crush 项目解耦)
+  - [x] 适配器模式 (引擎无关的 render.Model 接口)
+
+**源文件**:
+```
+E:/projects/ai/crush/internal/ui/chat/*.go
+```
+
+**完成内容**:
+- ✅ 引擎无关的 Message 和 MessageItem 接口
+- ✅ 6 种消息类型组件 (Assistant, User, Tool, Fetch, Diagnostic, Todo)
+- ✅ Focusable, Expandable, Identifiable 等适配器接口
+- ✅ 综合测试套件 (messages_test.go, 570+ lines, 60+ tests)
+
+**文件结构**:
+```
+ui/components/messages/
+├── types.go           (250+ lines) - 核心接口和类型定义
+├── assistant.go       (200+ lines) - 助手消息组件
+├── user.go            (250+ lines) - 用户消息组件
+├── tools.go           (300+ lines) - 工具调用消息组件
+├── fetch.go           (730+ lines) - Agentic fetch 消息组件
+├── diagnostics.go     (200+ lines) - 诊断信息组件
+├── todos.go           (540+ lines) - TODO 列表组件
+└── messages_test.go   (570+ lines) - 综合测试
+```
+
+**特性**:
+- Markdown 渲染与语法高亮（AssistantMessage）
+- Token 使用统计显示
+- 文件附件管理（UserMessage）
+- 多层嵌套消息支持（FetchTypeAgentic）
+- 多诊断汇总与代码片段高亮（DiagnosticMessage）
+- 进度跟踪与状态管理（TodoMessage）
+- 缓存优化提升性能
+
+---
+
+### 8.2 Markdown 渲染增强 ⭐⭐
+
+**目标**: 更强大的 Markdown 渲染
+
+**任务**:
+- [x] 增强 `internal/ui/styles/styles.go` (incorporating chroma/markdown logic) ✅
+- [x] 代码块语法高亮 ✅
+- [x] 表格渲染 ✅ (RenderTable/ParseTable/ParseTableRow/ParseTableAlignment)
+- [x] 任务列表 ✅ (RenderTaskList/TaskItem 结构)
+- [x] 链接处理 ✅ (RenderLink/MarkdownLink)
+- [x] 图片引用处理 ✅ (RenderImage/MarkdownImage)
+
+**完成内容**:
+- ✅ MarkdownTable 完整表格渲染系统（表头、边框、对齐、交替行色）
+- ✅ MarkdownTaskList 任务列表渲染（复选框、文本样式）
+- ✅ MarkdownLink 链接处理（URL 显示、悬停/激活样式）
+- ✅ MarkdownImage 图片引用（占位符、URL 信息、图标）
+- ✅ ParseTable/ParseTableRow/ParseTableAlignment 解析函数
+- ✅ 综合测试套件 (markdown_test.go, 250+ lines, 10+ tests)
+
+**文件结构**:
+```
+ui/styles/
+└── markdown.go        (400+ lines) - Markdown 渲染功能
+                       - RenderTable, ParseTable
+                       - RenderTaskList
+                       - RenderLink
+                       - RenderImage
+```
+
+**特性**:
+- 支持左/中/右对齐
+- 自动列宽调整与响应式表格
+- 交替行色提升可读性
+- 自定义边框样式
+- 复选框指示器（☑/☐）
+- 链接 URL 显示切换
+- 图片占位符（🖼）与信息显示
+
+---
+
+### 8.3 任务列表组件 ⭐⭐
+
+**目标**: TODO/Tasks 列表显示
+
+**任务**:
+- [x] 迁移 todos.go ✅ (ui/components/messages/todos.go, 540+ lines)
+- [x] 任务状态图标 ✅ (⬜ pending, 🔄 in-progress, ✅ completed)
+- [x] 进度条 ✅ (整体进度 + 单项进度)
+- [x] 展开/折叠 ✅ (expanded/ToggleExpanded/键盘和点击事件)
+- [ ] 动画效果 (AnimationHandler 接口定义，但暂未实现)
+
+**完成内容**:
+- ✅ TodoMessage 组件（540+ lines）
+- ✅ 三种任务状态：Pending, InProgress, Completed
+- ✅ 整体进度条与单项进度条
+- ✅ 状态图标与颜色编码
+- ✅ 展开/折叠交互（Space/ Enter/点击）
+- ✅ 任务标签支持
+- ✅ 焦点状态与样式
+- ✅ 缓存优化
+
+**特性**:
+- 任务计数与状态统计 (TodoCount, CompletedCount, InProgressCount)
+- 添加/删除/更新任务方法
+- 批量操作 SetTodos
+- 响应式宽度调整
+- 可配置的任务指示符
+- 自动完成的视觉反馈
+
+---
+
 ## Phase 8: 消息系统 (3-4周)
 
 ### 8.1 消息渲染框架 ⭐⭐⭐
@@ -346,9 +473,9 @@ tui/exp/diffview/
   - [x] fetch.go - Agentic fetch ✅
   - [x] diagnostics.go - 诊断信息 ✅
   - [x] todos.go - 任务列表 ✅
-- [ ] 解耦 message.Message 依赖
-  - [ ] 定义通用接口
-  - [ ] 适配器模式
+- [x] 解耦 message.Message 依赖 ✅
+  - [x] 定义通用接口 (Message 接口与 Crush 项目解耦)
+  - [x] 适配器模式 (引擎无关的 render.Model 接口)
 
 **源文件**:
 ```
@@ -364,10 +491,10 @@ E:/projects/ai/crush/internal/ui/chat/*.go
 **任务**:
 - [x] 增强 `internal/ui/styles/styles.go` (incorporating chroma/markdown logic) ✅
 - [x] 代码块语法高亮 ✅
-- [ ] 表格渲染
-- [ ] 任务列表
-- [ ] 链接处理
-- [ ] 图片引用处理
+- [x] 表格渲染 ✅ (RenderTable/ParseTable/ParseTableRow/ParseTableAlignment)
+- [x] 任务列表 ✅ (RenderTaskList/TaskItem 结构)
+- [x] 链接处理 ✅ (RenderLink/MarkdownLink)
+- [x] 图片引用处理 ✅ (RenderImage/MarkdownImage)
 
 ---
 
@@ -376,11 +503,11 @@ E:/projects/ai/crush/internal/ui/chat/*.go
 **目标**: TODO/Tasks 列表显示
 
 **任务**:
-- [ ] 迁移 `internal/ui/chat/todos.go`
-- [ ] 任务状态图标
-- [ ] 进度条
-- [ ] 展开/折叠
-- [ ] 动画效果
+- [x] 迁移 todos.go ✅ (ui/components/messages/todos.go, 540+ lines)
+- [x] 任务状态图标 ✅ (⬜ pending, 🔄 in-progress, ✅ completed)
+- [x] 进度条 ✅ (整体进度 + 单项进度)
+- [x] 展开/折叠 ✅ (expanded/ToggleExpanded/键盘和点击事件)
+- [ ] 动画效果 (AnimationHandler 接口定义，但暂未实现)
 
 ---
 
