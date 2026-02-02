@@ -344,10 +344,6 @@ func (m Model) renderMessages() string {
 
 	var b strings.Builder
 	availableWidth := m.width - 6 // Account for padding and borders
-	messageWidth := 60
-	if availableWidth*2/3 < messageWidth {
-		messageWidth = availableWidth * 2 / 3
-	}
 
 	// Show messages with chat-style layout
 	for i, msg := range m.messages {
@@ -370,9 +366,9 @@ func (m Model) renderMessages() string {
 			// User message - right aligned
 			isUserMessage = true
 			if isSelected {
-				messageStyle = styleUserMessageSelected.Width(messageWidth)
+				messageStyle = styleUserMessageSelected
 			} else {
-				messageStyle = styleUserMessage.Width(messageWidth)
+				messageStyle = styleUserMessage
 			}
 			_ = m // Avoid unused variable warning
 
@@ -380,9 +376,9 @@ func (m Model) renderMessages() string {
 			// Assistant message - left aligned
 			isUserMessage = false
 			if isSelected {
-				messageStyle = styleAssistantMessageSelected.Width(messageWidth)
+				messageStyle = styleAssistantMessageSelected
 			} else {
-				messageStyle = styleAssistantMessage.Width(messageWidth)
+				messageStyle = styleAssistantMessage
 			}
 			_ = m // Avoid unused variable warning
 
@@ -390,9 +386,9 @@ func (m Model) renderMessages() string {
 			// Other message types - left aligned
 			isUserMessage = false
 			if isSelected {
-				messageStyle = styleOtherMessageSelected.Width(messageWidth)
+				messageStyle = styleOtherMessageSelected
 			} else {
-				messageStyle = styleOtherMessage.Width(messageWidth)
+				messageStyle = styleOtherMessage
 			}
 		}
 
@@ -402,31 +398,34 @@ func (m Model) renderMessages() string {
 		// Position the message based on type
 		if isUserMessage {
 			// User message - right aligned
-			// Add selection indicator on the left, message on the right
-			var leftPadding string
+			// Use Place to position the message on the right side
+			var indicator string
 			if isSelected {
-				leftPadding = styleSelectedIndicator.Render("▶ ")
+				indicator = styleSelectedIndicator.Render("▶")
 			} else {
-				leftPadding = "  "
+				indicator = " "
 			}
 
-			// Build the row: [indicator] [padding] [message on right]
-			padding := availableWidth - messageWidth - lipgloss.Width(leftPadding) - 2
-			if padding < 0 {
-				padding = 0
-			}
-			paddingStr := strings.Repeat(" ", padding)
+			// Place indicator on left, message on right
+			leftSpace := strings.Repeat(" ", lipgloss.Width(indicator))
+			rightAlignedMsg := lipgloss.Place(
+				availableWidth,
+				lipgloss.Height(styledMessage),
+				lipgloss.Right,
+				lipgloss.Top,
+				styledMessage,
+			)
 
-			row := leftPadding + paddingStr + styledMessage
-			b.WriteString(row)
+			// Add indicator on the far left
+			b.WriteString(indicator + leftSpace + rightAlignedMsg)
 		} else {
 			// Assistant/other message - left aligned
 			// Add selection indicator on the left
 			var indent string
 			if isSelected {
-				indent = styleSelectedIndicator.Render("▶ ")
+				indent = styleSelectedIndicator.Render("▶ ") + " "
 			} else {
-				indent = "  "
+				indent = "   "
 			}
 			b.WriteString(indent + styledMessage)
 		}
@@ -480,14 +479,16 @@ var (
 			BorderForeground(lipgloss.Color("#89b4fa")).
 			Foreground(lipgloss.Color("#cdd6f4")).
 			Padding(0, 1).
-			MaxWidth(60)
+			MaxWidth(60).
+			Align(lipgloss.Right)
 
 	styleUserMessageSelected = lipgloss.NewStyle().
 			Border(lipgloss.ThickBorder()).
 			BorderForeground(lipgloss.Color("#b4befe")).
 			Foreground(lipgloss.Color("#cdd6f4")).
 			Padding(0, 1).
-			MaxWidth(60)
+			MaxWidth(60).
+			Align(lipgloss.Right)
 
 	// Assistant message styles (left-aligned with border)
 	styleAssistantMessage = lipgloss.NewStyle().
