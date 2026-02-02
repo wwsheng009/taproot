@@ -1137,6 +1137,7 @@ func (m Model) View() string {
 
 	leftContent := m.renderFileBrowser(m.fileListWidth, mainHeight)
 	// Calculate right width: total width minus left panel width
+	// Ensure rightWidth includes space for right border
 	rightWidth := m.width - m.fileListWidth
 	if rightWidth < 20 {
 		rightWidth = 20
@@ -1189,36 +1190,36 @@ func (m Model) renderFileBrowser(width, height int) string {
 
 // renderRightPanel - Render right panel (Preview or Output)
 func (m Model) renderRightPanel(width, height int) string {
-	panelFocused := m.panelFocus == FocusPreview || m.panelFocus == FocusCommandOutput
-	
-	// Simple tabs at top (outside the panel border)
-	previewTab := " Preview "
-	outputTab := " Output "
-	
-	if m.panelFocus == FocusPreview {
-		previewTab = "* Preview "
-	} else if m.panelFocus == FocusCommandOutput {
-		outputTab = "* Output "
+	// Check if width is sufficient for border and content
+	minWidth := 10 // minimum width for border + padding
+	if width < minWidth {
+		return ""
 	}
-	
-	tabs := lipgloss.NewStyle().
-		Background(lipgloss.Color("#1e1e2e")).
-		Foreground(lipgloss.Color("#cba6f7")).
-		Width(width).
-		Render(previewTab + outputTab)
+
+	panelFocused := m.panelFocus == FocusPreview || m.panelFocus == FocusCommandOutput
 	
 	// Render content based on current panel
 	var content string
+	contentWidth := width - 4 // border (2) + padding (2)
+	contentHeight := height - 3 // tabs (1) + border/padding (2)
+	
+	if contentWidth < 1 {
+		contentWidth = 1
+	}
+	if contentHeight < 1 {
+		contentHeight = 1
+	}
+
 	switch m.panelFocus {
 	case FocusPreview:
-		content = m.renderPreviewContent(width-4, height-2)
+		content = m.renderPreviewContent(contentWidth, contentHeight)
 	case FocusCommandOutput:
-		content = m.renderOutputContent(width-4, height-2)
+		content = m.renderOutputContent(contentWidth, contentHeight)
 	default:
-		content = m.renderPreviewContent(width-4, height-2)
+		content = m.renderPreviewContent(contentWidth, contentHeight)
 	}
 	
-	// Build panel with content
+	// Build panel with content and border
 	var panelStyle lipgloss.Style
 	if panelFocused {
 		panelStyle = stylePanelFocused
@@ -1231,7 +1232,25 @@ func (m Model) renderRightPanel(width, height int) string {
 		Width(width).
 		Render(content)
 	
-	// Tabs on top, panel below (tabs outside border)
+	// Simple tabs at top (outside the panel border)
+	previewTab := " Preview "
+	outputTab := " Output "
+	
+	if m.panelFocus == FocusPreview {
+		previewTab = "* Preview "
+	} else if m.panelFocus == FocusCommandOutput {
+		outputTab = "* Output "
+	}
+	
+	tabsStyle := lipgloss.NewStyle().
+		Background(lipgloss.Color("#1e1e2e")).
+		Foreground(lipgloss.Color("#cba6f7")).
+		Width(width)
+	
+	tabsText := previewTab + outputTab
+	tabs := tabsStyle.Render(tabsText)
+	
+	// Tabs on top, panel below
 	return tabs + "\n" + panel
 }
 
@@ -1241,6 +1260,15 @@ func (m Model) renderPreviewContent(width, height int) string {
 	
 	if content == "" {
 		content = "Select a file to preview"
+	}
+	
+	// Ensure content has enough lines to render full height
+	lines := strings.Split(content, "\n")
+	missingLines := height - len(lines)
+	if missingLines > 0 {
+		for i := 0; i < missingLines; i++ {
+			content += "\n"
+		}
 	}
 	
 	return content
@@ -1266,6 +1294,15 @@ Note: Long-running commands timeout after 5 seconds
 Examples:
   ping -n 4 baidu.com    (Windows)
   ping -c 4 baidu.com    (Linux)`
+	}
+	
+	// Ensure content has enough lines to render full height
+	lines := strings.Split(content, "\n")
+	missingLines := height - len(lines)
+	if missingLines > 0 {
+		for i := 0; i < missingLines; i++ {
+			content += "\n"
+		}
 	}
 	
 	return content
