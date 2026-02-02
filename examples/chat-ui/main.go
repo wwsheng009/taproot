@@ -336,26 +336,83 @@ func (m Model) View() string {
 	return b.String()
 }
 
-// renderMessages - Render messages
+// renderMessages - Render messages with chat-style layout
 func (m Model) renderMessages() string {
 	if len(m.messages) == 0 {
 		return styleEmpty.Render("No messages yet. Type a message to start!")
 	}
 
 	var b strings.Builder
+	availableWidth := m.width - 4 // Account for padding and borders
+	messageWidth := availableWidth * 2 / 3 // Use 2/3 of available width
 
-	// Show messages with selection indicator
+	// Show messages with chat-style layout
 	for i, msg := range m.messages {
-		// Add selection indicator
+		// Determine message type and styling
+		var messageStyle lipgloss.Style
+		var isSelected bool
+
+		// Determine if this message is selected
 		if i == m.selectedMessage {
-			b.WriteString(styleSelectedIndicator.Render("▶ "))
-		} else {
-			b.WriteString("  ")
+			isSelected = true
 		}
 
-		// Render the message
+		// Get message content
 		messageView := msg.View()
-		b.WriteString(messageView)
+
+		// Determine message type and apply appropriate style
+		switch m := msg.(type) {
+		case *messages.UserMessage:
+			// User message - right aligned, blue background
+			if isSelected {
+				messageStyle = styleUserMessageSelected.
+					Width(messageWidth).
+					Align(lipgloss.Right)
+			} else {
+				messageStyle = styleUserMessage.
+					Width(messageWidth).
+					Align(lipgloss.Right)
+			}
+			_ = m // Avoid unused variable warning
+
+		case *messages.AssistantMessage:
+			// Assistant message - left aligned, gray background
+			if isSelected {
+				messageStyle = styleAssistantMessageSelected.
+					Width(messageWidth).
+					Align(lipgloss.Left)
+			} else {
+				messageStyle = styleAssistantMessage.
+					Width(messageWidth).
+					Align(lipgloss.Left)
+			}
+			_ = m // Avoid unused variable warning
+
+		default:
+			// Other message types - left aligned, neutral background
+			if isSelected {
+				messageStyle = styleOtherMessageSelected.
+					Width(messageWidth).
+					Align(lipgloss.Left)
+			} else {
+				messageStyle = styleOtherMessage.
+					Width(messageWidth).
+					Align(lipgloss.Left)
+			}
+		}
+
+		// Apply style and render message
+		styledMessage := messageStyle.Render(messageView)
+
+		// Add selection indicator on the side
+		if isSelected {
+			// Show indicator on the side
+			indent := strings.Repeat(" ", 1)
+			b.WriteString(styleSelectedIndicator.Render("▶") + indent + styledMessage)
+		} else {
+			// Just show the message with appropriate indentation
+			b.WriteString(styledMessage)
+		}
 
 		// Add spacing between messages
 		if i < len(m.messages)-1 {
@@ -399,6 +456,58 @@ var (
 	styleSelectedIndicator = lipgloss.NewStyle().
 				Foreground(lipgloss.Color("#cba6f7")).
 				Bold(true)
+
+	// User message styles (right-aligned)
+	styleUserMessage = lipgloss.NewStyle().
+			Background(lipgloss.Color("#89b4fa")).
+			Foreground(lipgloss.Color("#1e1e2e")).
+			Padding(0, 1).
+			MaxWidth(60).
+			MarginRight(0).
+			MarginLeft(2)
+
+	styleUserMessageSelected = lipgloss.NewStyle().
+			Background(lipgloss.Color("#b4befe")).
+			Foreground(lipgloss.Color("#1e1e2e")).
+			Padding(0, 1).
+			MaxWidth(60).
+			MarginRight(0).
+			MarginLeft(2)
+
+	// Assistant message styles (left-aligned)
+	styleAssistantMessage = lipgloss.NewStyle().
+			Background(lipgloss.Color("#45475a")).
+			Foreground(lipgloss.Color("#cdd6f4")).
+			Padding(0, 1).
+			MaxWidth(60).
+			MarginLeft(0).
+			MarginRight(2)
+
+	styleAssistantMessageSelected = lipgloss.NewStyle().
+			Background(lipgloss.Color("#585b70")).
+			Foreground(lipgloss.Color("#cdd6f4")).
+			Padding(0, 1).
+			MaxWidth(60).
+			MarginLeft(0).
+			MarginRight(2)
+
+	// Other message types (left-aligned, neutral)
+	styleOtherMessage = lipgloss.NewStyle().
+			Background(lipgloss.Color("#313244")).
+			Foreground(lipgloss.Color("#a6adc8")).
+			Padding(0, 1).
+			MaxWidth(60).
+			MarginLeft(0).
+			MarginRight(2)
+
+	styleOtherMessageSelected = lipgloss.NewStyle().
+			Background(lipgloss.Color("#45475a")).
+			Foreground(lipgloss.Color("#cdd6f4")).
+			Padding(0, 1).
+			MaxWidth(60).
+			MarginLeft(0).
+			MarginRight(2)
+
 )
 
 func main() {
