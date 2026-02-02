@@ -397,8 +397,18 @@ func (m Model) renderMessages() string {
 			}
 		}
 
+		// Apply width constraint before rendering
+		// Reserve space for margins and selection indicator
+		// Use 70% of available width for messages (leaves 30% for spacing)
+		maxMsgWidth := int(float64(availableWidth) * 0.7)
+		if maxMsgWidth < 30 {
+			maxMsgWidth = 30 // Minimum width for readability
+		}
+		messageStyle = messageStyle.Width(maxMsgWidth)
+
 		// Apply style and render message
 		styledMessage := messageStyle.Render(messageView)
+		msgWidth := lipgloss.Width(styledMessage)
 
 		// Position the message based on type
 		if isUserMessage {
@@ -410,14 +420,10 @@ func (m Model) renderMessages() string {
 				indicator = " "
 			}
 
-			// Get message dimensions for positioning
-			msgWidth := lipgloss.Width(styledMessage)
-
 			// Calculate left padding to push message to the right
-			// The indicator should be at the left edge (column 0), then padding, then content
 			leftPadding := availableWidth - msgWidth
-			if leftPadding < 0 {
-				leftPadding = 0
+			if leftPadding < 1 {
+				leftPadding = 1 // Minimum padding to separate from indicator
 			}
 
 			// Split and render with indicator at position 0
@@ -425,23 +431,36 @@ func (m Model) renderMessages() string {
 			for lineIdx, line := range msgLines {
 				if lineIdx > 0 {
 					b.WriteString("\n")
-					b.WriteString(indicator)
+					b.WriteString(" ") // Use space for subsequent lines to maintain alignment
+					paddingStr := strings.Repeat(" ", leftPadding)
+					b.WriteString(paddingStr + line)
 				} else {
 					b.WriteString(indicator)
+					paddingStr := strings.Repeat(" ", leftPadding)
+					b.WriteString(paddingStr + line)
 				}
-				paddingStr := strings.Repeat(" ", leftPadding)
-				b.WriteString(paddingStr + line)
 			}
 		} else {
 			// Assistant/other message - left aligned
-			// Add selection indicator on the left
-			var indent string
+			var indicator string
 			if isSelected {
-				indent = "▶  "
+				indicator = "▶"
 			} else {
-				indent = "   "
+				indicator = " "
 			}
-			b.WriteString(indent + styledMessage)
+
+			// Split and render with indicator at position 0
+			msgLines := strings.Split(styledMessage, "\n")
+			for lineIdx, line := range msgLines {
+				if lineIdx > 0 {
+					b.WriteString("\n")
+					b.WriteString(" ") // Space on subsequent lines to maintain alignment
+					b.WriteString(line)
+				} else {
+					b.WriteString(indicator)
+					b.WriteString(line)
+				}
+			}
 		}
 
 		// Add spacing between messages
@@ -487,35 +506,31 @@ var (
 				Foreground(lipgloss.Color("#cba6f7")).
 				Bold(true)
 
-	// User message styles (right-aligned with border)
+	// User message styles (right-aligned with double border)
 	styleUserMessage = lipgloss.NewStyle().
-			Border(lipgloss.RoundedBorder()).
+			Border(lipgloss.NormalBorder()).
 			BorderForeground(lipgloss.Color("#89b4fa")).
 			Foreground(lipgloss.Color("#cdd6f4")).
-			Padding(0, 1).
-			MaxWidth(60)
+			Padding(0, 1)
 
 	styleUserMessageSelected = lipgloss.NewStyle().
-			Border(lipgloss.ThickBorder()).
+			Border(lipgloss.DoubleBorder()).
 			BorderForeground(lipgloss.Color("#b4befe")).
 			Foreground(lipgloss.Color("#cdd6f4")).
-			Padding(0, 1).
-			MaxWidth(60)
+			Padding(0, 1)
 
 	// Assistant message styles (left-aligned with border)
 	styleAssistantMessage = lipgloss.NewStyle().
 			Border(lipgloss.RoundedBorder()).
 			BorderForeground(lipgloss.Color("#45475a")).
 			Foreground(lipgloss.Color("#cdd6f4")).
-			Padding(0, 1).
-			MaxWidth(60)
+			Padding(0, 1)
 
 	styleAssistantMessageSelected = lipgloss.NewStyle().
 			Border(lipgloss.ThickBorder()).
 			BorderForeground(lipgloss.Color("#585b70")).
 			Foreground(lipgloss.Color("#cdd6f4")).
-			Padding(0, 1).
-			MaxWidth(60)
+			Padding(0, 1)
 
 	// Other message types (left-aligned with neutral border)
 	styleOtherMessage = lipgloss.NewStyle().
