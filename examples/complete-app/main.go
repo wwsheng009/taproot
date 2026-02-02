@@ -1135,14 +1135,28 @@ func (m Model) View() string {
 		mainHeight = 10
 	}
 
-	leftContent := m.renderFileBrowser(m.fileListWidth, mainHeight)
-	// Calculate right width: total width minus left panel width
-	// Ensure rightWidth includes space for right border
-	rightWidth := m.width - m.fileListWidth
-	if rightWidth < 20 {
-		rightWidth = 20
+	// Calculate widths carefully to ensure two panels fit
+	// Each panel has border (2 chars) + padding (2 chars) = 4 chars overhead
+	leftPanelWidth := m.fileListWidth
+	rightPanelWidth := m.width - leftPanelWidth
+	
+	// Ensure minimum width for right panel
+	if rightPanelWidth < 20 {
+		rightPanelWidth = 20
+		leftPanelWidth = m.width - rightPanelWidth
+		if leftPanelWidth < 20 {
+			leftPanelWidth = 20
+			rightPanelWidth = m.width - leftPanelWidth
+		}
 	}
-	rightContent := m.renderRightPanel(rightWidth, mainHeight)
+	
+	leftContent := m.renderFileBrowser(leftPanelWidth, mainHeight)
+	rightContent := m.renderRightPanel(rightPanelWidth, mainHeight)
+
+	// Debug info: show widths at the top
+	debugInfo := fmt.Sprintf("[DEBUG] Total:%d Left:%d Right:%d", m.width, leftPanelWidth, rightPanelWidth)
+	b.WriteString(debugInfo)
+	b.WriteString("\n")
 
 	b.WriteString(lipgloss.JoinHorizontal(lipgloss.Left,
 		leftContent,
@@ -1194,7 +1208,7 @@ func (m Model) renderRightPanel(width, height int) string {
 	
 	// Render content based on current panel
 	var content string
-	contentWidth := width - 4 // border (2) + padding (2)
+	contentWidth := width - 5 // border (2) + padding (2) + ensure right border visible
 	contentHeight := height - 4 // top/bottom border (2) + top/bottom padding (2)
 	
 	if contentWidth < 1 {
@@ -1206,12 +1220,29 @@ func (m Model) renderRightPanel(width, height int) string {
 
 	switch m.panelFocus {
 	case FocusPreview:
-		content = m.renderPreviewContent(contentWidth, contentHeight-1)
+		content = m.renderPreviewContent(contentWidth, contentHeight-2) // minus 2 debug lines
 	case FocusCommandOutput:
-		content = m.renderOutputContent(contentWidth, contentHeight-1)
+		content = m.renderOutputContent(contentWidth, contentHeight-2) // minus 2 debug lines
 	default:
-		content = m.renderPreviewContent(contentWidth, contentHeight-1)
+		content = m.renderPreviewContent(contentWidth, contentHeight-2)
 	}
+	
+	// Prepend debug info to content (2 lines)
+	debugLine1 := fmt.Sprintf("Panel:%dx%d Content:%dx%d", width, height, contentWidth, contentHeight)
+	debugLine2 := fmt.Sprintf("Viewport size: W=%d H=%d", m.viewport.Width, m.viewport.Height)
+	
+	// Pad debug lines to content width
+	if len(debugLine1) < contentWidth {
+		debugLine1 += strings.Repeat(" ", contentWidth-len(debugLine1))
+	} else if len(debugLine1) > contentWidth {
+		debugLine1 = debugLine1[:contentWidth]
+	}
+	if len(debugLine2) < contentWidth {
+		debugLine2 += strings.Repeat(" ", contentWidth-len(debugLine2))
+	} else if len(debugLine2) > contentWidth {
+		debugLine2 = debugLine2[:contentWidth]
+	}
+	content = debugLine1 + "\n" + debugLine2 + "\n" + content
 	
 	// Add tabs at the top of content
 	previewTab := " Preview "
@@ -1262,8 +1293,16 @@ func (m Model) renderPreviewContent(width, height int) string {
 		content = "Select a file to preview"
 	}
 	
-	// Truncate content width if it exceeds the specified width
+	// Debug: check max line width
 	lines := strings.Split(content, "\n")
+	maxLineWidth := 0
+	for _, line := range lines {
+		if len(line) > maxLineWidth {
+			maxLineWidth = len(line)
+		}
+	}
+	
+	// Truncate content width if it exceeds the specified width
 	var truncatedLines []string
 	for _, line := range lines {
 		if len(line) > width {
@@ -1273,8 +1312,17 @@ func (m Model) renderPreviewContent(width, height int) string {
 	}
 	content = strings.Join(truncatedLines, "\n")
 	
+	// Add debug line showing truncation info - RIGHT ALIGNED
+	debugLine := fmt.Sprintf("Viewport: max=%d truncated to %d", maxLineWidth, width)
+	if len(debugLine) > width {
+		debugLine = debugLine[:width]
+	}
+	// Debug info on the right
+	padding := strings.Repeat(" ", width-len(debugLine))
+	content = padding + debugLine + "\n" + content
+	
 	// Ensure content has enough lines to render full height
-	missingLines := height - len(truncatedLines)
+	missingLines := height - len(truncatedLines) - 1 // minus debug line
 	if missingLines > 0 {
 		padding := strings.Repeat(" ", width)
 		for i := 0; i < missingLines; i++ {
