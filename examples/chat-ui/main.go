@@ -398,8 +398,6 @@ func (m Model) renderMessages() string {
 		// Position the message based on type
 		if isUserMessage {
 			// User message - right aligned
-			// Calculate left padding to push message to right
-			msgWidth := lipgloss.Width(styledMessage)
 			var indicator string
 			if isSelected {
 				indicator = "▶"
@@ -407,15 +405,37 @@ func (m Model) renderMessages() string {
 				indicator = " "
 			}
 
-			// Calculate padding: availableWidth - messageWidth - indicatorWidth
-			padding := availableWidth - msgWidth - 1
-			if padding < 0 {
-				padding = 0
+			// For proper right alignment with multi-line messages, we need to:
+			// 1. Split the styled message into lines
+			// 2. Pad each line on the left to push the content to the right
+			msgLines := strings.Split(styledMessage, "\n")
+			if len(msgLines) == 0 {
+				msgLines = []string{styledMessage}
 			}
-			paddingStr := strings.Repeat(" ", padding)
 
-			// Build row: [indicator] [padding] [message]
-			b.WriteString(indicator + paddingStr + styledMessage)
+			// Calculate padding based on the widest line and indicator
+			maxMsgWidth := 0
+			for _, line := range msgLines {
+				lineWidth := lipgloss.Width(line)
+				if lineWidth > maxMsgWidth {
+					maxMsgWidth = lineWidth
+				}
+			}
+
+			// Left padding needed to position content on the right
+			leftPadding := availableWidth - maxMsgWidth - len(indicator)
+			if leftPadding < 0 {
+				leftPadding = 0
+			}
+			paddingStr := strings.Repeat(" ", leftPadding)
+
+			// Render each line with proper padding
+			for lineIdx, line := range msgLines {
+				if lineIdx > 0 {
+					b.WriteString("\n")
+				}
+				b.WriteString(paddingStr + indicator + line)
+			}
 		} else {
 			// Assistant/other message - left aligned
 			// Add selection indicator on the left
