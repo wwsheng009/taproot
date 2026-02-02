@@ -1191,10 +1191,7 @@ func (m Model) renderFileBrowser(width, height int) string {
 func (m Model) renderRightPanel(width, height int) string {
 	panelFocused := m.panelFocus == FocusPreview || m.panelFocus == FocusCommandOutput
 	
-	// Build content with tabs inside the panel
-	var b strings.Builder
-	
-	// Simple tabs at top
+	// Simple tabs at top (outside the panel border)
 	previewTab := " Preview "
 	outputTab := " Output "
 	
@@ -1204,34 +1201,24 @@ func (m Model) renderRightPanel(width, height int) string {
 		outputTab = "* Output "
 	}
 	
-	// Calculate tab width to fill the panel interior (width - 2 borders - 2 padding)
-	tabWidth := width - 4
-	if tabWidth < 1 {
-		tabWidth = 1
-	}
-	
 	tabs := lipgloss.NewStyle().
 		Background(lipgloss.Color("#1e1e2e")).
 		Foreground(lipgloss.Color("#cba6f7")).
-		Width(tabWidth).
+		Width(width).
 		Render(previewTab + outputTab)
 	
 	// Render content based on current panel
 	var content string
 	switch m.panelFocus {
 	case FocusPreview:
-		content = m.renderPreviewContent(width-4, height-3)
+		content = m.renderPreviewContent(width-4, height-2)
 	case FocusCommandOutput:
-		content = m.renderOutputContent(width-4, height-4)
+		content = m.renderOutputContent(width-4, height-2)
 	default:
-		content = m.renderPreviewContent(width-4, height-3)
+		content = m.renderPreviewContent(width-4, height-2)
 	}
 	
-	// Combine tabs and content
-	b.WriteString(tabs)
-	b.WriteString("\n")
-	b.WriteString(content)
-	
+	// Build panel with content
 	var panelStyle lipgloss.Style
 	if panelFocused {
 		panelStyle = stylePanelFocused
@@ -1239,10 +1226,13 @@ func (m Model) renderRightPanel(width, height int) string {
 		panelStyle = stylePanel
 	}
 	
-	return panelStyle.
-		Height(height).
+	panel := panelStyle.
+		Height(height-1).
 		Width(width).
-		Render(b.String())
+		Render(content)
+	
+	// Tabs on top, panel below (tabs outside border)
+	return tabs + "\n" + panel
 }
 
 // renderPreviewContent - Render preview content without header
