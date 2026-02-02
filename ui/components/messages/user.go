@@ -149,6 +149,24 @@ func (m *UserMessage) AddAttachment(attachment Attachment) {
 	m.cacheValid = false
 }
 
+// SetConfig sets the message configuration.
+func (m *UserMessage) SetConfig(config MessageConfig) {
+	m.config = config
+	m.cacheValid = false
+}
+
+// SetCompactMode sets compact mode on or off.
+func (m *UserMessage) SetCompactMode(compact bool) {
+	m.config.CompactMode = compact
+	m.cacheValid = false
+}
+
+// SetShowTimestamp sets whether to show timestamps.
+func (m *UserMessage) SetShowTimestamp(show bool) {
+	m.config.ShowTimestamp = show
+	m.cacheValid = false
+}
+
 // SetTimestamp sets the message timestamp.
 func (m *UserMessage) SetTimestamp(timestamp time.Time) {
 	m.timestamp = timestamp
@@ -157,12 +175,6 @@ func (m *UserMessage) SetTimestamp(timestamp time.Time) {
 // Config returns the current configuration.
 func (m *UserMessage) Config() MessageConfig {
 	return m.config
-}
-
-// SetConfig sets the message configuration.
-func (m *UserMessage) SetConfig(config MessageConfig) {
-	m.config = config
-	m.cacheValid = false
 }
 
 // MaxWidth returns the maximum width.

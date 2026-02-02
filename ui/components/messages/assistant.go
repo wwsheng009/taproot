@@ -213,6 +213,18 @@ func (m *AssistantMessage) SetConfig(config *MessageConfig) {
 	m.cacheValid = false
 }
 
+// SetCompactMode sets compact mode on or off.
+func (m *AssistantMessage) SetCompactMode(compact bool) {
+	m.config.CompactMode = compact
+	m.cacheValid = false
+}
+
+// SetShowTimestamp sets whether to show timestamps.
+func (m *AssistantMessage) SetShowTimestamp(show bool) {
+	m.config.ShowTimestamp = show
+	m.cacheValid = false
+}
+
 // render renders the assistant message with the given width.
 func (m *AssistantMessage) render(width int) string {
 	// Check cache first

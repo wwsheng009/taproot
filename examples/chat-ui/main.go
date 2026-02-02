@@ -28,6 +28,7 @@ func NewModel() Model {
 		"msg-0",
 		"# Welcome to Taproot Chat UI!\n\nThis is an interactive chat interface demonstrating the **v2.0 messages** component.\n\n## Demo Commands\n\n- `help` - Show help message\n- `demo` - Show message types\n- `clear` - Clear all messages\n\nType a message and press Enter to chat!",
 	)
+	welcomeMsg.SetShowTimestamp(false)
 
 	// Initialize and focus text input
 	ti := textinput.New()
@@ -125,10 +126,12 @@ func (m Model) handleInput(input string) Model {
 		return m.showHelp()
 	case "clear":
 		m.messages = []messages.MessageItem{}
-		m.messages = append(m.messages, messages.NewAssistantMessage(
+		clearMsg := messages.NewAssistantMessage(
 			"msg-cleared",
 			"Chat cleared! 🧹",
-		))
+		)
+		clearMsg.SetShowTimestamp(false)
+		m.messages = append(m.messages, clearMsg)
 		return m
 	case "demo":
 		return m.showDemo()
@@ -139,6 +142,7 @@ func (m Model) handleInput(input string) Model {
 		fmt.Sprintf("msg-%d-user", len(m.messages)),
 		input,
 	)
+	userMsg.SetShowTimestamp(false)
 	m.messages = append(m.messages, userMsg)
 
 	// Generate AI response
@@ -147,6 +151,7 @@ func (m Model) handleInput(input string) Model {
 		fmt.Sprintf("msg-%d", len(m.messages)),
 		response,
 	)
+	assistantMsg.SetShowTimestamp(false)
 	m.messages = append(m.messages, assistantMsg)
 
 	return m
@@ -405,36 +410,27 @@ func (m Model) renderMessages() string {
 				indicator = " "
 			}
 
-			// For proper right alignment with multi-line messages, we need to:
-			// 1. Split the styled message into lines
-			// 2. Pad each line on the left to push the content to the right
-			msgLines := strings.Split(styledMessage, "\n")
-			if len(msgLines) == 0 {
-				msgLines = []string{styledMessage}
-			}
+			// Get message dimensions for positioning
+			msgWidth := lipgloss.Width(styledMessage)
 
-			// Calculate padding based on the widest line and indicator
-			maxMsgWidth := 0
-			for _, line := range msgLines {
-				lineWidth := lipgloss.Width(line)
-				if lineWidth > maxMsgWidth {
-					maxMsgWidth = lineWidth
-				}
-			}
-
-			// Left padding needed to position content on the right
-			leftPadding := availableWidth - maxMsgWidth - len(indicator)
+			// Calculate left padding to push message to the right
+			// The indicator should be at the left edge (column 0), then padding, then content
+			leftPadding := availableWidth - msgWidth
 			if leftPadding < 0 {
 				leftPadding = 0
 			}
-			paddingStr := strings.Repeat(" ", leftPadding)
 
-			// Render each line with proper padding
+			// Split and render with indicator at position 0
+			msgLines := strings.Split(styledMessage, "\n")
 			for lineIdx, line := range msgLines {
 				if lineIdx > 0 {
 					b.WriteString("\n")
+					b.WriteString(indicator)
+				} else {
+					b.WriteString(indicator)
 				}
-				b.WriteString(paddingStr + indicator + line)
+				paddingStr := strings.Repeat(" ", leftPadding)
+				b.WriteString(paddingStr + line)
 			}
 		} else {
 			// Assistant/other message - left aligned
