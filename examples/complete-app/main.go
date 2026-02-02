@@ -269,7 +269,7 @@ func NewModel() Model {
 	return Model{
 		currentPath:      wd,
 		fileList:         fileList,
-		fileListWidth:    40,
+		fileListWidth:    30,
 		keyMap:           DefaultKeyMap,
 		panelFocus:       FocusFileList,
 		lspList:          lspList,
@@ -1190,18 +1190,12 @@ func (m Model) renderFileBrowser(width, height int) string {
 
 // renderRightPanel - Render right panel (Preview or Output)
 func (m Model) renderRightPanel(width, height int) string {
-	// Check if width is sufficient for border and content
-	minWidth := 10 // minimum width for border + padding
-	if width < minWidth {
-		return ""
-	}
-
 	panelFocused := m.panelFocus == FocusPreview || m.panelFocus == FocusCommandOutput
 	
 	// Render content based on current panel
 	var content string
 	contentWidth := width - 4 // border (2) + padding (2)
-	contentHeight := height - 3 // tabs (1) + border/padding (2)
+	contentHeight := height - 4 // top/bottom border (2) + top/bottom padding (2)
 	
 	if contentWidth < 1 {
 		contentWidth = 1
@@ -1212,27 +1206,14 @@ func (m Model) renderRightPanel(width, height int) string {
 
 	switch m.panelFocus {
 	case FocusPreview:
-		content = m.renderPreviewContent(contentWidth, contentHeight)
+		content = m.renderPreviewContent(contentWidth, contentHeight-1)
 	case FocusCommandOutput:
-		content = m.renderOutputContent(contentWidth, contentHeight)
+		content = m.renderOutputContent(contentWidth, contentHeight-1)
 	default:
-		content = m.renderPreviewContent(contentWidth, contentHeight)
+		content = m.renderPreviewContent(contentWidth, contentHeight-1)
 	}
 	
-	// Build panel with content and border
-	var panelStyle lipgloss.Style
-	if panelFocused {
-		panelStyle = stylePanelFocused
-	} else {
-		panelStyle = stylePanel
-	}
-	
-	panel := panelStyle.
-		Height(height-1).
-		Width(width).
-		Render(content)
-	
-	// Simple tabs at top (outside the panel border)
+	// Add tabs at the top of content
 	previewTab := " Preview "
 	outputTab := " Output "
 	
@@ -1242,16 +1223,35 @@ func (m Model) renderRightPanel(width, height int) string {
 		outputTab = "* Output "
 	}
 	
-	tabsStyle := lipgloss.NewStyle().
+	tabsText := previewTab + outputTab
+	// Pad tabs to fill content width
+	if len(tabsText) < contentWidth {
+		padding := strings.Repeat(" ", contentWidth-len(tabsText))
+		tabsText += padding
+	} else if len(tabsText) > contentWidth {
+		tabsText = tabsText[:contentWidth]
+	}
+	
+	tabs := lipgloss.NewStyle().
 		Background(lipgloss.Color("#1e1e2e")).
 		Foreground(lipgloss.Color("#cba6f7")).
-		Width(width)
+		Render(tabsText + "\n")
 	
-	tabsText := previewTab + outputTab
-	tabs := tabsStyle.Render(tabsText)
+	// Combine tabs with content
+	fullContent := tabs + content
 	
-	// Tabs on top, panel below
-	return tabs + "\n" + panel
+	// Build panel with full content and border
+	var panelStyle lipgloss.Style
+	if panelFocused {
+		panelStyle = stylePanelFocused
+	} else {
+		panelStyle = stylePanel
+	}
+	
+	return panelStyle.
+		Width(width).
+		Height(height).
+		Render(fullContent)
 }
 
 // renderPreviewContent - Render preview content without header
@@ -1262,12 +1262,23 @@ func (m Model) renderPreviewContent(width, height int) string {
 		content = "Select a file to preview"
 	}
 	
-	// Ensure content has enough lines to render full height
+	// Truncate content width if it exceeds the specified width
 	lines := strings.Split(content, "\n")
-	missingLines := height - len(lines)
+	var truncatedLines []string
+	for _, line := range lines {
+		if len(line) > width {
+			line = line[:width]
+		}
+		truncatedLines = append(truncatedLines, line)
+	}
+	content = strings.Join(truncatedLines, "\n")
+	
+	// Ensure content has enough lines to render full height
+	missingLines := height - len(truncatedLines)
 	if missingLines > 0 {
+		padding := strings.Repeat(" ", width)
 		for i := 0; i < missingLines; i++ {
-			content += "\n"
+			content += "\n" + padding
 		}
 	}
 	
@@ -1296,12 +1307,23 @@ Examples:
   ping -c 4 baidu.com    (Linux)`
 	}
 	
-	// Ensure content has enough lines to render full height
+	// Truncate content width if it exceeds the specified width
 	lines := strings.Split(content, "\n")
-	missingLines := height - len(lines)
+	var truncatedLines []string
+	for _, line := range lines {
+		if len(line) > width {
+			line = line[:width]
+		}
+		truncatedLines = append(truncatedLines, line)
+	}
+	content = strings.Join(truncatedLines, "\n")
+	
+	// Ensure content has enough lines to render full height
+	missingLines := height - len(truncatedLines)
 	if missingLines > 0 {
+		padding := strings.Repeat(" ", width)
 		for i := 0; i < missingLines; i++ {
-			content += "\n"
+			content += "\n" + padding
 		}
 	}
 	
