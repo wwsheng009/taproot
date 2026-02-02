@@ -328,10 +328,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.fileList.SetSize(m.fileListWidth-2, listHeight)
 
 		// Update viewport size based on actual panel structure
-		// Panel layout: border(1) + tabs(1) + debugLines(2) + content + border(1)
-		// Total overhead: 5 lines, so viewport = m.height - 5 - 1 (header) = m.height - 6
+		// Panel layout: border(1) + padding(1) + tabs(1) + debugLines(2) + content + padding(1) + border(1)
+		// Total overhead: 7 lines
 		viewportWidth := m.width - m.fileListWidth - 5
-		viewportHeight := m.height - 6
+		viewportHeight := m.height - 10
 		m.viewport.Width = viewportWidth
 		m.viewport.Height = viewportHeight
 		m.commandOutput.Width = viewportWidth
@@ -1133,7 +1133,8 @@ func (m Model) View() string {
 
 	// Main content area
 	// Subtract: header(1) + debug(1) + footer(1) = 3 lines
-	mainHeight := m.height - 3
+	// But we need room for debug line at bottom too, so subtract 4
+	mainHeight := m.height - 4
 	if mainHeight < 10 {
 		mainHeight = 10
 	}
@@ -1165,15 +1166,6 @@ func (m Model) View() string {
 		leftContent,
 		rightContent,
 	))
-
-	// Debug info at bottom-right: track height calculations
-	heightDebug := fmt.Sprintf("[H] total:%d main:%d panel:%d content:%d", m.height, mainHeight, mainHeight, mainHeight-4)
-	rightPanelWidth = m.width - leftPanelWidth
-	if rightPanelWidth < len(heightDebug) {
-		rightPanelWidth = len(heightDebug)
-	}
-	heightDebug = fmt.Sprintf("%*s", rightPanelWidth, heightDebug)
-	b.WriteString("\n" + heightDebug)
 
 	// Command/Search/Footer
 	b.WriteString("\n")
@@ -1232,40 +1224,23 @@ func (m Model) renderRightPanel(width, height int) string {
 
 	switch m.panelFocus {
 	case FocusPreview:
-		content = m.renderPreviewContent(contentWidth, contentHeight-2) // minus 2 debug lines
+		content = m.renderPreviewContent(contentWidth, contentHeight-1) // minus tabs line
 	case FocusCommandOutput:
-		content = m.renderOutputContent(contentWidth, contentHeight-2) // minus 2 debug lines
+		content = m.renderOutputContent(contentWidth, contentHeight-1) // minus tabs line
 	default:
-		content = m.renderPreviewContent(contentWidth, contentHeight-2)
+		content = m.renderPreviewContent(contentWidth, contentHeight-1)
 	}
-	
-	// Prepend debug info to content (2 lines)
-	debugLine1 := fmt.Sprintf("Panel:%dx%d Content:%dx%d", width, height, contentWidth, contentHeight)
-	debugLine2 := fmt.Sprintf("Viewport size: W=%d H=%d ContentH:%d", m.viewport.Width, m.viewport.Height, contentHeight-2)
 
-	// Pad debug lines to content width
-	if len(debugLine1) < contentWidth {
-		debugLine1 += strings.Repeat(" ", contentWidth-len(debugLine1))
-	} else if len(debugLine1) > contentWidth {
-		debugLine1 = debugLine1[:contentWidth]
-	}
-	if len(debugLine2) < contentWidth {
-		debugLine2 += strings.Repeat(" ", contentWidth-len(debugLine2))
-	} else if len(debugLine2) > contentWidth {
-		debugLine2 = debugLine2[:contentWidth]
-	}
-	content = debugLine1 + "\n" + debugLine2 + "\n" + content
-	
 	// Add tabs at the top of content
 	previewTab := " Preview "
 	outputTab := " Output "
-	
+
 	if m.panelFocus == FocusPreview {
 		previewTab = "* Preview "
 	} else if m.panelFocus == FocusCommandOutput {
 		outputTab = "* Output "
 	}
-	
+
 	tabsText := previewTab + outputTab
 	// Pad tabs to fill content width
 	if len(tabsText) < contentWidth {
@@ -1274,15 +1249,15 @@ func (m Model) renderRightPanel(width, height int) string {
 	} else if len(tabsText) > contentWidth {
 		tabsText = tabsText[:contentWidth]
 	}
-	
+
 	tabs := lipgloss.NewStyle().
 		Background(lipgloss.Color("#1e1e2e")).
 		Foreground(lipgloss.Color("#cba6f7")).
 		Render(tabsText + "\n")
-	
+
 	// Combine tabs with content
 	fullContent := tabs + content
-	
+
 	// Build panel with full content and border
 	var panelStyle lipgloss.Style
 	if panelFocused {
@@ -1290,7 +1265,7 @@ func (m Model) renderRightPanel(width, height int) string {
 	} else {
 		panelStyle = stylePanel
 	}
-	
+
 	return panelStyle.
 		Width(width).
 		Height(height).
@@ -1323,25 +1298,16 @@ func (m Model) renderPreviewContent(width, height int) string {
 		truncatedLines = append(truncatedLines, line)
 	}
 	content = strings.Join(truncatedLines, "\n")
-	
-	// Add debug line showing truncation info - RIGHT ALIGNED
-	debugLine := fmt.Sprintf("Viewport: max=%d truncated to %d", maxLineWidth, width)
-	if len(debugLine) > width {
-		debugLine = debugLine[:width]
-	}
-	// Debug info on the right
-	padding := strings.Repeat(" ", width-len(debugLine))
-	content = padding + debugLine + "\n" + content
-	
+
 	// Ensure content has enough lines to render full height
-	missingLines := height - len(truncatedLines) - 1 // minus debug line
+	missingLines := height - len(truncatedLines)
 	if missingLines > 0 {
 		padding := strings.Repeat(" ", width)
 		for i := 0; i < missingLines; i++ {
 			content += "\n" + padding
 		}
 	}
-	
+
 	return content
 }
 
