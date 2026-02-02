@@ -343,14 +343,18 @@ func (m Model) renderMessages() string {
 	}
 
 	var b strings.Builder
-	availableWidth := m.width - 4 // Account for padding and borders
-	messageWidth := availableWidth * 2 / 3 // Use 2/3 of available width
+	availableWidth := m.width - 6 // Account for padding and borders
+	messageWidth := 60
+	if availableWidth*2/3 < messageWidth {
+		messageWidth = availableWidth * 2 / 3
+	}
 
 	// Show messages with chat-style layout
 	for i, msg := range m.messages {
 		// Determine message type and styling
 		var messageStyle lipgloss.Style
 		var isSelected bool
+		var isUserMessage bool
 
 		// Determine if this message is selected
 		if i == m.selectedMessage {
@@ -363,55 +367,68 @@ func (m Model) renderMessages() string {
 		// Determine message type and apply appropriate style
 		switch m := msg.(type) {
 		case *messages.UserMessage:
-			// User message - right aligned, blue background
+			// User message - right aligned
+			isUserMessage = true
 			if isSelected {
-				messageStyle = styleUserMessageSelected.
-					Width(messageWidth).
-					Align(lipgloss.Right)
+				messageStyle = styleUserMessageSelected.Width(messageWidth)
 			} else {
-				messageStyle = styleUserMessage.
-					Width(messageWidth).
-					Align(lipgloss.Right)
+				messageStyle = styleUserMessage.Width(messageWidth)
 			}
 			_ = m // Avoid unused variable warning
 
 		case *messages.AssistantMessage:
-			// Assistant message - left aligned, gray background
+			// Assistant message - left aligned
+			isUserMessage = false
 			if isSelected {
-				messageStyle = styleAssistantMessageSelected.
-					Width(messageWidth).
-					Align(lipgloss.Left)
+				messageStyle = styleAssistantMessageSelected.Width(messageWidth)
 			} else {
-				messageStyle = styleAssistantMessage.
-					Width(messageWidth).
-					Align(lipgloss.Left)
+				messageStyle = styleAssistantMessage.Width(messageWidth)
 			}
 			_ = m // Avoid unused variable warning
 
 		default:
-			// Other message types - left aligned, neutral background
+			// Other message types - left aligned
+			isUserMessage = false
 			if isSelected {
-				messageStyle = styleOtherMessageSelected.
-					Width(messageWidth).
-					Align(lipgloss.Left)
+				messageStyle = styleOtherMessageSelected.Width(messageWidth)
 			} else {
-				messageStyle = styleOtherMessage.
-					Width(messageWidth).
-					Align(lipgloss.Left)
+				messageStyle = styleOtherMessage.Width(messageWidth)
 			}
 		}
 
 		// Apply style and render message
 		styledMessage := messageStyle.Render(messageView)
 
-		// Add selection indicator on the side
-		if isSelected {
-			// Show indicator on the side
-			indent := strings.Repeat(" ", 1)
-			b.WriteString(styleSelectedIndicator.Render("▶") + indent + styledMessage)
+		// Position the message based on type
+		if isUserMessage {
+			// User message - right aligned
+			// Add selection indicator on the left, message on the right
+			var leftPadding string
+			if isSelected {
+				leftPadding = styleSelectedIndicator.Render("▶ ")
+			} else {
+				leftPadding = "  "
+			}
+
+			// Build the row: [indicator] [padding] [message on right]
+			padding := availableWidth - messageWidth - lipgloss.Width(leftPadding) - 2
+			if padding < 0 {
+				padding = 0
+			}
+			paddingStr := strings.Repeat(" ", padding)
+
+			row := leftPadding + paddingStr + styledMessage
+			b.WriteString(row)
 		} else {
-			// Just show the message with appropriate indentation
-			b.WriteString(styledMessage)
+			// Assistant/other message - left aligned
+			// Add selection indicator on the left
+			var indent string
+			if isSelected {
+				indent = styleSelectedIndicator.Render("▶ ")
+			} else {
+				indent = "  "
+			}
+			b.WriteString(indent + styledMessage)
 		}
 
 		// Add spacing between messages
@@ -457,56 +474,50 @@ var (
 				Foreground(lipgloss.Color("#cba6f7")).
 				Bold(true)
 
-	// User message styles (right-aligned)
+	// User message styles (right-aligned with border)
 	styleUserMessage = lipgloss.NewStyle().
-			Background(lipgloss.Color("#89b4fa")).
-			Foreground(lipgloss.Color("#1e1e2e")).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#89b4fa")).
+			Foreground(lipgloss.Color("#cdd6f4")).
 			Padding(0, 1).
-			MaxWidth(60).
-			MarginRight(0).
-			MarginLeft(2)
+			MaxWidth(60)
 
 	styleUserMessageSelected = lipgloss.NewStyle().
-			Background(lipgloss.Color("#b4befe")).
-			Foreground(lipgloss.Color("#1e1e2e")).
-			Padding(0, 1).
-			MaxWidth(60).
-			MarginRight(0).
-			MarginLeft(2)
-
-	// Assistant message styles (left-aligned)
-	styleAssistantMessage = lipgloss.NewStyle().
-			Background(lipgloss.Color("#45475a")).
+			Border(lipgloss.ThickBorder()).
+			BorderForeground(lipgloss.Color("#b4befe")).
 			Foreground(lipgloss.Color("#cdd6f4")).
 			Padding(0, 1).
-			MaxWidth(60).
-			MarginLeft(0).
-			MarginRight(2)
+			MaxWidth(60)
+
+	// Assistant message styles (left-aligned with border)
+	styleAssistantMessage = lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#45475a")).
+			Foreground(lipgloss.Color("#cdd6f4")).
+			Padding(0, 1).
+			MaxWidth(60)
 
 	styleAssistantMessageSelected = lipgloss.NewStyle().
-			Background(lipgloss.Color("#585b70")).
+			Border(lipgloss.ThickBorder()).
+			BorderForeground(lipgloss.Color("#585b70")).
 			Foreground(lipgloss.Color("#cdd6f4")).
 			Padding(0, 1).
-			MaxWidth(60).
-			MarginLeft(0).
-			MarginRight(2)
+			MaxWidth(60)
 
-	// Other message types (left-aligned, neutral)
+	// Other message types (left-aligned with neutral border)
 	styleOtherMessage = lipgloss.NewStyle().
-			Background(lipgloss.Color("#313244")).
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("#313244")).
 			Foreground(lipgloss.Color("#a6adc8")).
 			Padding(0, 1).
-			MaxWidth(60).
-			MarginLeft(0).
-			MarginRight(2)
+			MaxWidth(60)
 
 	styleOtherMessageSelected = lipgloss.NewStyle().
-			Background(lipgloss.Color("#45475a")).
+			Border(lipgloss.ThickBorder()).
+			BorderForeground(lipgloss.Color("#45475a")).
 			Foreground(lipgloss.Color("#cdd6f4")).
 			Padding(0, 1).
-			MaxWidth(60).
-			MarginLeft(0).
-			MarginRight(2)
+			MaxWidth(60)
 
 )
 
