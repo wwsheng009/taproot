@@ -327,9 +327,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		listHeight := m.height - 10
 		m.fileList.SetSize(m.fileListWidth-2, listHeight)
 
-		// Update viewport size
-		viewportWidth := m.width - m.fileListWidth - 4
-		viewportHeight := m.height - 10
+		// Update viewport size based on actual panel structure
+		// Panel layout: border(1) + tabs(1) + debugLines(2) + content + border(1)
+		// Total overhead: 5 lines, so viewport = m.height - 5 - 1 (header) = m.height - 6
+		viewportWidth := m.width - m.fileListWidth - 5
+		viewportHeight := m.height - 6
 		m.viewport.Width = viewportWidth
 		m.viewport.Height = viewportHeight
 		m.commandOutput.Width = viewportWidth
@@ -1130,7 +1132,8 @@ func (m Model) View() string {
 	b.WriteString("\n")
 
 	// Main content area
-	mainHeight := m.height - 8
+	// Subtract: header(1) + debug(1) + footer(1) = 3 lines
+	mainHeight := m.height - 3
 	if mainHeight < 10 {
 		mainHeight = 10
 	}
@@ -1153,7 +1156,7 @@ func (m Model) View() string {
 	leftContent := m.renderFileBrowser(leftPanelWidth, mainHeight)
 	rightContent := m.renderRightPanel(rightPanelWidth, mainHeight)
 
-	// Debug info: show widths at the top
+	// Debug info: show widths at the top (left justified for visibility)
 	debugInfo := fmt.Sprintf("[DEBUG] Total:%d Left:%d Right:%d", m.width, leftPanelWidth, rightPanelWidth)
 	b.WriteString(debugInfo)
 	b.WriteString("\n")
@@ -1162,6 +1165,15 @@ func (m Model) View() string {
 		leftContent,
 		rightContent,
 	))
+
+	// Debug info at bottom-right: track height calculations
+	heightDebug := fmt.Sprintf("[H] total:%d main:%d panel:%d content:%d", m.height, mainHeight, mainHeight, mainHeight-4)
+	rightPanelWidth = m.width - leftPanelWidth
+	if rightPanelWidth < len(heightDebug) {
+		rightPanelWidth = len(heightDebug)
+	}
+	heightDebug = fmt.Sprintf("%*s", rightPanelWidth, heightDebug)
+	b.WriteString("\n" + heightDebug)
 
 	// Command/Search/Footer
 	b.WriteString("\n")
@@ -1229,8 +1241,8 @@ func (m Model) renderRightPanel(width, height int) string {
 	
 	// Prepend debug info to content (2 lines)
 	debugLine1 := fmt.Sprintf("Panel:%dx%d Content:%dx%d", width, height, contentWidth, contentHeight)
-	debugLine2 := fmt.Sprintf("Viewport size: W=%d H=%d", m.viewport.Width, m.viewport.Height)
-	
+	debugLine2 := fmt.Sprintf("Viewport size: W=%d H=%d ContentH:%d", m.viewport.Width, m.viewport.Height, contentHeight-2)
+
 	// Pad debug lines to content width
 	if len(debugLine1) < contentWidth {
 		debugLine1 += strings.Repeat(" ", contentWidth-len(debugLine1))
