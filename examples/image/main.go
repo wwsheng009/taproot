@@ -10,6 +10,13 @@ import (
 	"github.com/wwsheng009/taproot/tui/components/image"
 )
 
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
 func main() {
 	// Get image path from command line or use a placeholder
 	imgPath := "placeholder.png"
@@ -29,6 +36,8 @@ type Model struct {
 	quitting  bool
 	imgPath   string
 	renderer  image.RendererType
+	width     int
+	height    int
 }
 
 func NewModel(imgPath string) Model {
@@ -47,6 +56,12 @@ func (m Model) Init() tea.Cmd {
 }
 
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+	// First, update the image component with the message
+	var imgCmd tea.Cmd
+	updatedModel, imgCmd := m.image.Update(msg)
+	m.image = updatedModel.(*image.Image)
+
+	// Then handle our own messages
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -76,12 +91,35 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			// Switch to a different path (demo)
 			m.imgPath = "demo-" + m.imgPath
 			return m, m.image.SetPath(m.imgPath)
+		case "+", "=":
+			// Zoom in
+			return m, m.image.ZoomIn()
+		case "-", "_":
+			// Zoom out
+			return m, m.image.ZoomOut()
+		case "0", " ":
+			// Reset zoom to fit screen
+			return m, m.image.ResetZoom()
+		case "m":
+			// Cycle zoom mode
+			return m, m.image.CycleZoomMode()
 		}
 	case tea.WindowSizeMsg:
-		m.image.SetSize(msg.Width-4, msg.Height-8)
+		// Check if this is the first time we get window size (or if it changed)
+		oldWidth := m.width
+		m.width = msg.Width
+		m.height = msg.Height
+		
+		// If we just got window size for the first time, or it changed significantly
+		if oldWidth == 0 || oldWidth != msg.Width {
+			newW := msg.Width - 4
+			newH := msg.Height - 4
+			m.image.SetSize(newW, newH)
+		}
 	}
 
-	return m, nil
+	// Return any command from the image component
+	return m, imgCmd
 }
 
 func (m Model) View() string {
@@ -110,7 +148,12 @@ func (m Model) View() string {
 
 	fmt.Fprintf(&b, "Path: %s\n", m.imgPath)
 	fmt.Fprintf(&b, "Renderer: %s\n", rendererName)
-	fmt.Fprintf(&b, "Loaded: %v\n\n", m.image.IsLoaded())
+	fmt.Fprintf(&b, "Loaded: %v\n", m.image.IsLoaded())
+
+	// Add debugging info
+	imgW, imgH := m.image.Size()
+	scaledW, scaledH := m.image.ScaledSize()
+	fmt.Fprintf(&b, "Terminal: %dx%d | Image: %dx%d | Scaled: %dx%d\n\n", m.width, m.height, imgW, imgH, scaledW, scaledH)
 
 	if m.image.Error() != "" {
 		errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("196")).Bold(true)
@@ -123,10 +166,22 @@ func (m Model) View() string {
 	// Image view
 	b.WriteString(m.image.View())
 
+	// Add separator line
+	separatorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("244"))
+	b.WriteString("\n")
+	b.WriteString(separatorStyle.Render(strings.Repeat("─", min(m.width, 80))))
+	b.WriteString("\n")
+
 	// Footer hints
-	b.WriteString("\n\n")
+	b.WriteString("\n")
+	
+	// Show zoom level and mode
+	scalePercent := int(m.image.GetScale() * 100)
+	zoomMode := m.image.GetZoomModeName()
+	zoomText := fmt.Sprintf("Zoom: %s %d%%", zoomMode, scalePercent)
+	
 	hints := lipgloss.NewStyle().Foreground(lipgloss.Color("242")).Render(
-		"1-4: Switch renderer | r: Reload | s: Switch path | q: Quit",
+		"+/-: Zoom | 0: Reset | m: Mode | 1-4: Renderer | r: Reload | s: Path | q: Quit  [" + zoomText + "]",
 	)
 	b.WriteString(hints)
 
