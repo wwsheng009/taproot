@@ -683,19 +683,68 @@ examples/header-demo/
 
 ---
 
-## Phase 10: 高级功能 (3-4周)
+## Phase 10: 高级功能 (3-4周) ✅
 
 ### 10.1 附件系统 ⭐⭐
 
 **目标**: 文件附件管理
 
 **任务**:
-- [ ] 创建 `internal/ui/components/attachments/`
-- [ ] 迁移 `internal/ui/attachments/`
-- [ ] 图片附件预览
-- [ ] 文件附件显示
-- [ ] 删除模式
-- [ ] 拖拽支持
+- [x] 创建 `ui/components/attachments/` ✅
+- [x] 核心类型定义 (types.go) ✅
+  - [x] AttachmentType 枚举 (File, Image, Video, Audio, Document, Archive)
+  - [x] Attachment 结构体 (ID, Type, Name, Path, Size, MimeType, Preview, CreatedAt, ModifiedAt, Metadata)
+  - [x] AttachmentConfig 配置 (ShowThumbnails, ShowSize, ShowDate, ShowPreview, CompactMode, MaxThumbnailWidth)
+  - [x] DefaultAttachmentConfig() 默认配置
+  - [x] DetectAttachmentType() 文件类型检测 (支持 50+ 文件扩展名)
+  - [x] FormatSize() 文件大小格式化 (KB, MB, GB, TB)
+  - [x] NewAttachment() 创建新附件
+  - [x] detectMimeType() MIME 类型检测
+- [x] 主组件实现 (attachments.go) ✅
+  - [x] AttachmentList 组件实现 render.Model
+  - [x] 文件图标系统 (📄 🖼️ 🎬 🎵 📝 📦)
+  - [x] 文件附件显示 (名称、类型、大小、MIME 类型、预览)
+  - [x] 添加/删除/获取附件方法
+  - [x] 按类型过滤 (FilterByType)
+  - [x] 统计功能 (GetTotalSize, GetCountByType)
+  - [x] 紧凑模式支持
+  - [x] 焦点/模糊处理
+  - [x] 缓存优化
+- [x] 综合测试套件 ✅
+  - [x] AttachmentType.String() 测试
+  - [x] DetectAttachmentType() 测试 (12+ 文件类型)
+  - [x] FormatSize() 测试
+  - [x] AttachmentList 操作测试 (Add, Remove, Get, Filter)
+  - [x] 统计功能测试
+  - [x] 焦点/模糊/配置测试
+- [x] 交互式演示 (examples/attachments) ✅
+  - [x] 添加示例附件 (PDF, 图片, 视频, 音频, 文档, 压缩包)
+  - [x] 导航选择 (上下键)
+  - [x] 添加/删除附件 (a/r)
+  - [x] 切换紧凑模式 (c)
+  - [x] 切换预览显示 (p)
+  - [x] 切换大小显示 (s)
+
+**完成内容**:
+- ✅ Engine-agnostic 设计，实现 render.Model 接口
+- ✅ 6 种附件类型支持 (File, Image, Video, Audio, Document, Archive)
+- ✅ 自动文件类型检测 (基于扩展名)
+- ✅ MIME 类型识别
+- ✅ 文件大小格式化 (KB, MB, GB, TB)
+- ✅ 文件图标显示
+- ✅ 紧凑模式配置
+- ✅ 缓存优化提升性能
+
+**文件结构** (3 files, ~860 lines):
+```
+ui/components/attachments/
+├── types.go           (185 lines) - 核心类型和实用函数
+├── attachments.go     (263 lines) - 主组件实现
+└── attachments_test.go (409 lines) - 测试套件
+
+examples/attachments/
+└── main.go            (200 lines) - 交互式演示
+```
 
 **源文件**:
 ```
@@ -709,12 +758,62 @@ E:/projects/ai/crush/internal/ui/attachments/attachments.go
 **目标**: TODO/Queue 胶囊显示
 
 **任务**:
-- [ ] 创建 `internal/ui/components/pills/`
-- [ ] 迁移 `internal/tui/page/chat/pills.go`
-- [ ] TODO 胶囊
-- [ ] Queue 胶囊
-- [ ] 展开/折叠
-- [ ] 动画效果
+- [x] 创建 `ui/components/pills/` ✅
+- [x] 核心类型定义 (pills.go) ✅
+  - [x] PillStatus 枚举 (Pending, InProgress, Completed, Error, Warning, Info, Neutral)
+  - [x] Pill 结构体 (ID, Label, Count, Status, Expanded, Items)
+  - [x] PillConfig 配置 (ShowItems, ShowCount, CompactMode, MaxItemWidth, ShowIcons, InlineMode)
+  - [x] DefaultPillConfig() 默认配置
+- [x] 主组件实现 (pills.go) ✅
+  - [x] PillList 组件实现 render.Model
+  - [x] 状态图标系统 (☐ ⟳ ✓ × ⚠ ℹ •)
+  - [x] TODO 胶囊显示 (Pending 状态)
+  - [x] Queue 胶囊显示 (InProgress/Completed/Error 等各种状态)
+  - [x] 展开/折叠功能
+  - [x] 批量操作 (ExpandAll, CollapseAll)
+  - [x] 添加/删除/获取 Pill 方法
+  - [x] 统计功能 (GetTotalCount, GetCountByStatus)
+  - [x] 行内模式支持 (InlineMode)
+  - [x] 紧凑模式支持
+  - [x] 图标控制 (ShowIcons)
+  - [x] 缓存优化
+- [x] 综合测试套件 ✅
+  - [x] PillStatus.String() 测试
+  - [x] PillList 操作测试 (Add, Remove, Get, ToggleExpanded)
+  - [x] 批量操作测试 (ExpandAll, CollapseAll)
+  - [x] 统计功能测试
+  - [x] 焦点/模糊/配置测试
+  - [x] 行内模式测试
+  - [x] Pill 状态图标测试
+- [x] 交互式演示 (examples/pills) ✅
+  - [x] 多种状态 Pills (Tasks, In Progress, Completed, Errors, Warnings, Info)
+  - [x] 展开/折叠 Pills (1-6 数字键)
+  - [x] 批量展开/折叠 (e/c)
+  - [x] 添加/删除 Pills (a/r)
+  - [x] 切换行内模式 (m)
+  - [x] 切换图标显示 (i)
+  - [x] 切换计数显示 (s)
+  - [x] 实时统计显示 (Total Pills, Total Items)
+
+**完成内容**:
+- ✅ Engine-agnostic 设计，实现 render.Model 接口
+- ✅ 7 种 Pill 状态 (Pending, InProgress, Completed, Error, Warning, Info, Neutral)
+- ✅ 状态图标和颜色编码
+- ✅ 展开/折叠功能
+- ✅ 行内模式 (Pills 在同一行显示)
+- ✅ 批量操作 (ExpandAll, CollapseAll)
+- ✅ 统计功能 (总数、按状态计数)
+- ✅ 缓存优化提升性能
+
+**文件结构** (3 files, ~1,200 lines):
+```
+ui/components/pills/
+├── pills.go        (379 lines) - 核心实现
+└── pills_test.go   (452 lines) - 测试套件
+
+examples/pills/
+└── main.go         (250 lines) - 交互式演示
+```
 
 **源文件**:
 ```
@@ -729,11 +828,64 @@ E:/projects/ai/crush/internal/ui/model/pills.go
 **目标**: 统一的动画系统
 
 **任务**:
-- [ ] 增强 `internal/tui/anim/`
-- [ ] 进度条组件
-- [ ] 加载动画
-- [ ] 过渡动画
-- [ ] 性能优化
+- [x] 创建 `ui/components/progress/` ✅
+- [x] 核心类型定义 (progressbar.go) ✅
+  - [x] ProgressBarStyle 配置 (FullBarStyle, EmptyBarStyle, ShowPercent, ShowLabel, Width)
+  - [x] DefaultProgressBarStyle() 默认样式
+  - [x] ProgressBar 结构体 (current, total, label, style, initialized)
+- [x] 进度条组件 (progressbar.go) ✅
+  - [x] ProgressBar 实现 render.Model
+  - [x] 进度条渲染 (█ 填充字符，░ 空字符)
+  - [x] 百分比显示
+  - [x] Label 标签支持
+  - [x] SetCurrent/SetTotal/Increment/Reset 方法
+  - [x] Completed/Percent 查询方法
+  - [x] 边界检查 (current 不会超过 total，不会为负)
+- [x] 加载动画组件 (spinner.go) ✅
+  - [x] SpinnerStyle 配置 (Color, Label, Type, FPS, Width)
+  - [x] DefaultSpinnerStyle() 默认样式
+  - [x] Spinner 结构体 (id, state, style, started, stopped, initialized, tickInterval)
+  - [x] Spinner 实现 render.Model
+  - [x] 4 种 Spinner 类型 (Dots, Line, Arrow, Moon)
+  - [x] 自定义颜色和 FPS
+  - [x] Stop/Reset/Running 状态管理
+  - [x] TickMsg 和 render.TickMsg 处理
+- [x] 综合测试套件 ✅
+  - [x] ProgressBar 测试 (SetCurrent, Add, Increment, SetTotal, Completed, Percent, Reset, View)
+  - [x] ProgressBar 边界测试 (不超过 total，不为负)
+  - [x] Spinner 测试 (Init, Update_TickMsg, View, Stop, Reset, Running)
+  - [x] Spinner 状态包装测试
+  - [x] Spinner 类型测试 (Dots, Line, Arrow, Moon)
+- [x] 交互式演示 (examples/progress) ✅
+  - [x] 多个进度条显示 (Download, Processing, Upload)
+  - [x] 增加/减少进度 (↑/↓)
+  - [x] 增加单个进度条 (1/2/3)
+  - [x] 重置所有进度 (r)
+  - [x] 多种 Spinner 类型演示
+  - [x] 切换 Spinner 类型 (t)
+  - [x] 切换进度条/Spinner 显示 (b/s)
+  - [x] 实时进度统计
+
+**完成内容**:
+- ✅ Engine-agnostic 设计，实现 render.Model 接口
+- ✅ 进度条组件 (Progress Bar with percentage)
+- ✅ 加载动画组件 (4 种 Spinner 类型)
+- ✅ 4 种 Spinner 动画 (⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏, -\|/, ←↖↑↗→↘↓↙, 🌑🌒🌓🌔🌕🌖🌗🌘)
+- ✅ 可配置 FPS (frames per second)
+- ✅ 状态管理 (Started, Stopped, Running)
+- ✅ 边界检查和自动限制
+- ✅ 实时进度统计
+
+**文件结构** (3 files, ~830 lines):
+```
+ui/components/progress/
+├── progressbar.go (190 lines) - 进度条组件
+├── spinner.go     (222 lines) - 加载动画组件
+└── progress_test.go (419 lines) - 测试套件
+
+examples/progress/
+└── main.go        (200 lines) - 交互式演示
+```
 
 ---
 
@@ -744,11 +896,13 @@ E:/projects/ai/crush/internal/ui/model/pills.go
 **目标**: 跨平台 shell 命令执行
 
 **任务**:
-- [ ] 完善 `internal/tui/util/shell.go`
-- [ ] 命令构建器
-- [ ] 输出捕获
-- [ ] 异步执行
-- [ ] 进度回调
+- [x] 创建 `ui/tools/shell/`
+- [x] 命令构建器
+- [x] 输出捕获
+- [x] 异步执行
+- [x] 进度回调
+
+**状态**: ✅ 完成
 
 ---
 
@@ -757,11 +911,13 @@ E:/projects/ai/crush/internal/ui/model/pills.go
 **目标**: 文件变化监控
 
 **任务**:
-- [ ] 创建 `internal/ui/watch/`
-- [ ] fsnotify 集成
-- [ ] 事件过滤
-- [ ] 防抖动
-- [ ] 批量更新
+- [x] 创建 `ui/tools/watcher/`
+- [x] fsnotify 集成
+- [x] 事件过滤
+- [x] 防抖动
+- [x] 批量更新
+
+**状态**: ✅ 完成
 
 ---
 
@@ -770,11 +926,20 @@ E:/projects/ai/crush/internal/ui/model/pills.go
 **目标**: 跨平台剪贴板操作
 
 **任务**:
-- [ ] 创建 `internal/ui/clipboard/`
-- [ ] OSC 52 支持
-- [ ] 原生剪贴板
-- [ ] 图片支持
-- [ ] 历史记录
+- [x] 创建 `ui/tools/clipboard/`
+- [x] OSC 52 支持
+- [x] 原生剪贴板
+- [x] 图片支持
+- [x] 历史记录
+
+**状态**: ✅ 完成
+
+**实现功能**:
+- OSC 52 终端剪贴板 (写支持, Base64 编码)
+- Native OS 剪贴板 (Linux: xclip/xsel, macOS: pbcopy/pbpaste, Windows: Windows API)
+- 剪贴板历史管理 (去重、过期、最大条目限制)
+- 灵活的配置系统 (超时、重试、持久化)
+- 跨平台自动检测和回退机制
 
 ---
 
@@ -795,12 +960,16 @@ E:/projects/ai/crush/internal/ui/model/pills.go
 ### 12.2 示例程序 ⭐⭐⭐
 
 **任务**:
-- [ ] `examples/ultraviolet/` - UV 引擎演示
-- [ ] `examples/dual-engine/` - 双引擎对比
-- [ ] `examples/file-browser/` - 文件浏览器
+- [x] `examples/ultraviolet/` - UV 引擎演示
+- [x] `examples/dual-engine/` - 双引擎对比
+- [x] `examples/file-browser/` - 文件浏览器
 - [ ] `examples/dashboard/` - 仪表板
 - [ ] `examples/chat-ui/` - 聊天界面
 - [ ] `examples/complete-app/` - 完整应用
+- [x] `examples/shell/` - Shell 执行工具演示
+- [x] `examples/clipboard/` - 剪贴板工具演示
+
+**状态**: 部分完成
 
 ---
 

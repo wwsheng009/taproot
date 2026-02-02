@@ -32,11 +32,11 @@ const (
 
 // SpinnerStyle defines the visual style configuration for spinners.
 type SpinnerStyle struct {
-	Color  lipgloss.Color
-	Label  string
-	Type   SpinnerType
-	FPS    int
-	Width  int
+	Color lipgloss.Color
+	Label string
+	Type  SpinnerType
+	FPS   int
+	Width int
 }
 
 // DefaultSpinnerStyle returns the default spinner style.

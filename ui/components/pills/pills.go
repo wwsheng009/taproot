@@ -56,12 +56,12 @@ type Pill struct {
 
 // PillConfig holds configuration for pill display.
 type PillConfig struct {
-	ShowItems      bool // Show item list in expanded state
-	ShowCount      bool // Show count badge
-	CompactMode    bool // Compact display mode
-	MaxItemWidth   int  // Maximum width for item display
-	ShowIcons      bool // Show status icons
-	InlineMode     bool // Display pills in a single line
+	ShowItems    bool // Show item list in expanded state
+	ShowCount    bool // Show count badge
+	CompactMode  bool // Compact display mode
+	MaxItemWidth int  // Maximum width for item display
+	ShowIcons    bool // Show status icons
+	InlineMode   bool // Display pills in a single line
 }
 
 // DefaultPillConfig returns default pill configuration.

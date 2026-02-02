@@ -1058,6 +1058,1043 @@ func (m Model) View() string {
 
 ---
 
+## Tools and Utilities (Phase 11)
+
+### Shell Execution Tool (`ui/tools/shell/`)
+
+**Purpose**: Cross-platform shell command execution with advanced features.
+
+**Core Files**:
+- `types.go` (267 lines): Command types, options, builders
+- `executor.go` (566 lines): Execution engine with async support
+- `shell_test.go` (780+ lines): Comprehensive test coverage
+- `examples/shell/main.go` (500+ lines): Interactive demo
+
+**Core Types**:
+
+```go
+// CommandType - Execution type
+type CommandType int
+const (
+    CommandShell  // Shell command (sh/bash/cmd.exe)
+    CommandDirect // Direct execution
+)
+
+// CommandOptions - Configuration
+type CommandOptions struct {
+    Type            CommandType
+    Direction       CommandDirection
+    WorkingDir      string
+    Timeout         time.Duration
+    Progress        func(ProgressUpdate)
+    Env             []string
+}
+
+// CommandResult - Execution result
+type CommandResult struct {
+    ExitCode    int
+    Stdout      string
+    Stderr      string
+    Duration    time.Duration
+    Error       error
+    Cancelled   bool
+    TimedOut    bool
+}
+
+// CommandBuilder - Fluent interface
+func NewCommandBuilder() *CommandBuilder {
+    return &CommandBuilder{}
+}
+
+func (b *CommandBuilder) Command(cmd string, args ...string) *CommandBuilder
+func (b *CommandBuilder) ShellCommand(cmd string) *CommandBuilder
+func (b *CommandBuilder) SetWorkingDir(dir string) *CommandBuilder
+func (b *CommandBuilder) SetTimeout(timeout time.Duration) *CommandBuilder
+func (b *CommandBuilder) SetProgress(callback func(ProgressUpdate)) *CommandBuilder
+func (b *CommandBuilder) Build() (string, []string, CommandOptions, error)
+```
+
+**Usage Examples**:
+
+```go
+import "github.com/wwsheng009/taproot/ui/tools/shell"
+
+// Basic execution
+executor := shell.NewExecutor()
+result, err := executor.Execute("echo", []string{"hello"})
+fmt.Printf("Output: %s\n", result.Stdout)
+
+// Command builder
+cmd, args, opts, err := shell.NewCommandBuilder().
+    ShellCommand("ls -la /tmp").
+    SetTimeout(5 * time.Second).
+    SetWorkingDir("/home/user").
+    SetProgress(func(update shell.ProgressUpdate) {
+        fmt.Printf("[%s] %s", update.Stdout, update.Stderr)
+    }).
+    Build()
+
+result, err := executor.ExecuteWithOptions(cmd, args, opts)
+
+// Async execution with process tracking
+process, err := executor.ExecuteAsync("long-running", []string{"task"}, opts)
+
+// Monitor progress
+for process.IsRunning() {
+    fmt.Printf("PID: %d, State: %s\n", process.PID(), process.State())
+    time.Sleep(100 * time.Millisecond)
+}
+
+// Cancel async process
+err = executor.Cancel(process.ID())
+
+// Pipe commands
+result, err = executor.Pipe(
+    []string{"cat", "file.txt"},
+    []string{"grep", "pattern"},
+)
+```
+
+**Features**:
+- Synchronous and async execution
+- Real-time progress callbacks
+- Timeout and cancellation
+- Working directory and environment variables
+- Command piping
+- Cross-platform (Windows/Unix)
+- Process management (list, cancel, status)
+
+**Path Utilities**:
+```go
+// Find executable in PATH
+which := executor.Which("python")
+
+// Get default shell
+shellPath := shell.GetDefaultShell() // "cmd.exe" on Windows, "/bin/sh" on Unix
+
+// Expand tilde and variables
+expanded := shell.ExpandPath("~/Documents")
+```
+
+---
+
+### File Watcher (`ui/tools/watcher/`)
+
+**Purpose**: File system event monitoring with filtering and batching.
+
+**Core Files**:
+- `types.go` (286 lines): Event types, filters, configuration
+- `watcher.go` (800+ lines): fsnotify integration and event processing
+- `examples/watcher/main.go`: Interactive demo
+
+**Core Types**:
+
+```go
+// EventType - File system event type
+type EventType int
+const (
+    EventCreate EventType
+    EventWrite
+    EventRemove
+    EventRename
+    EventChmod
+)
+
+// Event - File system event
+type Event struct {
+    Type      EventType
+    Path      string
+    OldPath   string // for rename events
+    Timestamp time.Time
+}
+
+// Filter - Event filtering configuration
+type Filter struct {
+    IncludePatterns   []string // glob patterns
+    ExcludePatterns   []string
+    Directories       bool
+    HiddenFiles       bool
+    EventTypes        []EventType
+    MinSize, MaxSize  int64
+    Extensions        []string
+    Recursive         bool
+}
+
+// DebounceConfig - Debounce configuration
+type DebounceConfig struct {
+    Enabled      bool
+    Delay        time.Duration
+    MaxWait      time.Duration
+    MergeEvents  bool
+    MergeWindow  time.Duration
+}
+
+// Watcher - Main watcher struct
+type Watcher struct {
+    fsnotify    *fsnotify.Watcher
+    filter      Filter
+    debounce    DebounceConfig
+    batch       BatchConfig
+    handler     func([]Event)
+    errorHandler func(error)
+}
+```
+
+**Usage Examples**:
+
+```go
+import "github.com/wwsheng009/taproot/ui/tools/watcher"
+
+// Basic watching
+w, err := watcher.NewWatcher(
+    filter.Filter{
+        IncludePatterns: []string{"*.go"},
+        Recursive:       true,
+    },
+    func(events []watcher.Event) {
+        for _, e := range events {
+            fmt.Printf("%s: %s\n", e.Type.String(), e.Path)
+        }
+    },
+    func(err error) {
+        log.Printf("Watcher error: %v", err)
+    },
+)
+
+// Add paths
+w.AddRecursive("/path/to/project")
+w.Add("/tmp/single-file.txt")
+
+// Start watching
+w.Start()
+
+// Wait for events
+w.Wait()
+
+// Stop watching
+w.Stop()
+```
+
+**Advanced Filtering**:
+```go
+// Filter by extension
+filter := watcher.Filter{
+    Extensions: []string{".go", ".md", ".txt"},
+    Recursive:  true,
+}
+
+// Filter by event types
+filter.EventTypes = []watcher.EventType{
+    watcher.EventWrite,
+    watcher.EventCreate,
+}
+
+// Exclude patterns
+filter.ExcludePatterns = []string{
+    "node_modules/*",
+    ".git/*",
+    "*.tmp",
+}
+
+// Size filtering
+filter.MinSize = 100  // minimum 100 bytes
+filter.MaxSize = 1024 * 1024 // maximum 1MB
+```
+
+**Debouncing and Batching**:
+```go
+// Enable debouncing to reduce event storms
+w.SetDebounceConfig(watcher.DebounceConfig{
+    Enabled:     true,
+    Delay:       100 * time.Millisecond,
+    MaxWait:     500 * time.Millisecond,
+    MergeEvents: true,
+    MergeWindow: 50 * time.Millisecond,
+})
+
+// Enable batching
+w.SetBatchConfig(watcher.BatchConfig{
+    Enabled:    true,
+    MaxSize:    10,
+    MaxWait:    200 * time.Millisecond,
+    MinSize:    1,
+})
+```
+
+**Convenience Functions**:
+```go
+// Quick watch with defaults
+err = watcher.Watch("/path", handler, errorHandler)
+
+// Watch directory recursively
+err = watcher.WatchRecursive("/path", handler, errorHandler)
+
+// Watch specific files
+err = watcher.WatchFiles([]string{"/path1", "/path2"}, handler, errorHandler)
+```
+
+**Statistics**:
+```go
+// Get statistics
+stats := w.GetStats()
+fmt.Printf("Events: %d (dropped: %d, debounced: %d, batched: %d)\n",
+    stats.TotalEvents, stats.Dropped, stats.Debounced, stats.Batched)
+fmt.Printf("Watching: %d files, %d directories\n",
+    stats.WatchedFiles, stats.WatchedDirectories)
+```
+
+---
+
+### Clipboard Support (`ui/tools/clipboard/`)
+
+**Purpose**: Cross-platform clipboard operations with OSC 52 and native support.
+
+**Core Files**:
+- `types.go` (370+ lines): Clipboard types, interfaces, data structures
+- `osc52.go` (270+ lines): OSC 52 terminal clipboard
+- `native.go` (410+ lines): Native OS clipboard provider
+- `windows.go` (170+ lines): Windows API clipboard implementation
+- `manager.go` (530+ lines): Unified clipboard manager with history
+- `clipboard_test.go` (430+ lines): Comprehensive tests
+- `examples/clipboard/main.go` (330+ lines): Interactive demo
+
+**Core Types**:
+
+```go
+// ClipboardType - Clipboard implementation type
+type ClipboardType int
+const (
+    ClipboardOSC52    // Terminal clipboard (write-only)
+    ClipboardNative   // OS clipboard (full support)
+    ClipboardPlatform // Auto-detect
+)
+
+// ClipboardData - Clipboard data container
+type ClipboardData struct {
+    Format    Format
+    Text      string
+    Bytes     []byte
+    Timestamp time.Time
+}
+
+// Format - Data format
+type Format string
+const (
+    FormatText       = "text/plain"
+    FormatHTML       = "text/html"
+    FormatRTF        = "text/rtf"
+    FormatImagePNG   = "image/png"
+    FormatImageJPEG  = "image/jpeg"
+    FormatImageGIF   = "image/gif"
+)
+
+// HistoryConfig - History configuration
+type HistoryConfig struct {
+    MaxItems    int
+    Expiration  time.Duration
+    PersistPath string
+    Deduplicate bool
+}
+
+// Manager - Unified clipboard manager
+type Manager struct {
+    primary Provider
+    history *HistoryManager
+    config  ManagerConfig
+}
+```
+
+**Usage Examples**:
+
+```go
+import "github.com/wwsheng009/taproot/ui/tools/clipboard"
+
+// Create manager with default config
+mgr := clipboard.NewDefaultManager()
+
+// Simple copy/paste
+err := mgr.Copy("Hello, clipboard!")
+text, _ := mgr.Paste()
+fmt.Println("Pasted:", text)
+
+// Copy with custom data
+data := clipboard.NewClipboardData(clipboard.FormatText, "Custom text")
+err = mgr.Write(data)
+
+// Read with format
+data, err := mgr.Read(clipboard.FormatText)
+fmt.Println(data.Text)
+```
+
+**History Management**:
+```go
+// Enable history
+config := clipboard.DefaultManagerConfig()
+config.HistoryConfig.MaxItems = 100
+config.HistoryConfig.Deduplicate = true
+mgr := clipboard.NewManager(config)
+
+// View history
+history := mgr.History()
+for i, data := range history {
+    fmt.Printf("[%d] %s\n", i, data.Text)
+}
+
+// Restore from history
+err = mgr.RestoreFromHistory(0)
+
+// Clear history
+mgr.ClearHistory()
+
+// Remove specific entry
+mgr.RemoveFromHistory(5)
+```
+
+**OSC 52 Terminal Clipboard**:
+```go
+// Create OSC 52 provider
+config := clipboard.DefaultOSC52Config()
+config.MaxSize = 100 * 1024 // 100KB limit
+config.EncodeBase64 = true
+
+provider := clipboard.NewOSC52Provider(config)
+
+// Check terminal support
+if provider.Available() {
+    fmt.Println("Terminal supports OSC 52")
+    ctx := context.Background()
+    data := clipboard.NewClipboardData(clipboard.FormatText, "Text via OSC 52")
+    err := provider.Write(ctx, data)
+}
+
+// Encode/decode utilities
+encoded := clipboard.EncodeOSC52("Hello")
+decoded, _ := clipboard.DecodeOSC52(encoded)
+
+// Parse OSC 52 sequence
+selection, data, err := clipboard.ParseOSC52Sequence("\x1b]52;c;SGVsbG8=\x1b\\")
+```
+
+**Native Clipboard**:
+```go
+// Platform-specific clipboard
+config := clipboard.DefaultNativeConfig()
+config.Timeout = 5 * time.Second
+config.RetryCount = 3
+
+provider := clipboard.NewNativeProvider(config)
+
+// Check read/write support
+fmt.Printf("Read supported: %v\n", provider.IsReadSupported())
+fmt.Printf("Write supported: %v\n", provider.IsWriteSupported())
+fmt.Printf("Platform: %s\n", provider.GetPlatformName())
+
+// Copy and paste
+if provider.IsWriteSupported() {
+    ctx := context.Background()
+    data := clipboard.NewClipboardData(clipboard.FormatText, "Native clipboard")
+    err := provider.Write(ctx, data)
+}
+
+if provider.IsReadSupported() {
+    ctx := context.Background()
+    data, err := provider.Read(ctx)
+    if err == nil {
+        fmt.Println("Clipboard:", data.Text)
+    }
+}
+```
+
+**Platform Support**:
+- **Windows**: Windows API (full read/write support)
+- **Linux**: xclip or xsel (full read/write support)
+- **macOS**: pbcopy/pbpaste (full read/write support)
+- **OSC 52**: Terminal clipboard (write-only, works on all platforms)
+
+**Provider Switching**:
+```go
+// Switch between providers
+err := mgr.SetProvider(clipboard.ClipboardOSC52)
+err = mgr.SetProvider(clipboard.ClipboardNative)
+err = mgr.SetProvider(clipboard.ClipboardPlatform) // auto-detect
+
+// Get current provider
+provider := mgr.GetProvider()
+fmt.Printf("Active provider: %s\n", mgr.Type().String())
+
+// Get platform information
+info := mgr.GetPlatformInfo()
+fmt.Printf("OS: %s\n", info["OS"])
+fmt.Printf("OSC52 Available: %v\n", info["OSC52Available"])
+fmt.Printf("Native Available: %v\n", info["NativeAvailable"])
+```
+
+**Platform Detection**:
+```go
+// Terminal detection
+terminalName := clipboard.GetTerminalName()
+terminalVersion := clipboard.GetTerminalVersion()
+fmt.Printf("Terminal: %s %s\n", terminalName, terminalVersion)
+
+// Check OSC 52 support
+if clipboard.IsOSC52Supported() {
+    fmt.Println("OSC 52 is supported")
+}
+
+// Tool availability (Linux/macOS)
+tools := clipboard.CheckToolAvailability()
+fmt.Printf("xclip: %v\n", tools["xclip"])
+fmt.Printf("pbcopy: %v\n", tools["pbcopy"])
+```
+
+**Common Patterns**:
+
+```go
+// Auto-fallback copy
+err := mgr.TryCopy("fallback text")
+// Tries OSC 52 first, then native clipboard
+
+// Auto-fallback read
+text, err := mgr.TryRead()
+// Tries native clipboard first (OSC 52 doesn't support read)
+
+// Batch clipboard operations
+for _, item := range items {
+    mgr.Copy(item)
+    // Automatic history tracking
+}
+
+// Clear clipboard on exit
+defer mgr.Clear()
+
+// Persist history
+config.HistoryConfig.PersistPath = "/path/to/clipboard.json"
+err = mgr.PersistHistory()
+err = mgr.LoadHistory()
+```
+
+---
+
+## v2.0 Development Best Practices
+
+### Component Architecture Patterns
+
+#### 1. Implement render.Model for All Components
+
+All v2.0 components should implement the `render.Model` interface for engine compatibility:
+
+```go
+import "github.com/wwsheng009/taproot/ui/render"
+
+type MyComponent struct {
+    // State fields
+}
+
+func (c *MyComponent) Init() render.Cmd {
+    return nil
+}
+
+func (c *MyComponent) Update(msg any) (render.Model, render.Cmd) {
+    switch msg := msg.(type) {
+    case render.KeyMsg:
+        // Handle keyboard input
+    case render.WindowSizeMsg:
+        // Handle resize
+    }
+    return c, render.None()
+}
+
+func (c *MyComponent) View() string {
+    return "Component view"
+}
+```
+
+#### 2. Use Type Assertions for Messages
+
+Since v2.0 uses `any` for messages, use type assertions:
+
+```go
+func (m Model) Update(msg any) (render.Model, render.Cmd) {
+    switch msg := msg.(type) {
+    case render.KeyMsg:
+        // Keyboard input
+    case render.WindowSizeMsg:
+        // Terminal resize
+    case render.TickMsg:
+        // Timer tick
+    case CustomMsg:
+        // Custom message type
+    default:
+        // Unknown message - ignore
+    }
+    return m, render.None()
+}
+```
+
+#### 3. String-Based Key Handling
+
+v2.0 uses string-based keys instead of Bubbletea enums:
+
+```go
+// v2.0 key handling
+case render.KeyMsg:
+    switch key.Key {
+    case "up", "k":       // Up arrow or vim k
+    case "down", "j":     // Down arrow or vim j
+    case "enter", " ":    // Enter or space
+    case "q", "ctrl+c":   // Quit
+    }
+```
+
+### State Management Patterns
+
+#### 1. Immutable State Updates
+
+Return new model state instead of modifying:
+
+```go
+// Good: Return updated model
+func (m Model) Increment() Model {
+    m.count++
+    return m
+}
+
+// Avoid: Modify and return pointer
+func (m *Model) Increment() *Model {
+    m.count++
+    return m
+}
+```
+
+#### 2. Cache Management
+
+Implement render caching for performance:
+
+```go
+type MyComponent struct {
+    cache       map[string]string
+    lastConfig  ComponentConfig
+}
+
+func (c *MyComponent) View() string {
+    cacheKey := fmt.Sprintf("%v", c.lastConfig)
+
+    if cached, ok := c.cache[cacheKey]; ok {
+        return cached
+    }
+
+    view := c.renderView()
+    c.cache[cacheKey] = view
+    return view
+}
+
+func (c *MyComponent) configChanged(newConfig ComponentConfig) bool {
+    return !reflect.DeepEqual(c.lastConfig, newConfig)
+}
+```
+
+#### 3. Boundary Checking
+
+Always validate state boundaries:
+
+```go
+func (p *ProgressBar) SetCurrent(current int64) {
+    if p.total <= 0 {
+        p.current = 0
+        return
+    }
+    if current < 0 {
+        current = 0
+    }
+    if current > p.total {
+        current = p.total
+    }
+    p.current = current
+}
+```
+
+### Testing Strategies
+
+#### 1. Use DirectEngine for Tests
+
+The DirectEngine is perfect for unit tests:
+
+```go
+func TestMyComponent(t *testing.T) {
+    component := NewMyComponent()
+
+    // Use DirectEngine for testing (no terminal)
+    engine, _ := render.CreateEngine(render.EngineDirect, render.DefaultConfig())
+    engine.Start(component)
+
+    // Test update
+    newComponent := component.Update(render.KeyMsg{Key: "up"})
+    
+    // Verify state change
+    assert.Equal(t, expectedValue, newComponent.SomeField())
+}
+```
+
+#### 2. Test Interface Compliance
+
+Ensure components implement required interfaces:
+
+```go
+func TestComponentImplementsRenderModel(t *testing.T) {
+    var _ render.Model = (*MyComponent)(nil)
+}
+
+func TestComponentFocusable(t *testing.T) {
+    c := NewMyComponent()
+    _, ok := interface{}(c).(Focusable)
+    assert.True(t, ok, "Component should be Focusable")
+}
+```
+
+#### 3. Test Edge Cases
+
+Test boundary conditions:
+
+```go
+func TestProgressBarBoundaryConditions(t *testing.T) {
+    bar := NewProgressBar()
+
+    // Test negative values
+    bar.SetCurrent(-10)
+    assert.Equal(t, int64(0), bar.Current())
+
+    // Test overflow
+    bar.SetTotal(100)
+    bar.SetCurrent(200)
+    assert.Equal(t, int64(100), bar.Current())
+
+    // Test zero total
+    bar.SetTotal(0)
+    assert.Equal(t, 0.0, bar.Percent())
+}
+```
+
+### Command Patterns
+
+#### 1. Quit Command
+
+Always use `render.Quit()` for clean exit:
+
+```go
+case render.KeyMsg:
+    switch key.Key {
+    case "q", "ctrl+c":
+        return m, render.Quit()
+    }
+```
+
+#### 2. Batch Commands
+
+Combine multiple commands:
+
+```go
+return m, render.Batch(
+    cmd1,
+    cmd2,
+    render.Tick(time.Second, tickCallback),
+)
+```
+
+#### 3. Custom Commands
+
+Define custom message types:
+
+```go
+type CustomMsg struct {
+    Data string
+}
+
+func MyCommand(data string) render.Cmd {
+    return func() render.Msg {
+        return CustomMsg{Data: data}
+    }
+}
+```
+
+### Error Handling
+
+#### 1. Report Errors via InfoMsg
+
+Use the status system for errors:
+
+```go
+import "github.com/wwsheng009/taproot/tui/util"
+
+if err != nil {
+    return m, util.ReportError(fmt.Errorf("operation failed: %w", err))
+}
+```
+
+#### 2. Return Commands for Errors
+
+Commands can handle errors asynchronously:
+
+```go
+func doWork() render.Cmd {
+    return func() render.Msg {
+        result, err := someOperation()
+        if err != nil {
+            return ErrorMsg{Err: err}
+        }
+        return SuccessMsg{Result: result}
+    }
+}
+```
+
+### Performance Optimization
+
+#### 1. Efficient View Rendering
+
+Use `strings.Builder` for concatenation:
+
+```go
+func (m *Model) View() string {
+    var b strings.Builder
+    b.WriteString("Header\n")
+    b.WriteString(m.renderList())
+    b.WriteString("Footer\n")
+    return b.String()
+}
+```
+
+#### 2. Lazy Evaluation
+
+Calculate view only when needed:
+
+```go
+func (m *Model) View() string {
+    if !m.visible {
+        return ""
+    }
+
+    if m.cachedView != "" && !m.dirty {
+        return m.cachedView
+    }
+
+    view := m.renderView()
+    m.cachedView = view
+    m.dirty = false
+    return view
+}
+```
+
+#### 3. Minimize Allocations
+
+Reuse large buffers:
+
+```go
+type Model struct {
+    viewBuffer strings.Builder
+}
+
+func (m *Model) View() string {
+    m.viewBuffer.Reset()
+    // Build view...
+    return m.viewBuffer.String()
+}
+```
+
+### Common Components Patterns
+
+#### 1. List Component Pattern
+
+```go
+type MyListComponent struct {
+    items    []list.FilterableItem
+    viewport *list.Viewport
+    filter   *list.Filter
+    cursor   int
+}
+
+func (m *MyListComponent) Update(msg any) (render.Model, render.Cmd) {
+    switch key := msg.(type) {
+    case render.KeyMsg:
+        action := list.DefaultKeyMap().MatchAction(key.Key)
+        switch action {
+        case list.ActionMoveUp:
+            m.viewport.MoveUp()
+        case list.ActionMoveDown:
+            m.viewport.MoveDown()
+        case list.ActionFilter:
+            m.filter.SetQuery("") // Start filtering
+        }
+    }
+    return m, render.None()
+}
+```
+
+#### 2. Dialog Pattern
+
+```go
+type DialogModel struct {
+    overlay   *dialog.Overlay
+    callback  dialog.Callback
+}
+
+func NewDialog(title, message string, callback dialog.Callback) *DialogModel {
+    infoDialog := dialog.NewInfoDialog(title, message)
+    infoDialog.SetCallback(callback)
+
+    overlay := dialog.NewOverlay()
+    overlay.Push(infoDialog)
+
+    return &DialogModel{
+        overlay:  overlay,
+        callback: callback,
+    }
+}
+```
+
+#### 3. Form Pattern
+
+```go
+type FormModel struct {
+    form     *forms.Form
+    submitted bool
+}
+
+func NewForm() *FormModel {
+    nameInput := forms.NewTextInput("Name", "Enter your name")
+    nameInput.SetRequired(true)
+
+    emailInput := forms.NewTextInput("Email", "Enter email")
+    emailInput.SetValidation(validateEmail)
+
+    return &FormModel{
+        form: forms.NewForm(nameInput, emailInput),
+    }
+}
+```
+
+### Engine Considerations
+
+#### 1. Cross-Engine Compatibility
+
+Write code that works with all engines:
+
+```go
+// Don't use engine-specific types
+func (m Model) Update(msg tea.Msg) // ❌ Bubbletea-specific
+
+// Use generic message type
+func (m Model) Update(msg any) // ✅ Engine-agnostic
+```
+
+#### 2. Tick Message Support
+
+Support both tick types:
+
+```go
+func (s *Spinner) Update(msg any) (render.Model, render.Cmd) {
+    switch msg := msg.(type) {
+    case render.TickMsg:
+        // render.Tick() message
+    case tea.TickMsg: // tea.Tick from adapter
+        // Handle if using Bubbletea
+    }
+    return s, render.NextTick()
+}
+```
+
+#### 3. Engine Configuration
+
+Provide flexible configuration:
+
+```go
+type ComponentConfig struct {
+    Width       int
+    Height      int
+    Theme       *styles.Styles
+    EngineMode  EngineMode // "bubbletea" or "ultraviolet"
+}
+```
+
+### Documentation Best Practices
+
+#### 1. Document Component Purpose
+
+```go
+// ProgressBar displays progress with visual bar and percentage.
+// It supports automatic boundary checking (0-100%) and can show
+// labels and percentages in various modes.
+type ProgressBar struct {
+    current int64
+    total   int64
+    width   int
+}
+```
+
+#### 2. Document Key Bindings
+
+```go
+// Key Bindings:
+//   up/k     : Move up
+//   down/j   : Move down
+//   enter    : Select item
+//   q/ctrl+c : Quit
+```
+
+#### 3. Provide Usage Examples
+
+```go
+// Example:
+//   bar := progress.NewProgressBar()
+//   bar.SetTotal(100)
+//   bar.SetCurrent(75)
+//   view := bar.View()
+//   // Output: ████████░░░░░░░ 75/100 (75%)
+```
+
+### Debugging Tips
+
+#### 1. Logging State Changes
+
+```go
+func (m Model) Update(msg any) (render.Model, render.Cmd) {
+    debug.Printf("Received message: %T", msg)
+    debug.Printf("Current state: %+v", m)
+    // ...
+}
+```
+
+#### 2. Visualization Mode
+
+Add debug view mode:
+
+```go
+type Model struct {
+    debugMode bool
+}
+
+func (m *Model) View() string {
+    if m.debugMode {
+        return fmt.Sprintf("DEBUG:\nState: %+v\nMessages: %d",
+            m, m.messageCount)
+    }
+    return m.normalView()
+}
+```
+
+#### 3. Step-Through Execution
+
+Use tick delay for debugging:
+
+```go
+func (m Model) Init() render.Cmd {
+    if debugMode {
+        return render.Tick(time.Second, tickCallback) // Slow tick for debugging
+    }
+    return nil
+}
+```
+
+---
+
 ## Related Projects
 
 This framework is extracted from the Crush CLI tool (E:/projects/ai/crush), which contains extensive TUI implementations including:

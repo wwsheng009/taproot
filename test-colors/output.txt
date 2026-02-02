@@ -1,0 +1,13 @@
+COLORTERM=
+TERM=
+WT_SESSION=ee0d7009-7b5e-4dbf-869f-1030052281f1
+
+With 256-color codes:
+▀
+Raw: "▀"
+
+With hex colors:
+▀
+Raw: "▀"
+
+Plain char: ▀

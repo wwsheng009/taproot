@@ -48,8 +48,8 @@ type Attachment struct {
 	Path       string
 	Size       int64
 	MimeType   string
-	Thumbnail  string   // Path to thumbnail for images
-	Preview    string   // Text preview or description
+	Thumbnail  string // Path to thumbnail for images
+	Preview    string // Text preview or description
 	CreatedAt  time.Time
 	ModifiedAt time.Time
 	Metadata   map[string]string // Additional metadata
@@ -57,22 +57,22 @@ type Attachment struct {
 
 // AttachmentConfig holds configuration for attachment list display.
 type AttachmentConfig struct {
-	ShowThumbnails bool   // Show thumbnails for images
-	ShowSize       bool   // Show file size
-	ShowDate       bool   // Show modification date
-	ShowPreview    bool   // Show text preview
-	CompactMode    bool   // Compact display mode
-	MaxThumbnailWidth int // Maximum thumbnail width
+	ShowThumbnails    bool // Show thumbnails for images
+	ShowSize          bool // Show file size
+	ShowDate          bool // Show modification date
+	ShowPreview       bool // Show text preview
+	CompactMode       bool // Compact display mode
+	MaxThumbnailWidth int  // Maximum thumbnail width
 }
 
 // DefaultAttachmentConfig returns default attachment configuration.
 func DefaultAttachmentConfig() AttachmentConfig {
 	return AttachmentConfig{
-		ShowThumbnails:   true,
-		ShowSize:         true,
-		ShowDate:         false,
-		ShowPreview:      true,
-		CompactMode:      false,
+		ShowThumbnails:    true,
+		ShowSize:          true,
+		ShowDate:          false,
+		ShowPreview:       true,
+		CompactMode:       false,
 		MaxThumbnailWidth: 40,
 	}
 }

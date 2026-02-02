@@ -29,8 +29,8 @@ func TestAttachmentTypeString(t *testing.T) {
 
 func TestDetectAttachmentType(t *testing.T) {
 	tests := []struct {
-		filename  string
-		expected  AttachmentType
+		filename string
+		expected AttachmentType
 	}{
 		{"test.jpg", AttachmentTypeImage},
 		{"test.jpeg", AttachmentTypeImage},
@@ -298,11 +298,11 @@ func TestSetConfig(t *testing.T) {
 	al := NewAttachmentList([]*Attachment{})
 
 	newConfig := AttachmentConfig{
-		ShowThumbnails:   false,
-		ShowSize:         false,
-		ShowDate:         true,
-		ShowPreview:      false,
-		CompactMode:      true,
+		ShowThumbnails:    false,
+		ShowSize:          false,
+		ShowDate:          true,
+		ShowPreview:       false,
+		CompactMode:       true,
 		MaxThumbnailWidth: 60,
 	}
 
