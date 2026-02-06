@@ -21,17 +21,10 @@ import (
 
 	"github.com/wwsheng009/taproot/ui/components/status"
 	"github.com/wwsheng009/taproot/ui/components/messages"
+	"github.com/wwsheng009/taproot/ui/layout"
 	"github.com/wwsheng009/taproot/ui/markdown"
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/transform"
-)
-
-// Application state
-type AppState int
-
-const (
-	StateFileBrowser AppState = iota
-	StatePreviewPanel
 )
 
 // PanelFocus - Which panel has focus
@@ -43,8 +36,15 @@ const (
 	FocusCommandOutput
 )
 
-// Model - Complete application model
+// Model - File browser with Taproot layout system
 type Model struct {
+	// Layout areas
+	mainArea      layout.Area
+	fileListArea  layout.Area
+	rightPanelArea layout.Area
+	contentArea   layout.Area
+	footerArea    layout.Area
+
 	// Navigation
 	currentPath string
 	fileList    list.Model
@@ -90,7 +90,7 @@ type Model struct {
 	previewThrottler *time.Timer
 
 	// Resizable panels
-	fileListWidth int
+	fileListWidthRatio float64 // Ratio of main width for file list
 }
 
 // PreviewType - Type of file preview
@@ -267,30 +267,30 @@ func NewModel() Model {
 	})
 
 	return Model{
-		currentPath:      wd,
-		fileList:         fileList,
-		fileListWidth:    25,
-		keyMap:           DefaultKeyMap,
-		panelFocus:       FocusFileList,
-		lspList:          lspList,
-		mcpList:          mcpList,
-		todos:            todos,
-		commandInput:     commandInput,
-		searchInput:      searchInput,
-		viewport:         vp,
-		commandOutput:    cmdOutput,
-		previewFile:      "",
-		previewData:      "",
-		previewType:      PreviewNone,
-		previewLoading:   false,
-		outputLines:      []string{"Ready. Type ! to enter command mode."},
-		contentCache:     make(map[string]string),
-		commandHistory:   make([]string, 0),
-		historyIndex:     -1,
-		width:            80,
-		height:           24,
-		quitting:         false,
-		previewThrottler: nil,
+		currentPath:        wd,
+		fileList:           fileList,
+		fileListWidthRatio: 0.3, // 30% width for file list
+		keyMap:             DefaultKeyMap,
+		panelFocus:         FocusFileList,
+		lspList:            lspList,
+		mcpList:            mcpList,
+		todos:              todos,
+		commandInput:       commandInput,
+		searchInput:        searchInput,
+		viewport:           vp,
+		commandOutput:      cmdOutput,
+		previewFile:        "",
+		previewData:        "",
+		previewType:        PreviewNone,
+		previewLoading:     false,
+		outputLines:        []string{"Ready. Type ! to enter command mode."},
+		contentCache:       make(map[string]string),
+		commandHistory:     make([]string, 0),
+		historyIndex:       -1,
+		width:              80,
+		height:             24,
+		quitting:           false,
+		previewThrottler:   nil,
 	}
 }
 
@@ -323,19 +323,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.width = msg.Width
 		m.height = msg.Height
 
-		// Update file list size
-		listHeight := m.height - 10
-		m.fileList.SetSize(m.fileListWidth-2, listHeight)
+		// Recalculate layout areas
+		m.recalculateLayout()
 
-		// Update viewport size based on actual panel structure
-		// Panel layout: border(1) + padding(1) + tabs(1) + debugLines(2) + content + padding(1) + border(1)
-		// Total overhead: 7 lines
-		viewportWidth := m.width - m.fileListWidth - 5
-		viewportHeight := m.height - 10
-		m.viewport.Width = viewportWidth
-		m.viewport.Height = viewportHeight
-		m.commandOutput.Width = viewportWidth
-		m.commandOutput.Height = viewportHeight
+		// Update component sizes
+		m.updateComponentSizes()
 
 	case []list.Item:
 		// File list loaded
@@ -343,6 +335,61 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	}
 
 	return m, tea.Batch(cmds...)
+}
+
+// recalculateLayout - Recalculate layout areas using Taproot layout system
+func (m *Model) recalculateLayout() {
+	// Main content area (subtract header, footer, and debug lines)
+	 totalHeight := m.height - 3 // header(1) + debug(1) + footer(1)
+	if totalHeight < 10 {
+		totalHeight = 10
+	}
+
+	// Create main content area
+	m.mainArea = layout.NewArea(0, 2, m.width, totalHeight)
+
+	// Split horizontally into file list and right panel
+	fileListWidth := int(float64(m.width) * m.fileListWidthRatio)
+	m.fileListArea, m.rightPanelArea = layout.SplitHorizontal(
+		m.mainArea,
+		layout.Fixed(fileListWidth),
+	)
+
+	// Right panel is the preview/output area
+	m.contentArea = m.rightPanelArea
+
+	// Footer area
+	m.footerArea = layout.NewArea(0, m.height-1, m.width, 1)
+}
+
+// updateComponentSizes - Update component sizes based on layout areas
+func (m *Model) updateComponentSizes() {
+	// Update file list
+	fileListWidth := m.fileListArea.Dx()
+	fileListHeight := m.fileListArea.Dy()
+
+	// Account for panel border and padding
+	listContentWidth := fileListWidth - 4 // border(2) + padding(2)
+	listContentHeight := fileListHeight - 4 // border(2) + padding(2)
+
+	if listContentWidth > 0 {
+		m.fileList.SetSize(listContentWidth, listContentHeight)
+	}
+
+	// Update viewports
+	contentWidth := m.contentArea.Dx()
+	contentHeight := m.contentArea.Dy()
+
+	// Account for panel border(2) + padding(2) + tabs line(1)
+	viewportWidth := contentWidth - 4
+	viewportHeight := contentHeight - 1
+
+	if viewportWidth > 0 && viewportHeight > 0 {
+		m.viewport.Width = viewportWidth
+		m.viewport.Height = viewportHeight
+		m.commandOutput.Width = viewportWidth
+		m.commandOutput.Height = viewportHeight
+	}
 }
 
 // updateCommandMode - Handle command mode input
@@ -470,28 +517,22 @@ func (m Model) updateNormalMode(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case key.Matches(msg, m.keyMap.ResizePanel):
 		// Resize file list using [ and ]
 		if msg.Type == tea.KeyRunes && len(msg.Runes) > 0 {
-			rune := msg.Runes[0]
-			if rune == '[' {
-				// Decrease width
-				if m.fileListWidth > 30 {
-					m.fileListWidth -= 5
+			r := msg.Runes[0]
+			if r == '[' {
+				// Decrease width ratio (minimum 15%)
+				if m.fileListWidthRatio > 0.15 {
+					m.fileListWidthRatio -= 0.05
+					m.recalculateLayout()
+					m.updateComponentSizes()
 				}
-			} else if rune == ']' {
-				// Increase width
-				if m.fileListWidth < m.width-30 {
-					m.fileListWidth += 5
+			} else if r == ']' {
+				// Increase width ratio (maximum 50%)
+				if m.fileListWidthRatio < 0.5 {
+					m.fileListWidthRatio += 0.05
+					m.recalculateLayout()
+					m.updateComponentSizes()
 				}
 			}
-
-			// Update sizes
-			listHeight := m.height - 10
-			m.fileList.SetSize(m.fileListWidth-2, listHeight)
-			viewportWidth := m.width - m.fileListWidth - 4
-			viewportHeight := m.height - 10
-			m.viewport.Width = viewportWidth
-			m.viewport.Height = viewportHeight
-			m.commandOutput.Width = viewportWidth
-			m.commandOutput.Height = viewportHeight
 		}
 		return m, nil
 
@@ -534,11 +575,10 @@ func (m Model) updateNormalMode(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		case FocusFileList:
 			m.fileList, cmd = m.fileList.Update(msg)
 
-			// Update preview when selection changes (with throttling)
+			// Update preview when selection changes
 			if m.fileList.SelectedItem() != nil {
 				selected := m.fileList.SelectedItem().(FileItem)
 				if !selected.isDir {
-					// Throttle preview updates to avoid lag
 					if time.Since(m.lastPreview) > 300*time.Millisecond {
 						m.loadPreview(selected.path)
 						m.lastPreview = time.Now()
@@ -641,7 +681,6 @@ func (m Model) handleFileSelection() (tea.Model, tea.Cmd) {
 
 // loadPreview - Load file preview asynchronously
 func (m *Model) loadPreview(filePath string) {
-	// Skip if already previewing this file
 	if m.previewFile == filePath && !m.previewLoading {
 		return
 	}
@@ -711,7 +750,7 @@ func (m *Model) renderPreview(content, filePath string) {
 		return
 	}
 
-	// Check for text files based on extension
+	// Check for text files
 	textExtensions := []string{
 		".txt", ".go", ".py", ".js", ".ts", ".java", ".c", ".cpp", ".h", ".hpp",
 		".rs", ".rb", ".php", ".html", ".css", ".json", ".xml", ".yaml", ".yml",
@@ -732,13 +771,11 @@ func (m *Model) renderPreview(content, filePath string) {
 		m.viewport.SetContent(content)
 		m.previewData = content
 	} else {
-		// Binary file
 		m.previewType = PreviewBinary
 		m.viewport.SetContent("[Binary file]")
 		m.previewData = ""
 	}
 
-	// Reset viewport position
 	m.viewport.GotoTop()
 }
 
@@ -767,14 +804,11 @@ func (m Model) executeCommand(cmd string) (tea.Model, tea.Cmd) {
 	switch command {
 	case "cd":
 		return m.cmdChangeDir(args)
-
 	case "ls", "dir":
 		return m.cmdList(args)
-
 	case "help", "?":
 		m.panelFocus = FocusCommandOutput
 		return m.cmdHelp(args)
-
 	case "clear":
 		m.fileList.ResetFilter()
 		m.showCommand = false
@@ -782,28 +816,21 @@ func (m Model) executeCommand(cmd string) (tea.Model, tea.Cmd) {
 		m.outputLines = append(m.outputLines, "Search filter cleared.")
 		m.commandOutput.SetContent(strings.Join(m.outputLines, "\n"))
 		return m, nil
-
 	case "task":
 		return m.cmdTask(args)
-
 	case "refresh", "reload":
 		m.showCommand = false
 		m.commandInput.Reset()
 		return m, m.loadDirectory(m.currentPath)
-
 	case "preview":
 		return m.cmdPreview(args)
-
 	case "exit", "quit":
 		m.quitting = true
 		return m, tea.Quit
-
 	case "cat":
 		return m.cmdCat(args)
-
 	case "echo":
 		return m.cmdEcho(args)
-
 	default:
 		return m.cmdShell(cmd)
 	}
@@ -1028,7 +1055,6 @@ func (m Model) cmdShell(cmd string) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Create command with timeout
 	var execCmd *exec.Cmd
 	if runtime.GOOS == "windows" {
 		execCmd = exec.Command("cmd", "/C", cmd)
@@ -1036,16 +1062,13 @@ func (m Model) cmdShell(cmd string) (tea.Model, tea.Cmd) {
 		execCmd = exec.Command(shell, "-c", cmd)
 	}
 
-	// Add timeout to prevent blocking on continuous commands like ping
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 	execCmd = exec.CommandContext(ctx, execCmd.Path, execCmd.Args[1:]...)
 
-	// Start command and capture output
 	out, err := execCmd.CombinedOutput()
 
 	if err != nil {
-		// Check if it was a timeout
 		if ctx.Err() == context.DeadlineExceeded {
 			m.outputLines = append(m.outputLines, "Note: Command timed out after 5 seconds")
 			m.outputLines = append(m.outputLines, "Output captured up to timeout...")
@@ -1054,18 +1077,15 @@ func (m Model) cmdShell(cmd string) (tea.Model, tea.Cmd) {
 		}
 	}
 
-	// Convert encoding for Windows (GBK -> UTF-8)
 	var outputStr string
 	if runtime.GOOS == "windows" {
-		// Try to decode GBK
 		outputStr = decodeGBK(out)
 	} else {
 		outputStr = string(out)
 	}
-	
+
 	if outputStr != "" {
 		lines := strings.Split(outputStr, "\n")
-		// Limit output to prevent memory issues
 		maxLines := 100
 		if len(lines) > maxLines {
 			lines = lines[:maxLines]
@@ -1088,11 +1108,9 @@ func (m Model) cmdShell(cmd string) (tea.Model, tea.Cmd) {
 
 // decodeGBK - Convert GBK encoded bytes to UTF-8 string
 func decodeGBK(data []byte) string {
-	// Try GBK decoding
 	reader := transform.NewReader(strings.NewReader(string(data)), simplifiedchinese.GBK.NewDecoder())
 	decoded, err := io.ReadAll(reader)
 	if err != nil {
-		// If GBK decoding fails, fall back to UTF-8
 		return string(data)
 	}
 	return string(decoded)
@@ -1106,12 +1124,10 @@ func (m Model) showError(err string) tea.Cmd {
 	return nil
 }
 
-// showCommandOutput - Set output content, scroll to bottom, and switch to output panel
+// showCommandOutput - Set output content
 func (m *Model) showCommandOutput() {
 	m.commandOutput.SetContent(strings.Join(m.outputLines, "\n"))
 	m.commandOutput.GotoBottom()
-	// Don't auto-switch to output for all commands
-	// Shell commands will set panelFocus directly
 }
 
 // showHelp - Show help
@@ -1119,7 +1135,7 @@ func (m Model) showHelp() Model {
 	return m
 }
 
-// View - Render application
+// View - Render application using Taproot layout system
 func (m Model) View() string {
 	if m.quitting {
 		return ""
@@ -1127,55 +1143,35 @@ func (m Model) View() string {
 
 	var b strings.Builder
 
+	// Calculate layout if not already done
+	if m.mainArea.Dx() == 0 {
+		m.recalculateLayout()
+		m.updateComponentSizes()
+	}
+
 	// Header
 	b.WriteString(m.renderHeader(m.width))
 	b.WriteString("\n")
 
-	// Main content area
-	// Subtract: header(1) + debug(1) + footer(1) = 3 lines
-	// But we need room for debug line at bottom too, so subtract 4
-	mainHeight := m.height - 4
-	if mainHeight < 10 {
-		mainHeight = 10
-	}
-
-	// Calculate widths carefully to ensure two panels fit
-	// Each panel has border (2 chars) + padding (2 chars) = 4 chars overhead
-	leftPanelWidth := m.fileListWidth
-	rightPanelWidth := m.width - leftPanelWidth
-	
-	// Ensure minimum width for right panel
-	if rightPanelWidth < 20 {
-		rightPanelWidth = 20
-		leftPanelWidth = m.width - rightPanelWidth
-		if leftPanelWidth < 20 {
-			leftPanelWidth = 20
-			rightPanelWidth = m.width - leftPanelWidth
-		}
-	}
-	
-	leftContent := m.renderFileBrowser(leftPanelWidth, mainHeight)
-	rightContent := m.renderRightPanel(rightPanelWidth, mainHeight)
-
-	// Debug info: show widths at the top (left justified for visibility)
-	debugInfo := fmt.Sprintf("[DEBUG] Total:%d Left:%d Right:%d", m.width, leftPanelWidth, rightPanelWidth)
+	// Debug line showing layout dimensions
+	debugInfo := fmt.Sprintf("[LAYOUT] Total:%dx%d | FileList:%dx%d@(%d,%d) | Content:%dx%d@(%d,%d)",
+		m.width, m.height,
+		m.fileListArea.Dx(), m.fileListArea.Dy(), m.fileListArea.Min.X, m.fileListArea.Min.Y,
+		m.contentArea.Dx(), m.contentArea.Dy(), m.contentArea.Min.X, m.contentArea.Min.Y)
 	b.WriteString(debugInfo)
 	b.WriteString("\n")
 
-	b.WriteString(lipgloss.JoinHorizontal(lipgloss.Left,
-		leftContent,
-		rightContent,
-	))
+	// Render file list panel
+	fileListPanel := m.renderFileBrowser(m.fileListArea.Dx(), m.fileListArea.Dy())
 
-	// Command/Search/Footer
-	b.WriteString("\n")
-	if m.showCommand {
-		b.WriteString(m.renderCommandPanel(m.width))
-	} else if m.showSearch {
-		b.WriteString(m.renderSearchPanel(m.width))
-	} else {
-		b.WriteString(m.renderFooter(m.width))
-	}
+	// Render right panel (preview or output)
+	rightPanel := m.renderRightPanel(m.contentArea.Dx(), m.contentArea.Dy())
+
+	// Join panels horizontally
+	b.WriteString(lipgloss.JoinHorizontal(lipgloss.Left, fileListPanel, rightPanel))
+
+	// Footer
+	b.WriteString(m.renderFooter(m.width))
 
 	return b.String()
 }
@@ -1183,15 +1179,15 @@ func (m Model) View() string {
 // renderHeader - Render header
 func (m Model) renderHeader(width int) string {
 	return styleHeader.Render(fmt.Sprintf(
-		" 📁 Taproot File Browser - %s ",
+		" 📁 File Browser (Taproot Layout) - %s ",
 		m.currentPath,
 	))
 }
 
-// renderFileBrowser - Render file browser with focus indicator
+// renderFileBrowser - Render file browser
 func (m Model) renderFileBrowser(width, height int) string {
 	focused := m.panelFocus == FocusFileList
-	
+
 	var panelStyle lipgloss.Style
 	if focused {
 		panelStyle = stylePanelFocused
@@ -1206,32 +1202,25 @@ func (m Model) renderFileBrowser(width, height int) string {
 		Render(m.fileList.View())
 }
 
-// renderRightPanel - Render right panel (Preview or Output)
+// renderRightPanel - Render right panel
 func (m Model) renderRightPanel(width, height int) string {
 	panelFocused := m.panelFocus == FocusPreview || m.panelFocus == FocusCommandOutput
-	
+
 	// Render content based on current panel
 	var content string
-	contentWidth := width - 5 // border (2) + padding (2) + ensure right border visible
-	contentHeight := height - 4 // top/bottom border (2) + top/bottom padding (2)
-	
-	if contentWidth < 1 {
-		contentWidth = 1
-	}
-	if contentHeight < 1 {
-		contentHeight = 1
-	}
+	contentWidth := width - 4
+	contentHeight := height - 2
 
 	switch m.panelFocus {
 	case FocusPreview:
-		content = m.renderPreviewContent(contentWidth, contentHeight-1) // minus tabs line
+		content = m.renderPreviewContent(contentWidth, contentHeight-1)
 	case FocusCommandOutput:
-		content = m.renderOutputContent(contentWidth, contentHeight-1) // minus tabs line
+		content = m.renderOutputContent(contentWidth, contentHeight-1)
 	default:
 		content = m.renderPreviewContent(contentWidth, contentHeight-1)
 	}
 
-	// Add tabs at the top of content
+	// Add tabs
 	previewTab := " Preview "
 	outputTab := " Output "
 
@@ -1242,7 +1231,6 @@ func (m Model) renderRightPanel(width, height int) string {
 	}
 
 	tabsText := previewTab + outputTab
-	// Pad tabs to fill content width
 	if len(tabsText) < contentWidth {
 		padding := strings.Repeat(" ", contentWidth-len(tabsText))
 		tabsText += padding
@@ -1255,10 +1243,8 @@ func (m Model) renderRightPanel(width, height int) string {
 		Foreground(lipgloss.Color("#cba6f7")).
 		Render(tabsText + "\n")
 
-	// Combine tabs with content
 	fullContent := tabs + content
 
-	// Build panel with full content and border
 	var panelStyle lipgloss.Style
 	if panelFocused {
 		panelStyle = stylePanelFocused
@@ -1272,24 +1258,15 @@ func (m Model) renderRightPanel(width, height int) string {
 		Render(fullContent)
 }
 
-// renderPreviewContent - Render preview content without header
+// renderPreviewContent - Render preview content
 func (m Model) renderPreviewContent(width, height int) string {
 	content := m.viewport.View()
-	
+
 	if content == "" {
 		content = "Select a file to preview"
 	}
-	
-	// Debug: check max line width
+
 	lines := strings.Split(content, "\n")
-	maxLineWidth := 0
-	for _, line := range lines {
-		if len(line) > maxLineWidth {
-			maxLineWidth = len(line)
-		}
-	}
-	
-	// Truncate content width if it exceeds the specified width
 	var truncatedLines []string
 	for _, line := range lines {
 		if len(line) > width {
@@ -1299,7 +1276,6 @@ func (m Model) renderPreviewContent(width, height int) string {
 	}
 	content = strings.Join(truncatedLines, "\n")
 
-	// Ensure content has enough lines to render full height
 	missingLines := height - len(truncatedLines)
 	if missingLines > 0 {
 		padding := strings.Repeat(" ", width)
@@ -1311,10 +1287,10 @@ func (m Model) renderPreviewContent(width, height int) string {
 	return content
 }
 
-// renderOutputContent - Render command output content without header
+// renderOutputContent - Render command output content
 func (m Model) renderOutputContent(width, height int) string {
 	content := m.commandOutput.View()
-	
+
 	if content == "" {
 		content = `No output yet
 
@@ -1332,8 +1308,7 @@ Examples:
   ping -n 4 baidu.com    (Windows)
   ping -c 4 baidu.com    (Linux)`
 	}
-	
-	// Truncate content width if it exceeds the specified width
+
 	lines := strings.Split(content, "\n")
 	var truncatedLines []string
 	for _, line := range lines {
@@ -1343,8 +1318,7 @@ Examples:
 		truncatedLines = append(truncatedLines, line)
 	}
 	content = strings.Join(truncatedLines, "\n")
-	
-	// Ensure content has enough lines to render full height
+
 	missingLines := height - len(truncatedLines)
 	if missingLines > 0 {
 		padding := strings.Repeat(" ", width)
@@ -1352,96 +1326,8 @@ Examples:
 			content += "\n" + padding
 		}
 	}
-	
+
 	return content
-}
-
-// renderPreviewPanel - Render file preview panel with focus indicator
-func (m Model) renderPreviewPanel(width, height int) string {
-	focused := m.panelFocus == FocusPreview
-	
-	var panelStyle, headerStyle lipgloss.Style
-	if focused {
-		panelStyle = stylePanelFocused
-		headerStyle = styleHeaderFocused
-	} else {
-		panelStyle = stylePanel
-		headerStyle = styleHeader
-	}
-
-	var title string
-	if m.previewLoading {
-		title = "⏳ Loading..."
-	} else {
-		switch m.previewType {
-		case PreviewMarkdown:
-			title = "📖 Preview"
-		case PreviewText:
-			title = "📄 Preview"
-		case PreviewBinary:
-			title = "🔒 Preview"
-		default:
-			title = "👁️ Preview"
-		}
-	}
-
-	header := headerStyle.Render(title)
-	content := m.viewport.View()
-	
-	if content == "" {
-		content = "Select a file to preview"
-	}
-
-	return header + "\n" + panelStyle.
-		Height(height-2).
-		Width(width).
-		Render(content)
-}
-
-// renderCommandOutputPanel - Render command output panel with focus indicator
-func (m Model) renderCommandOutputPanel(width, height int) string {
-	focused := m.panelFocus == FocusCommandOutput
-	
-	var panelStyle, headerStyle lipgloss.Style
-	if focused {
-		panelStyle = stylePanelFocused
-		headerStyle = styleHeaderFocused
-	} else {
-		panelStyle = stylePanel
-		headerStyle = styleHeader
-	}
-
-	header := headerStyle.Render("⚡ Output")
-	content := m.commandOutput.View()
-	
-	if content == "" {
-		content = "No output yet"
-	}
-
-	return header + "\n" + panelStyle.
-		Height(height-2).
-		Width(width).
-		Render(content)
-}
-
-// renderCommandPanel - Render command input panel
-func (m Model) renderCommandPanel(width int) string {
-	return styleCommand.Render(m.commandInput.View())
-}
-
-// renderCommandInput - Render command input line for Output panel
-func (m Model) renderCommandInput(width int) string {
-	return lipgloss.NewStyle().
-		Background(lipgloss.Color("#313244")).
-		Foreground(lipgloss.Color("#cdd6f4")).
-		Padding(0, 1).
-		Width(width).
-		Render(m.commandInput.View())
-}
-
-// renderSearchPanel - Render search input panel
-func (m Model) renderSearchPanel(width int) string {
-	return styleCommand.Render(m.searchInput.View())
 }
 
 // renderFooter - Render footer
@@ -1468,12 +1354,6 @@ var (
 			Background(lipgloss.Color("#1e1e2e")).
 			Foreground(lipgloss.Color("#cba6f7"))
 
-	styleHeaderFocused = lipgloss.NewStyle().
-			Bold(true).
-			Padding(0, 1).
-			Background(lipgloss.Color("#cba6f7")).
-			Foreground(lipgloss.Color("#1e1e2e"))
-
 	stylePanel = lipgloss.NewStyle().
 		Border(lipgloss.RoundedBorder()).
 		BorderForeground(lipgloss.Color("#45475a")).
@@ -1483,11 +1363,6 @@ var (
 		Border(lipgloss.DoubleBorder()).
 		BorderForeground(lipgloss.Color("#cba6f7")).
 		Padding(1, 1)
-
-	styleCommand = lipgloss.NewStyle().
-		Background(lipgloss.Color("#313244")).
-		Foreground(lipgloss.Color("#cdd6f4")).
-		Padding(0, 1)
 
 	styleFooter = lipgloss.NewStyle().
 		Padding(0, 1).

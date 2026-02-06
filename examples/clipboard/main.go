@@ -22,9 +22,9 @@ func main() {
 	fmt.Println("Creating clipboard manager...")
 	manager := clipboard.NewDefaultManager()
 	if !manager.Available() {
-		fmt.Println("❌ Clipboard not available on this system")
-		fmt.Println("   - OSC 52 requires terminal support")
-		fmt.Println("   - Native clipboard may require external tools (xclip, pbcopy, etc.)")
+		fmt.Fprintln(os.Stderr, "❌ Clipboard not available on this system")
+		fmt.Fprintln(os.Stderr, "   - OSC 52 requires terminal support")
+		fmt.Fprintln(os.Stderr, "   - Native clipboard may require external tools (xclip, pbcopy, etc.)")
 		os.Exit(1)
 	}
 

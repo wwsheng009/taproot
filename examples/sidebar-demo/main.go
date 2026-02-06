@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/charmbracelet/lipgloss"
@@ -249,7 +250,8 @@ func (m *model) renderMainArea() string {
 func main() {
 	engine, err := render.CreateEngine(render.EngineBubbletea, render.DefaultConfig())
 	if err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "Error creating engine: %v\n", err)
+		os.Exit(1)
 	}
 
 	conf := sidebar.DefaultConfig()
@@ -262,6 +264,7 @@ func main() {
 	}
 
 	if err := engine.Start(m); err != nil {
-		panic(err)
+		fmt.Fprintf(os.Stderr, "Error starting engine: %v\n", err)
+		os.Exit(1)
 	}
 }

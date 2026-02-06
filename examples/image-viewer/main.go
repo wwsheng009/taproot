@@ -29,20 +29,22 @@ type Model struct {
 	displayHeight int
 }
 
-func initialModel() Model {
-	// Load the image file
-	imagePath := "test-image.jpeg"
+func initialModel(imagePath string) (Model, error) {
+	// Default image path if none provided
+	if imagePath == "" {
+		imagePath = "test-image.jpeg"
+	}
+
+	// Try to load the image file
 	imageData, err := os.ReadFile(imagePath)
 	if err != nil {
-		fmt.Printf("Error reading image: %v\n", err)
-		os.Exit(1)
+		return Model{}, fmt.Errorf("error reading image %q: %w", imagePath, err)
 	}
 
 	// Decode image
 	img, _, err := image.Decode(bytes.NewReader(imageData))
 	if err != nil {
-		fmt.Printf("Error decoding image: %v\n", err)
-		os.Exit(1)
+		return Model{}, fmt.Errorf("error decoding image: %w", err)
 	}
 
 	// Get image dimensions
@@ -88,14 +90,13 @@ func initialModel() Model {
 	var sixelBuf bytes.Buffer
 	encoder := sixel.NewEncoder(&sixelBuf)
 	if err := encoder.Encode(resized); err != nil {
-		fmt.Printf("Error encoding to sixel: %v\n", err)
-		os.Exit(1)
+		return Model{}, fmt.Errorf("error encoding to sixel: %w", err)
 	}
 
 	m.sixelData = sixelBuf.Bytes()
 	m.displayHeight = (newHeight + 5) / 6 // Approximate Sixel display height
 
-	return m
+	return m, nil
 }
 
 func (m Model) Init() tea.Cmd {
@@ -186,7 +187,22 @@ func (m Model) View() string {
 }
 
 func main() {
-	p := tea.NewProgram(initialModel())
+	// Get image path from command line or use default
+	imagePath := ""
+	if len(os.Args) > 1 {
+		imagePath = os.Args[1]
+	}
+
+	// Initialize model
+	model, err := initialModel(imagePath)
+	if err != nil {
+		fmt.Printf("Error: %v\n", err)
+		fmt.Println("\nUsage: go run main.go [image-path]")
+		fmt.Println("       (defaults to test-image.jpeg if no path provided)")
+		os.Exit(1)
+	}
+
+	p := tea.NewProgram(model)
 	if _, err := p.Run(); err != nil {
 		fmt.Printf("Error running program: %v\n", err)
 		os.Exit(1)

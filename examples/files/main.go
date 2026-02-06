@@ -38,7 +38,8 @@ func initialModel() model {
 		files.WithIncludeHidden(false),
 	)
 	if err != nil {
-		panic(err)
+		// If we can't create a file list, create an empty one as fallback
+		fl, _ = files.NewFileList(".")
 	}
 
 	return model{

@@ -2,6 +2,58 @@
 
 This directory contains examples demonstrating the new v2.0.0 engine-agnostic UI components in `internal/ui/list/` and `internal/ui/render/`.
 
+## Layout System Comparisons
+
+### file-browser-layout
+
+**Using Taproot Core Layout System** (`ui/layout/`)
+
+A file browser demonstrating the core layout system with area-based layout calculations and lipgloss rendering.
+
+- **Layout primitives**: `SplitHorizontal`, `SplitVertical`, `NewArea`
+- **Constraint system**: `Fixed`, `Percent`, `Ratio`, `Grow`
+- **Rendering**: lipgloss styles with layout delegation
+- **Features**: Resizable panels, file preview, command palette, search mode
+
+```bash
+go run examples/file-browser-layout/main.go
+```
+
+**Key bindings:**
+- `↑/k`, `↓/j` - Navigate
+- `[`, `]` - Resize panels
+- `Tab` - Toggle panels
+- `!` - Command mode
+- `/` - Search mode
+- `u` - Parent directory
+
+### file-browser-buffer
+
+**Using Buffer Layout System** (`ui/render/buffer/`)
+
+A file browser demonstrating the buffer layout system with cell-based rendering and native wide character support.
+
+- **Buffer API**: `NewBuffer`, `SetCell`, `WriteString`, `WriteBuffer`
+- **Cell-based rendering**: Exact dimension calculations
+- **Native CJK support**: Built-in wide character handling
+- **High performance**: ~0.15ms per frame
+- **Features**: Same as file-browser-layout
+
+```bash
+go run examples/file-browser-buffer/main.go
+```
+
+**Comparison:**
+| Aspect | Core Layout | Buffer Layout |
+|--------|-------------|---------------|
+| Layout | Area-based | Cell grid |
+| Rendering | lipgloss | Direct buffer ops |
+| Wide Characters | Handled by lipgloss | Native |
+| Performance | Good | Excellent (~0.15ms) |
+| Learning Curve | Easier (based on image.Rectangle) | More concepts |
+
+---
+
 ## Interactive Examples (Bubbletea)
 
 These examples use **Bubbletea** for real interactive TUI applications.
