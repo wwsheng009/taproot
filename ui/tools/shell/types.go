@@ -4,6 +4,7 @@ package shell
 import (
 	"context"
 	"io"
+	"sync"
 	"time"
 )
 
@@ -241,8 +242,10 @@ type Process struct {
 	cmd       *ProcessInfo
 	startTime time.Time
 	state     ProcessState
+	stateMu   sync.RWMutex // Protects state field
 	cancel    context.CancelFunc
 	result    CommandResult
+	resultMu  sync.RWMutex // Protects result field
 }
 
 // ProcessInfo holds internal process information.
@@ -256,22 +259,32 @@ type ProcessInfo struct {
 
 // State returns the current process state.
 func (p *Process) State() ProcessState {
+	p.stateMu.RLock()
+	defer p.stateMu.RUnlock()
 	return p.state
 }
 
 // Result returns the final execution result (only valid after completion).
 func (p *Process) Result() CommandResult {
+	p.resultMu.RLock()
+	defer p.resultMu.RUnlock()
 	return p.result
 }
 
 // Running returns true if the process is still running.
 func (p *Process) Running() bool {
+	p.stateMu.RLock()
+	defer p.stateMu.RUnlock()
 	return p.state == StateRunning
 }
 
 // Elapsed returns the time elapsed since the process started.
 func (p *Process) Elapsed() time.Duration {
-	if p.state == StateIdle {
+	p.stateMu.RLock()
+	state := p.state
+	p.stateMu.RUnlock()
+
+	if state == StateIdle {
 		return 0
 	}
 	return time.Since(p.startTime)

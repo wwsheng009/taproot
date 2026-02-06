@@ -89,6 +89,9 @@ type Model struct {
 	lastPreview   time.Time
 	previewThrottler *time.Timer
 
+	// Preview synchronization (protects previewLoading, previewData, previewType, viewport)
+	previewMu sync.Mutex
+
 	// Resizable panels
 	fileListWidth int
 }
@@ -663,10 +666,12 @@ func (m *Model) loadPreview(filePath string) {
 	go func() {
 		content, err := os.ReadFile(filePath)
 		if err != nil {
+			m.previewMu.Lock()
 			m.previewData = ""
 			m.previewType = PreviewNone
 			m.previewLoading = false
 			m.viewport.SetContent("Error: " + err.Error())
+			m.previewMu.Unlock()
 			return
 		}
 
@@ -678,8 +683,10 @@ func (m *Model) loadPreview(filePath string) {
 		m.cacheMutex.Unlock()
 
 		// Determine file type and render
+		m.previewMu.Lock()
 		m.renderPreview(contentStr, filePath)
 		m.previewLoading = false
+		m.previewMu.Unlock()
 	}()
 }
 
@@ -939,6 +946,33 @@ func (m Model) cmdTask(args []string) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// validatePath ensures the path is safe and doesn't escape the current directory
+func (m Model) validatePath(path string) (string, error) {
+	// Clean the path to resolve any ".." or "."
+	cleanPath := filepath.Clean(path)
+
+	// Convert to absolute path
+	absPath, err := filepath.Abs(cleanPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve absolute path: %w", err)
+	}
+
+	// Get the absolute path of the current directory
+	absCurrent, err := filepath.Abs(m.currentPath)
+	if err != nil {
+		return "", fmt.Errorf("failed to resolve current path: %w", err)
+	}
+
+	// Check if the resolved path is within the current directory
+	// Using strings.HasPrefix to check if absPath starts with absCurrent
+	// This prevents directory traversal attacks using ".."
+	if !strings.HasPrefix(absPath, absCurrent) {
+		return "", fmt.Errorf("path '%s' is outside the current directory '%s' (security restriction)", path, m.currentPath)
+	}
+
+	return absPath, nil
+}
+
 // cmdPreview - Preview file command
 func (m Model) cmdPreview(args []string) (tea.Model, tea.Cmd) {
 	if len(args) > 0 {
@@ -947,7 +981,18 @@ func (m Model) cmdPreview(args []string) (tea.Model, tea.Cmd) {
 			path = filepath.Join(m.currentPath, path)
 		}
 
-		info, err := os.Stat(path)
+		// Security: Validate path to prevent directory traversal
+		safePath, err := m.validatePath(path)
+		if err != nil {
+			m.outputLines = append(m.outputLines, fmt.Sprintf("Error: %v", err))
+			m.showCommand = false
+			m.commandInput.Reset()
+			m.commandOutput.SetContent(strings.Join(m.outputLines, "\n"))
+			m.commandOutput.GotoBottom()
+			return m, nil
+		}
+
+		info, err := os.Stat(safePath)
 		if err != nil {
 			m.outputLines = append(m.outputLines, fmt.Sprintf("Error: %v", err))
 			m.showCommand = false
@@ -958,9 +1003,9 @@ func (m Model) cmdPreview(args []string) (tea.Model, tea.Cmd) {
 		}
 
 		if !info.IsDir() {
-			m.loadPreview(path)
+			m.loadPreview(safePath)
 			m.panelFocus = FocusPreview
-			m.outputLines = append(m.outputLines, fmt.Sprintf("Previewing: %s", path))
+			m.outputLines = append(m.outputLines, fmt.Sprintf("Previewing: %s", safePath))
 		}
 	}
 
@@ -1018,7 +1063,62 @@ func (m Model) cmdEcho(args []string) (tea.Model, tea.Cmd) {
 }
 
 // cmdShell - Execute shell command
+// WARNING: This function has known security vulnerabilities (command injection).
+// It is provided for demonstration purposes only and should not be used in production.
 func (m Model) cmdShell(cmd string) (tea.Model, tea.Cmd) {
+	// Security: Basic validation to prevent obvious command injection
+	// In production, use a whitelist of allowed commands or proper argument parsing
+	trimmed := strings.TrimSpace(cmd)
+	if trimmed == "" {
+		m.outputLines = append(m.outputLines, "Error: Empty command")
+		m.showCommand = false
+		m.commandInput.Reset()
+		return m, nil
+	}
+
+	// Security: Block potentially dangerous shell operators
+	dangerousPatterns := []string{"&&", "||", ";", "|", "&", "`", "$(", ">", "<"}
+	for _, pattern := range dangerousPatterns {
+		if strings.Contains(trimmed, pattern) {
+			m.outputLines = append(m.outputLines, fmt.Sprintf("Error: Command contains forbidden operator '%s' (security restriction)", pattern))
+			m.showCommand = false
+			m.commandInput.Reset()
+			return m, nil
+		}
+	}
+
+	// Security: Only allow alphanumeric commands with safe arguments
+	// This is a basic whitelist approach - expand as needed
+	allowedCommands := []string{
+		"ls", "dir", "pwd", "cd", "echo", "cat", "type", "head", "tail",
+		"grep", "find", "wc", "date", "whoami", "hostname", "uname",
+		"ps", "top", "df", "du", "free", "env", "printenv", "clear",
+	}
+
+	parts := strings.Fields(trimmed)
+	if len(parts) == 0 {
+		m.outputLines = append(m.outputLines, "Error: Empty command")
+		m.showCommand = false
+		m.commandInput.Reset()
+		return m, nil
+	}
+
+	cmdName := strings.ToLower(parts[0])
+	allowed := false
+	for _, allowedCmd := range allowedCommands {
+		if cmdName == allowedCmd {
+			allowed = true
+			break
+		}
+	}
+
+	if !allowed {
+		m.outputLines = append(m.outputLines, fmt.Sprintf("Error: Command '%s' is not allowed (security restriction)", cmdName))
+		m.showCommand = false
+		m.commandInput.Reset()
+		return m, nil
+	}
+
 	shell := os.Getenv("SHELL")
 	if shell == "" {
 		if runtime.GOOS == "windows" {

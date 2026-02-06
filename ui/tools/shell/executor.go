@@ -311,7 +311,9 @@ func (e *Executor) ExecuteAsyncWithOptions(command string, args []string, opts C
 
 // runProcess executes the process in a goroutine.
 func (e *Executor) runProcess(process *Process, pid int) {
+	process.stateMu.Lock()
 	process.state = StateRunning
+	process.stateMu.Unlock()
 
 	defer func() {
 		e.mu.Lock()
@@ -322,8 +324,11 @@ func (e *Executor) runProcess(process *Process, pid int) {
 	// Execute the command
 	result, err := e.ExecuteWithOptions(process.cmd.Command, process.cmd.Args, process.cmd.Options)
 
+	process.resultMu.Lock()
 	process.result = result
+	process.resultMu.Unlock()
 
+	process.stateMu.Lock()
 	if err != nil {
 		if result.TimedOut {
 			process.state = StateFailed
@@ -335,6 +340,7 @@ func (e *Executor) runProcess(process *Process, pid int) {
 	} else {
 		process.state = StateCompleted
 	}
+	process.stateMu.Unlock()
 }
 
 // Cancel cancels a running process by PID.
@@ -347,8 +353,12 @@ func (e *Executor) Cancel(pid int) error {
 		return ErrProcessNotFound
 	}
 
-	if process.state != StateRunning {
-		return fmt.Errorf("process %d is not running (state: %s)", pid, process.state)
+	process.stateMu.RLock()
+	state := process.state
+	process.stateMu.RUnlock()
+
+	if state != StateRunning {
+		return fmt.Errorf("process %d is not running (state: %s)", pid, state)
 	}
 
 	process.cancel()
@@ -394,7 +404,11 @@ func (e *Executor) CancelAll() {
 	defer e.mu.Unlock()
 
 	for _, process := range e.runningProcesses {
-		if process.state == StateRunning {
+		process.stateMu.RLock()
+		state := process.state
+		process.stateMu.RUnlock()
+
+		if state == StateRunning {
 			process.cancel()
 			if opts := process.cmd.Options; opts.Progress != nil {
 				opts.Progress(ProgressUpdate{
@@ -413,9 +427,11 @@ func (e *Executor) CountRunning() int {
 
 	count := 0
 	for _, process := range e.runningProcesses {
+		process.stateMu.RLock()
 		if process.state == StateRunning {
 			count++
 		}
+		process.stateMu.RUnlock()
 	}
 
 	return count

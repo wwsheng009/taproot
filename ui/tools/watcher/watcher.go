@@ -32,6 +32,8 @@ type Watcher struct {
 	eventChan    chan Event
 	batchChan    chan []Event
 	stopChan     chan struct{}
+	stopChanClosed bool // Prevents closing stopChan multiple times
+	stopChanMu   sync.Mutex // Protects stopChanClosed
 	pauseChan    chan struct{}
 	paused       atomic.Bool
 
@@ -271,7 +273,14 @@ func (w *Watcher) Stop() error {
 	}
 
 	w.state = WatcherStopped
-	close(w.stopChan)
+
+	// Safely close the stopChan only once
+	w.stopChanMu.Lock()
+	if !w.stopChanClosed {
+		close(w.stopChan)
+		w.stopChanClosed = true
+	}
+	w.stopChanMu.Unlock()
 
 	if err := w.fsWatcher.Close(); err != nil {
 		return fmt.Errorf("failed to close watcher: %w", err)
@@ -697,7 +706,13 @@ func (w *Watcher) Close() error {
 	}
 
 	if w.state == WatcherRunning || w.state == WatcherPaused {
-		close(w.stopChan)
+		// Safely close the stopChan only once
+		w.stopChanMu.Lock()
+		if !w.stopChanClosed {
+			close(w.stopChan)
+			w.stopChanClosed = true
+		}
+		w.stopChanMu.Unlock()
 		w.state = WatcherStopped
 	}
 
