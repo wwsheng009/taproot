@@ -173,6 +173,18 @@ func (m FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 				m.fields[m.focused].checked = !m.fields[m.focused].checked
 			}
 			return m, nil
+		case "left", "h":
+			field := m.fields[m.focused]
+			if field.fieldType == FieldRadio && field.selected > 0 {
+				m.fields[m.focused].selected--
+			}
+			return m, nil
+		case "right", "l":
+			field := m.fields[m.focused]
+			if field.fieldType == FieldRadio && field.selected < len(field.options)-1 {
+				m.fields[m.focused].selected++
+			}
+			return m, nil
 		case "backspace":
 			field := m.fields[m.focused]
 			if field.fieldType == FieldInput && len(field.value) > 0 {
@@ -263,9 +275,11 @@ func (m FormModel) View() string {
 	}
 
 	// Draw buttons together on same row
-	buttonWidth := 15
-	submitX := m.width/2 - buttonWidth - 2
-	cancelX := m.width/2 + 2
+	buttonWidth := 16
+	gap := 4
+	totalButtonsWidth := buttonWidth*2 + gap
+	submitX := (m.width - totalButtonsWidth) / 2
+	cancelX := submitX + buttonWidth + gap
 
 	// Find button fields
 	for i, field := range m.fields {
