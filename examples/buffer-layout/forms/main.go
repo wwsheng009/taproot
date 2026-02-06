@@ -137,7 +137,10 @@ func (m FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
+		keyStr := msg.String()
+		keyRunes := msg.Runes
+
+		switch keyStr {
 		case "ctrl+c", "esc":
 			m.quitting = true
 			return m, tea.Quit
@@ -169,24 +172,29 @@ func (m FormModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			} else if field.fieldType == FieldCheckbox {
 				m.fields[m.focused].checked = !m.fields[m.focused].checked
 			}
+			return m, nil
+		case "backspace":
+			field := m.fields[m.focused]
+			if field.fieldType == FieldInput && len(field.value) > 0 {
+				m.fields[m.focused].value = field.value[:len(field.value)-1]
+				m.fields[m.focused].valid = len(m.fields[m.focused].value) > 0
+			}
+			return m, nil
 		default:
-			// Handle text input
-			if len(msg.String()) == 1 && msg.String() >= " " && msg.String() <= "~" {
-				field := m.fields[m.focused]
-				if field.fieldType == FieldInput {
-					m.fields[m.focused].value += msg.String()
+			// Handle character input for text fields
+			field := m.fields[m.focused]
+			if field.fieldType == FieldInput && len(keyRunes) == 1 {
+				// Only allow printable characters
+				r := keyRunes[0]
+				if r >= 32 && r <= 126 {
+					m.fields[m.focused].value += string(r)
 					m.fields[m.focused].valid = len(m.fields[m.focused].value) > 0
 					if len(m.fields[m.focused].value) > 0 {
 						m.fields[m.focused].errorMsg = ""
 					}
 				}
-			} else if msg.String() == "backspace" {
-				field := m.fields[m.focused]
-				if field.fieldType == FieldInput && len(field.value) > 0 {
-					m.fields[m.focused].value = field.value[:len(field.value)-1]
-					m.fields[m.focused].valid = len(m.fields[m.focused].value) > 0
-				}
 			}
+			return m, nil
 		}
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
