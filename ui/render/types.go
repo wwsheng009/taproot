@@ -34,8 +34,32 @@ func (c Command) Execute() error {
 }
 
 // None returns a nil command (no operation).
+// It returns a non-nil value that represents "no command" to allow
+// differentiation between "no command" and "not set".
 func None() Cmd {
+	return noneCmd{}
+}
+
+// noneCmd represents a no-op command.
+type noneCmd struct{}
+
+func (n noneCmd) Execute() error {
 	return nil
+}
+
+func (n noneCmd) IsNone() bool {
+	return true
+}
+
+// IsNone checks if a command is a none command.
+func IsNone(cmd Cmd) bool {
+	if cmd == nil {
+		return false
+	}
+	if _, ok := cmd.(noneCmd); ok {
+		return true
+	}
+	return false
 }
 
 // BatchCmd represents a batch of commands.
@@ -45,12 +69,17 @@ type BatchCmd []Cmd
 func Batch(cmds ...Cmd) Cmd {
 	var batch BatchCmd
 	for _, cmd := range cmds {
-		if cmd != nil {
-			if b, ok := cmd.(BatchCmd); ok {
-				batch = append(batch, b...)
-			} else {
-				batch = append(batch, cmd)
-			}
+		if cmd == nil {
+			continue
+		}
+		// Skip noneCmd commands in batches
+		if _, ok := cmd.(noneCmd); ok {
+			continue
+		}
+		if b, ok := cmd.(BatchCmd); ok {
+			batch = append(batch, b...)
+		} else {
+			batch = append(batch, cmd)
 		}
 	}
 	if len(batch) == 0 {

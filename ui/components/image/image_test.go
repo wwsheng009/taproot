@@ -4,6 +4,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/wwsheng009/taproot/ui/render"
 	"github.com/wwsheng009/taproot/ui/styles"
 )
 
@@ -129,8 +130,11 @@ func TestInit(t *testing.T) {
 	img := New("test.png")
 	cmd := img.Init()
 
-	if cmd != nil {
-		t.Error("Init should return nil (no-op)")
+	if cmd == nil {
+		t.Error("Init should return a command (noneCmd)")
+	}
+	if !render.IsNone(cmd) {
+		t.Error("Init should return a none command")
 	}
 }
 

@@ -254,8 +254,11 @@ func TestTestModel(t *testing.T) {
 func TestCommand(t *testing.T) {
 	t.Run("None", func(t *testing.T) {
 		cmd := None()
-		if cmd != nil {
-			t.Error("expected nil command")
+		if cmd == nil {
+			t.Error("expected non-nil none command")
+		}
+		if !IsNone(cmd) {
+			t.Error("expected none command")
 		}
 	})
 
@@ -302,8 +305,11 @@ func TestCommand(t *testing.T) {
 
 	t.Run("BatchEmpty", func(t *testing.T) {
 		batch := Batch()
-		if batch != nil {
-			t.Error("expected nil for empty batch")
+		if batch == nil {
+			t.Error("expected non-nil batch command")
+		}
+		if !IsNone(batch) {
+			t.Error("expected none command for empty batch")
 		}
 	})
 

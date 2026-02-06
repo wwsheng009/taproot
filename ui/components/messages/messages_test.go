@@ -103,8 +103,11 @@ func TestUserMessage(t *testing.T) {
 		if newMsg == nil {
 			t.Error("Update() should return a model")
 		}
-		if cmd != nil {
-			t.Error("Update() should return nil command")
+		if cmd == nil {
+			t.Error("Update() should return a command (noneCmd)")
+		}
+		if !render.IsNone(cmd) {
+			t.Error("Update() should return a none command")
 		}
 
 		if !msg.Focused() {

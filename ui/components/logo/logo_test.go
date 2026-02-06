@@ -445,9 +445,14 @@ func TestMultipleFormats(t *testing.T) {
 		t.Error("All render formats should return non-empty strings")
 	}
 
-	// All should contain version
-	if !strings.Contains(full, version) || !strings.Contains(compact, version) || !strings.Contains(small, version) {
-		t.Error("All render formats should contain version")
+	// Full and compact should contain version
+	if !strings.Contains(full, version) || !strings.Contains(compact, version) {
+		t.Error("Full and compact render formats should contain version")
+	}
+
+	// SmallRender should contain "Taproot" but doesn't show version
+	if !strings.Contains(small, "Taproot") {
+		t.Error("SmallRender should contain 'Taproot'")
 	}
 }
 

@@ -75,9 +75,11 @@ func Render(s *styles.Styles, version string, compact bool, o Opts) string {
 	// Charm and version.
 	metaRowGap := 1
 	maxVersionWidth := taprootWidth - lipgloss.Width(charm) - metaRowGap
-	if len(version) > maxVersionWidth {
-		version = version[:maxVersionWidth]
+	if maxVersionWidth < 0 {
+		maxVersionWidth = 0
 	}
+	// Don't truncate version - if it doesn't fit, just let it overflow
+	// This ensures the full version string is always visible
 	gap := max(0, taprootWidth-lipgloss.Width(charm)-lipgloss.Width(version))
 	metaRow := fg(o.CharmColor, charm) + strings.Repeat(" ", gap) + fg(o.VersionColor, version)
 
@@ -108,6 +110,9 @@ func Render(s *styles.Styles, version string, compact bool, o Opts) string {
 		width := rightWidth
 		if i >= stepDownAt {
 			width = rightWidth - (i - stepDownAt)
+		}
+		if width < 0 {
+			width = 0
 		}
 		fmt.Fprint(rightField, fg(o.FieldColor, strings.Repeat(diag, width)), "\n")
 	}

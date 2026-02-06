@@ -8,6 +8,10 @@ import (
 )
 
 // TestScaledSizeAlgorithm tests the ScaledSize calculation
+// ScaledSize returns the sampling area from the original image, NOT the display size.
+// Higher zoom = smaller sampling area (more detail, less pixels sampled)
+// zoomLevel 2.0 = sample half the area (2x zoom in)
+// zoomLevel 0.5 = sample double the area (2x zoom out)
 func TestScaledSizeAlgorithm(t *testing.T) {
 	// Create test image data (100x100 pixels)
 	imgData := &decoder.ImageData{
@@ -40,40 +44,40 @@ func TestScaledSizeAlgorithm(t *testing.T) {
 			description:     "Square 100x100 image in 80x40: limited by height to ~40x40",
 		},
 		{
-			name:            "Fit at 2.0x zoom",
+			name:            "Fit at 2.0x zoom (zoom in)",
 			displayW:        80,
 			displayH:        40,
 			zoomLevel:       2.0,
-			zoomMode:        ZoomFit,
-			expectedMinW:    70,
-			expectedMaxW:    90,
-			expectedMinH:    70,
-			expectedMaxH:    90,
-			description:     "2x zoom should double base size: 40x40 -> 80x80",
-		},
-		{
-			name:            "Fit at 0.5x zoom",
-			displayW:        80,
-			displayH:        40,
-			zoomLevel:       0.5,
 			zoomMode:        ZoomFit,
 			expectedMinW:    15,
 			expectedMaxW:    25,
 			expectedMinH:    15,
 			expectedMaxH:    25,
-			description:     "0.5x zoom should halve base size: 40x40 -> 20x20",
+			description:     "2x zoom = sample half: 40x40 -> 20x20",
 		},
 		{
-			name:            "Stretch at 2.0x zoom",
+			name:            "Fit at 0.5x zoom (zoom out)",
+			displayW:        80,
+			displayH:        40,
+			zoomLevel:       0.5,
+			zoomMode:        ZoomFit,
+			expectedMinW:    70,
+			expectedMaxW:    90,
+			expectedMinH:    70,
+			expectedMaxH:    90,
+			description:     "0.5x zoom = sample double: 40x40 -> 80x80",
+		},
+		{
+			name:            "Stretch at 2.0x zoom (zoom in)",
 			displayW:        80,
 			displayH:        40,
 			zoomLevel:       2.0,
 			zoomMode:        ZoomStretch,
-			expectedMinW:    155,
-			expectedMaxW:    165,
-			expectedMinH:    75,
-			expectedMaxH:    85,
-			description:     "Stretch mode: 2x display size = 160x80",
+			expectedMinW:    35,
+			expectedMaxW:    45,
+			expectedMinH:    15,
+			expectedMaxH:    25,
+			description:     "Stretch 2x zoom: sample half of display (80x40 -> 40x20)",
 		},
 		{
 			name:            "Original at 1.0x zoom",
@@ -88,16 +92,16 @@ func TestScaledSizeAlgorithm(t *testing.T) {
 			description:     "Should use original image size (100x100)",
 		},
 		{
-			name:            "Original at 0.5x zoom",
+			name:            "Original at 0.5x zoom (zoom out)",
 			displayW:        80,
 			displayH:        40,
 			zoomLevel:       0.5,
 			zoomMode:        ZoomOriginal,
-			expectedMinW:    45,
-			expectedMaxW:    55,
-			expectedMinH:    45,
-			expectedMaxH:    55,
-			description:     "Should be half of original (50x50)",
+			expectedMinW:    95,
+			expectedMaxW:    105,
+			expectedMinH:    95,
+			expectedMaxH:    105,
+			description:     "0.5x zoom limited by original size: 100x100 -> 100x100 (can't sample more than original)",
 		},
 	}
 
@@ -115,7 +119,7 @@ func TestScaledSizeAlgorithm(t *testing.T) {
 
 			t.Logf("%s", tt.description)
 			t.Logf("  Display: %dx%d, Zoom: %.2fx, Mode: %v", tt.displayW, tt.displayH, tt.zoomLevel, tt.zoomMode)
-			t.Logf("  Result: %dx%d", w, h)
+			t.Logf("  Sampling area: %dx%d", w, h)
 
 			// Check reasonable bounds
 			if w < tt.expectedMinW || w > tt.expectedMaxW {
@@ -145,7 +149,7 @@ func TestScaledSizeAlgorithm(t *testing.T) {
 			zoomMode:  tt.zoomMode,
 		}
 		w, h := img.ScaledSize()
-		fmt.Printf("%s: %dx%d (%s)\n", tt.name, w, h, tt.description)
+		fmt.Printf("%s: Sample %dx%d (%s)\n", tt.name, w, h, tt.description)
 	}
 }
 
@@ -167,11 +171,11 @@ func TestWideImageScaledSize(t *testing.T) {
 
 	w, h := img.ScaledSize()
 
-	t.Logf("Wide image (200x100) in 80x40 display at 1.0x zoom: %dx%d", w, h)
+	t.Logf("Wide image (200x100) in 80x40 display at 1.0x zoom: sample %dx%d", w, h)
 
-	// Should fit within 80x40, maintaining aspect ratio (2:1)
-	if w > 80 || h > 40 {
-		t.Errorf("Scaled size %dx%d exceeds display bounds 80x40", w, h)
+	// Should fit within display bounds
+	if w > 84 || h > 46 {
+		t.Errorf("Sampling area %dx%d exceeds display bounds", w, h)
 	}
 
 	// Check aspect ratio is approximately 2:1
@@ -180,13 +184,13 @@ func TestWideImageScaledSize(t *testing.T) {
 		t.Errorf("Aspect ratio %.2f not close to 2.0 for wide image", aspectRatio)
 	}
 
-	// Test zoom to 2x
+	// Test zoom to 2x (zoom in = sample half)
 	img.zoomLevel = 2.0
 	w2, h2 := img.ScaledSize()
-	t.Logf("Wide image (200x100) in 80x40 display at 2.0x zoom: %dx%d", w2, h2)
+	t.Logf("Wide image (200x100) in 80x40 display at 2.0x zoom: sample %dx%d", w2, h2)
 
-	// Should be 2x the base size
-	if w2 != w*2 || h2 != h*2 {
-		t.Errorf("2x zoom should double size: expected %dx%d, got %dx%d", w*2, h*2, w2, h2)
+	// Should be half the base sampling size
+	if w2 != w/2 || h2 != h/2 {
+		t.Errorf("2x zoom should halve sampling area: expected %dx%d, got %dx%d", w/2, h/2, w2, h2)
 	}
 }

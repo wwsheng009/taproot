@@ -154,13 +154,13 @@ func (img *Image) loadImage() {
 // SetRenderer sets the rendering type
 func (img *Image) SetRenderer(renderer RendererType) render.Cmd {
 	img.renderer = renderer
-	return nil
+	return render.None()
 }
 
 // Reload reloads the image (synchronous)
 func (img *Image) Reload() render.Cmd {
 	img.loadImage()
-	return nil
+	return render.None()
 }
 
 // Init implements render.Model
@@ -478,7 +478,7 @@ func (img *Image) Path() string {
 func (img *Image) SetPath(path string) render.Cmd {
 	img.path = path
 	img.loadImage()
-	return nil
+	return render.None()
 }
 
 // IsLoaded returns whether the image is loaded
