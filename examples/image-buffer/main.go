@@ -266,6 +266,25 @@ const (
 	RendererASCII
 )
 
+func (rt RendererType) String() string {
+	switch rt {
+	case RendererAuto:
+		return "Auto"
+	case RendererKitty:
+		return "Kitty"
+	case RendereriTerm2:
+		return "iTerm2"
+	case RendererBlocks:
+		return "Blocks"
+	case RendererSixel:
+		return "Sixel"
+	case RendererASCII:
+		return "ASCII"
+	default:
+		return "Unknown"
+	}
+}
+
 type Model struct {
 	quitting   bool
 	width      int

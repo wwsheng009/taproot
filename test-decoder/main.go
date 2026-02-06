@@ -36,5 +36,5 @@ func main() {
 
 	// Test RGBA conversion
 	rgba := data.GetRGBA()
-	fmt.Printf("  RGBA: %dx%d %s\n", rgba.Bounds().Dx(), rgba.Bounds().Dy(), rgba.Stride)
+	fmt.Printf("  RGBA: %dx%d stride:%d\n", rgba.Bounds().Dx(), rgba.Bounds().Dy(), rgba.Stride)
 }

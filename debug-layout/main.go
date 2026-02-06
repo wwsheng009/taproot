@@ -9,7 +9,7 @@ import (
 
 func main() {
 	// Test the problematic case: small display height (3-6 lines)
-	fmt.Println("=== Debugging Small Display Height Issue ===\n")
+	fmt.Println("=== Debugging Small Display Height Issue ===")
 
 	testCases := []struct {
 		displayHeight int

@@ -11,7 +11,7 @@
 
   <b>A composable TUI (Terminal User Interface) framework for Go</b>
 
-  <em>Built on top of <a href="https://github.com/charmbracelet/bubbletea">Bubbletea</a></em>
+  <em>Built on top of <a href="https://github.com/charmbracelet/bubbletea">Bubbletea</a> with engine-agnostic v2.0 architecture</em>
 </p>
 
 <p align="center">
@@ -25,7 +25,7 @@
     <img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License: MIT" />
   </a>
   <a href="https://github.com/wwsheng009/taproot/releases">
-    <img src="https://img.shields.io/badge/v1.0.0-green.svg" alt="Version: 1.0.0" />
+    <img src="https://img.shields.io/badge/v2.0.0-green.svg" alt="Version: 2.0.0" />
   </a>
 </p>
 
@@ -36,18 +36,18 @@ Taproot provides reusable, composable components and utilities for building term
 ## ✨ Features
 
 - **🎨 Theme System** - Dynamic themes with HCL color space blending and gradients
-- **📦 Component Library** - Pre-built components (dialogs, lists, forms, etc.)
+- **📦 Component Library** - 50+ pre-built components (dialogs, lists, forms, messages, etc.)
 - **🔧 Easy Composable** - Interface-based design for maximum flexibility
 - **📱 Responsive Layout** - Automatic size management and positioning
 - **🎯 Type Safe** - Full type safety with compile-time guarantees
 - **📝 Markdown Rendering** - Glamour-based markdown with syntax highlighting
 - **🎨 Syntax Highlighting** - Chroma-powered code highlighting
-- **🚀 Zero Dependencies** - Only depends on Bubbletea ecosystem
+- **🚀 Multi-Engine** - v2.0 supports Bubbletea, Ultraviolet, and custom engines
 
 ## 🚀 Quick Start
 
 ```bash
-go get github.com/wwsheng009/taproot
+go get github.com/wwsheng009/taproot@latest
 ```
 
 ```go
@@ -55,31 +55,43 @@ package main
 
 import (
     tea "github.com/charmbracelet/bubbletea"
-    "github.com/wwsheng009/taproot/tui/app"
-    "github.com/wwsheng009/taproot/tui/components/dialogs"
-    "github.com/wwsheng009/taproot/tui/components/dialogs/commands"
-    "github.com/wwsheng009/taproot/tui/page"
-    "github.com/wwsheng009/taproot/tui/util"
+    "github.com/wwsheng009/taproot/layout"
+    "github.com/wwsheng009/taproot/ui/styles"
 )
 
 func main() {
-    // Create application
-    application := app.NewApp()
-    
-    // Register pages
-    application.RegisterPage("home", HomePage{})
-    application.SetPage("home")
-    
-    // Run
-    p := tea.NewProgram(application, tea.WithAltScreen())
+    // Get default theme
+    s := styles.DefaultStyles()
+
+    // Simple counter model
+    model := counter{count: 0}
+
+    p := tea.NewProgram(model, tea.WithAltScreen())
     p.Run()
 }
 
-type HomePage struct{}
+type counter struct {
+    count int
+}
 
-func (h HomePage) Init() tea.Cmd { return nil }
-func (h HomePage) Update(msg tea.Msg) (util.Model, tea.Cmd) { return h, nil }
-func (h HomePage) View() string { return "Hello, Taproot!" }
+func (c counter) Init() tea.Cmd { return nil }
+func (c counter) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
+    if key, ok := msg.(tea.KeyMsg); ok {
+        switch key.String() {
+        case "q", "ctrl+c":
+            return c, tea.Quit
+        case "+", "=":
+            c.count++
+        case "-", "_":
+            c.count--
+        }
+    }
+    return c, nil
+}
+func (c counter) View() string {
+    s := styles.DefaultStyles()
+    return s.S().Title.Render(fmt.Sprintf("Count: %d", c.count))
+}
 ```
 
 ## 📦 Components
@@ -87,24 +99,29 @@ func (h HomePage) View() string { return "Hello, Taproot!" }
 ### Core Framework
 | Component | Description |
 |-----------|-------------|
-| **Layout** | Interfaces for composable components |
-| **Theme** | Dynamic theming with gradients |
+| **Layout** | Interfaces: Focusable, Sizeable, Positional, Help |
+| **Theme** | Dynamic theming with HCL color gradients |
 | **App** | Page management and dialog system |
 | **Status Bar** | Info messages with TTL |
 
-### UI Components
+### UI Components (v2.0)
 | Component | Description |
 |-----------|-------------|
-| **Commands** | Command palette with fuzzy search |
-| **Models** | Model selection dialog |
-| **Sessions** | Session management |
-| **Messages** | Chat message display |
-| **Lists** | Virtualized lists with filtering |
-| **DiffView** | Unified diff viewer |
-| **FilePicker** | File browser dialog |
-| **Quit** | Unsaved changes confirmation |
-| **Reasoning** | Collapsible reasoning display |
-| **Image** | Terminal image rendering |
+| **Lists** | Virtualized lists with filtering, grouping, selection |
+| **Dialogs** | Info, confirm, input, select dialogs with overlay |
+| **Forms** | Text input, textarea, select, checkbox, radio |
+| **Messages** | Chat messages (user, assistant, tool, diagnostic, todo) |
+| **Status** | LSP/MCP service status, diagnostic displays |
+| **Progress** | Progress bars and spinners |
+| **Attachments** | File attachment list with preview |
+| **Pills** | Status/queue pills for metadata |
+
+### Tools
+| Tool | Description |
+|------|------|
+| **Clipboard** | Cross-platform (OSC 52 + native) with history |
+| **Shell** | Command execution (sync/async, pipes, timeout) |
+| **Watcher** | File system monitoring (debounce, filtering) |
 
 ## 🎨 Themes
 
@@ -123,29 +140,73 @@ gradient := styles.ApplyForegroundGrad(&s, "Gradient Text", s.Primary, s.Seconda
 
 ## 📚 Examples
 
-Run any example:
+### v2.0 Engine-Agnostic Examples
 
 ```bash
-# Basic counter
-go run examples/demo/main.go
+# Virtualized list with selection
+go run examples/ui-list/main.go
 
-# Command palette
-go run examples/commands/main.go
+# Filterable and grouped list
+go run examples/ui-filtergroup/main.go
 
-# Model selection
-go run examples/models/main.go
+# Dialog system (v2.0)
+go run examples/ui-dialogs/main.go
 
-# Session management
-go run examples/sessions/main.go
+# Form components
+go run examples/forms/main.go
+
+# Auto-complete
+go run examples/autocomplete/main.go
 
 # Messages display
-go run examples/messages/main.go
+go run examples/messages-demo/main.go
 
-# Dialog system
-go run examples/app/main.go
+# Status components
+go run examples/status-demo/main.go
+go run examples/status-list-demo/main.go
+
+# Progress indicators
+go run examples/progress/main.go
+
+# Attachments and pills
+go run examples/attachments/main.go
+go run examples/pills/main.go
+
+# Tools: clipboard, shell
+go run examples/clipboard/main.go
+go run examples/shell/main.go
 ```
 
-See the [`examples/`](examples/) directory for more examples.
+### Layout System Examples
+
+```bash
+# File browser with core layout
+go run examples/file-browser-layout/main.go
+
+# File browser with buffer layout (better wide char support)
+go run examples/file-browser-buffer/main.go
+
+# Layout demo
+go run examples/layout-demo/main.go
+```
+
+### Dual Engine Examples
+
+```bash
+# Ultraviolet engine demo
+go run examples/ultraviolet/main.go
+
+# Same model, different engines
+go run examples/dual-engine/main.go
+go run examples/dual-engine/main.go -engine=ultraviolet
+```
+
+### Complete Application Example
+
+```bash
+# Full-featured application with multiple pages
+go run examples/complete-app/main.go
+```
 
 ## 🏗️ Architecture
 
@@ -172,12 +233,36 @@ Taproot follows the Elm Architecture (Model-View-Update) used by Bubbletea:
 └─────────────────────────────────────┘
 ```
 
+### v2.0 Multi-Engine Architecture
+
+```
+┌─────────────────────────────────────┐
+│         Engine-Agnostic Layer        │
+│  ┌─────────────────────────────┐   │
+│  │  render.Model Interface     │   │
+│  │  - Init() Cmd               │   │
+│  │  - Update(msg) (Model, Cmd) │   │
+│  │  - View() string            │   │
+│  └─────────────────────────────┘   │
+│  ┌─────────────────────────────┐   │
+│  │  UI Components              │   │
+│  │  - lists, dialogs, forms    │   │
+│  │  - messages, status         │   │
+│  └─────────────────────────────┘   │
+└─────────────────────────────────────┘
+           ↓         ↓         ↓
+    ┌─────────┐ ┌────────┐ ┌────────┐
+    │Bubbletea│ │Ultraviol│ │ Direct │
+    └─────────┘ └────────┘ └────────┘
+```
+
 ## 📖 Documentation
 
 - [Architecture](docs/ARCHITECTURE.md) - Detailed architecture analysis
-- [Migration Plan](docs/MIGRATION_PLAN.md) - Development roadmap
-- [Tasks](docs/TASKS.md) - Detailed task list
-- [Alternatives](docs/ALTERNATIVES.md) - Technology choices
+- [Components](docs/COMPONENTS.md) - Complete component reference
+- [API Reference](docs/API.md) - Full API documentation
+- [v2.0 Migration](docs/MIGRATION_V2.md) - Migrating to v2.0
+- [UI Examples](examples/UI_EXAMPLES.md) - Example descriptions
 
 ## 🧪 Testing
 
@@ -190,7 +275,8 @@ go test -cover ./...
 
 # Run specific package tests
 go test ./layout/
-go test ./tui/util/
+go test ./ui/list/
+go test ./ui/dialog/
 ```
 
 ## 🛠️ Development
@@ -208,21 +294,20 @@ taproot/
 ├── layout/          # Core interfaces (Focusable, Sizeable, etc.)
 ├── ui/              # UI components and theming
 │   ├── styles/     # Theme system with gradients
-│   ├── list/       # Virtualized list components
-│   ├── dialog/     # Dialog system
+│   ├── list/       # Virtualized list components (v2.0)
+│   ├── dialog/     # Dialog system (v2.0)
+│   ├── forms/      # Form components (v2.0)
+│   ├── render/     # Rendering engine abstraction (v2.0)
 │   ├── layout/     # Layout utilities
-│   ├── render/     # Rendering engine abstraction
-│   └── components/ # UI components (files, messages, etc.)
+│   ├── components/ # UI components (messages, status, etc.)
+│   └── tools/      # Tools (clipboard, shell, watcher)
 ├── tui/             # Framework-level components
 │   ├── app/        # Application framework
 │   ├── page/       # Page management
-│   ├── anim/       # Animations
 │   ├── util/       # Utilities
-│   ├── components/ # High-level components
-│   └── exp/        # Experimental features
-├── examples/        # Example programs
-├── docs/           # Documentation
-└── go.mod
+│   └── components/ # High-level components
+├── examples/        # 50+ example programs
+└── docs/           # Documentation
 ```
 
 ### Code Style
@@ -230,11 +315,11 @@ taproot/
 - Package names: lowercase
 - Interfaces: `-able` suffix (Focusable, Sizeable)
 - Functions: PascalCase (exported), camelCase (internal)
-- Always use `styles.CurrentTheme()` for colors
+- Always use `styles.DefaultStyles()` for colors
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request.
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guidelines.
 
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
@@ -249,14 +334,14 @@ Phase 1: ████████████████████ 100% ✅ C
 Phase 2: ████████████████████ 100% ✅ Application Layer
 Phase 3: ████████████████████ 100% ✅ UI Components
 Phase 4: ████████████████████ 100% ✅ Dialog System
-Phase 5: ██████████░░░░░░░░░░  60% ✅ Advanced Components
+Phase 5: ████████████████████ 100% ✅ v2.0 Engine-Agnostic
 ```
 
-**Current Version**: 1.0.0
+**Current Version**: 2.0.0
 
-**Components**: 38 core components, 15 examples
+**Components**: 50+ core components, 50+ examples
 
-**Test Coverage**: 21 tests passing
+**Test Coverage**: 30+ tests passing
 
 ## 📄 License
 
@@ -268,6 +353,7 @@ Built on top of amazing projects:
 - [Bubbletea](https://github.com/charmbracelet/bubbletea) - The Elm architecture for Go
 - [Lipgloss](https://github.com/charmbracelet/lipgloss) - Style definitions for nice terminal layouts
 - [Charmbracelet Bubbles](https://github.com/charmbracelet/bubbles) - TUI components for Bubbletea
+- [Ultraviolet](https://github.com/charmbracelet/ultraviolet) - High-performance TUI rendering
 
 ## 📮 Contact
 

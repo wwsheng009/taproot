@@ -96,7 +96,7 @@ func renderMixedStyles(width, height, iterations int) time.Duration {
 
 func main() {
 	fmt.Println("Buffer 渲染系统优化性能测试")
-	fmt.Println("================================\n")
+	fmt.Println("================================")
 
 	iterations := 1000
 
